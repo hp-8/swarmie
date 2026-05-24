@@ -177,6 +177,7 @@
   gap: var(--space-2);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
+  font-weight: 600;
   letter-spacing: 0.22em;
   color: var(--ink);
 }
@@ -193,7 +194,7 @@
   gap: var(--space-4);
 }
 .ghost-link {
-  color: var(--ink-3);
+  color: var(--ink-2);
   font-size: var(--text-sm);
   font-family: var(--font-mono);
   letter-spacing: 0.04em;
@@ -222,17 +223,25 @@
   color: var(--ink-3);
 }
 .hero-title {
-  font-size: clamp(48px, 11.5vw, var(--text-display));
+  font-size: clamp(56px, 10vw, 112px);
+  font-weight: 600;
+  font-variation-settings: 'opsz' 144, 'wght' 600;
   margin: 0 0 var(--space-6);
   color: var(--ink);
 }
-.hero-em { font-style: italic; color: var(--accent-bright); }
+.hero-em {
+  font-style: italic;
+  color: var(--accent-bright);
+  font-weight: 600;
+}
 .hero-dot { color: var(--accent); }
 .hero-lede {
   max-width: 640px;
+  font-family: var(--font-body);
   font-size: var(--text-lg);
+  font-weight: 400;
   line-height: 1.55;
-  color: var(--ink-2);
+  color: var(--ink);
   margin: 0 0 var(--space-7);
 }
 .hero-actions {
@@ -268,9 +277,10 @@
   gap: var(--space-3);
 }
 .truth-text {
+  font-family: var(--font-body);
   font-size: var(--text-md);
-  line-height: 1.6;
-  color: var(--ink-2);
+  line-height: 1.65;
+  color: var(--ink);
 }
 .truth-em { color: var(--ink); font-style: italic; }
 .warm { color: var(--accent-bright); font-weight: 500; }
@@ -284,6 +294,8 @@
 .section-head { margin-bottom: var(--space-7); }
 .section-title {
   font-size: clamp(36px, 6vw, var(--text-3xl));
+  font-weight: 500;
+  font-variation-settings: 'opsz' 144, 'wght' 500;
   margin: var(--space-3) 0 0;
   color: var(--ink);
 }
@@ -315,13 +327,20 @@
 }
 .how-title {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 500;
   font-style: italic;
+  font-variation-settings: 'opsz' 96, 'wght' 500;
   font-size: var(--text-2xl);
   margin: 0 0 var(--space-3);
   color: var(--ink);
 }
-.how-copy { color: var(--ink-2); line-height: 1.6; margin: 0; }
+.how-copy {
+  font-family: var(--font-body);
+  color: var(--ink-2);
+  line-height: 1.6;
+  margin: 0;
+  font-size: var(--text-base);
+}
 
 @media (max-width: 760px) {
   .how-grid { grid-template-columns: 1fr; }
@@ -330,9 +349,10 @@
 
 /* STACK */
 .stack-copy {
+  font-family: var(--font-body);
   font-size: var(--text-md);
   line-height: 1.65;
-  color: var(--ink-2);
+  color: var(--ink);
   max-width: var(--max-prose);
   margin: 0 0 var(--space-5);
 }
@@ -358,6 +378,8 @@
 }
 .cta-title {
   font-size: clamp(40px, 8vw, 88px);
+  font-weight: 500;
+  font-variation-settings: 'opsz' 144, 'wght' 500;
   margin: 0 auto var(--space-6);
   max-width: 720px;
   color: var(--ink);

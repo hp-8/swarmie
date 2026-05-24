@@ -338,13 +338,13 @@ onMounted(load)
 .score-num {
   font-family: var(--font-display);
   font-style: italic;
-  font-weight: 400;
+  font-weight: 600;
+  font-variation-settings: 'opsz' 144, 'wght' 600;
   font-size: clamp(120px, 22vw, 220px);
   line-height: 0.85;
   letter-spacing: -0.05em;
   margin-top: var(--space-3);
-  text-shadow: 0 0 80px currentColor;
-  opacity: 0.95;
+  text-shadow: 0 0 60px currentColor;
 }
 .score-band {
   font-family: var(--font-mono);
@@ -357,6 +357,8 @@ onMounted(load)
 .score-right { display: flex; flex-direction: column; gap: var(--space-4); }
 .score-headline {
   font-size: clamp(28px, 4.5vw, 44px);
+  font-weight: 500;
+  font-variation-settings: 'opsz' 144, 'wght' 500;
   margin: 0;
   color: var(--ink);
 }
@@ -366,6 +368,7 @@ onMounted(load)
 /* NARRATIVE */
 .narrative { display: flex; flex-direction: column; gap: var(--space-4); max-width: var(--max-prose); }
 .narrative-body {
+  font-family: var(--font-body);
   font-size: var(--text-lg);
   line-height: 1.65;
   color: var(--ink);
@@ -423,9 +426,11 @@ onMounted(load)
 .obj-quote {
   font-family: var(--font-display);
   font-style: italic;
+  font-weight: 500;
+  font-variation-settings: 'opsz' 96, 'wght' 500;
   font-size: var(--text-md);
   line-height: 1.55;
-  color: var(--ink-2);
+  color: var(--ink);
   margin: 0;
 }
 
@@ -448,6 +453,8 @@ onMounted(load)
 .action-count {
   font-family: var(--font-display);
   font-style: italic;
+  font-weight: 500;
+  font-variation-settings: 'opsz' 96, 'wght' 500;
   font-size: var(--text-2xl);
   color: var(--ink);
 }
@@ -465,7 +472,12 @@ onMounted(load)
 
 /* ICP */
 .icp-head { margin-bottom: var(--space-5); }
-.icp-title { font-size: var(--text-3xl); margin: var(--space-2) 0 0; }
+.icp-title {
+  font-size: var(--text-3xl);
+  font-weight: 500;
+  font-variation-settings: 'opsz' 144, 'wght' 500;
+  margin: var(--space-2) 0 0;
+}
 .icp-grid { display: flex; flex-direction: column; gap: var(--space-2); }
 .icp-row {
   display: grid;
@@ -494,7 +506,12 @@ onMounted(load)
 
 /* QUOTES */
 .qs-head { margin-bottom: var(--space-5); }
-.qs-title { font-size: var(--text-3xl); margin: var(--space-2) 0 0; }
+.qs-title {
+  font-size: var(--text-3xl);
+  font-weight: 500;
+  font-variation-settings: 'opsz' 144, 'wght' 500;
+  margin: var(--space-2) 0 0;
+}
 .quotes {
   columns: 2;
   column-gap: var(--space-4);
@@ -523,8 +540,10 @@ onMounted(load)
 .q-text {
   font-family: var(--font-display);
   font-style: italic;
+  font-weight: 500;
+  font-variation-settings: 'opsz' 96, 'wght' 500;
   font-size: var(--text-md);
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--ink);
   margin: 0 0 var(--space-3);
 }
@@ -544,6 +563,8 @@ onMounted(load)
 .usage-num {
   font-family: var(--font-display);
   font-style: italic;
+  font-weight: 500;
+  font-variation-settings: 'opsz' 96, 'wght' 500;
   font-size: var(--text-2xl);
   color: var(--ink);
 }

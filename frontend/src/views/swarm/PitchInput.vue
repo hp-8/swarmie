@@ -239,7 +239,7 @@ async function onSubmit() {
   color: var(--ink);
   margin-bottom: var(--space-2);
 }
-.step-hint { font-size: var(--text-sm); color: var(--ink-3); line-height: 1.55; }
+.step-hint { font-family: var(--font-body); font-size: var(--text-sm); color: var(--ink-2); line-height: 1.6; }
 
 @media (max-width: 880px) {
   .left-col { position: static; flex-direction: row; flex-wrap: wrap; }
@@ -250,13 +250,16 @@ async function onSubmit() {
 .canvas-head { margin-bottom: var(--space-7); max-width: 640px; }
 .canvas-title {
   font-size: clamp(40px, 6vw, 64px);
+  font-weight: 500;
+  font-variation-settings: 'opsz' 144, 'wght' 500;
   margin: 0 0 var(--space-3);
   color: var(--ink);
 }
 .canvas-sub {
-  color: var(--ink-2);
+  font-family: var(--font-body);
+  color: var(--ink);
   font-size: var(--text-md);
-  line-height: 1.55;
+  line-height: 1.6;
   margin: 0;
 }
 .canvas-sub em { color: var(--accent-bright); font-style: italic; }

@@ -292,6 +292,8 @@ onBeforeUnmount(() => {
 .anchor-head { margin-bottom: 0; }
 .anchor-title {
   font-size: var(--text-3xl);
+  font-weight: 500;
+  font-variation-settings: 'opsz' 144, 'wght' 500;
   margin: var(--space-3) 0 0;
   color: var(--ink);
 }
@@ -331,7 +333,8 @@ onBeforeUnmount(() => {
 .pitch-line {
   font-family: var(--font-display);
   font-style: italic;
-  font-weight: 400;
+  font-weight: 500;
+  font-variation-settings: 'opsz' 96, 'wght' 500;
   font-size: var(--text-xl);
   line-height: 1.25;
   margin: 0;
@@ -455,6 +458,7 @@ onBeforeUnmount(() => {
 .r-seg { color: var(--ink-4); margin-left: auto; }
 
 .r-text {
+  font-family: var(--font-body);
   font-size: var(--text-md);
   line-height: 1.6;
   color: var(--ink);
