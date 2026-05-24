@@ -10,6 +10,9 @@
         <button class="rail-action" @click="copyShareUrl">
           {{ copied ? '✓ copied' : 'copy link' }}
         </button>
+        <button class="rail-action" @click="downloadPdf" :disabled="downloading || !report">
+          {{ downloading ? 'building…' : '↓ download PDF' }}
+        </button>
         <router-link to="/new" class="rail-action accent">new roast →</router-link>
       </div>
     </header>
@@ -168,6 +171,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { roastApi } from '../../api/roast'
+import { generateRoastPDF } from '../../lib/pdf/template'
 
 const route = useRoute()
 const jobId = route.params.jobId
@@ -260,6 +264,25 @@ async function copyShareUrl() {
   setTimeout(() => (copied.value = false), 1500)
 }
 
+const downloading = ref(false)
+async function downloadPdf() {
+  if (downloading.value || !report.value) return
+  downloading.value = true
+  try {
+    generateRoastPDF({
+      report: report.value,
+      parsedPitch: parsedPitch.value,
+      usage: usage.value,
+      jobId,
+    })
+  } catch (e) {
+    console.error('PDF gen failed', e)
+  } finally {
+    // brief delay so the button state is visible
+    setTimeout(() => { downloading.value = false }, 400)
+  }
+}
+
 function animateScore(target) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     scoreDisplayed.value = target
@@ -315,6 +338,8 @@ onMounted(load)
 .rail-action:hover { color: var(--ink); border-color: var(--ink-2); }
 .rail-action.accent { background: var(--accent); border-color: var(--accent); color: var(--paper); }
 .rail-action:active { transform: scale(0.96); }
+.rail-action:disabled { opacity: 0.5; cursor: not-allowed; }
+.rail-action:disabled:hover { color: var(--ink-2); border-color: var(--rule-2); background: transparent; }
 
 /* state msgs */
 .state-msg {
