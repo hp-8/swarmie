@@ -10,8 +10,10 @@
         <button class="rail-action" @click="copyShareUrl">
           {{ copied ? '✓ copied' : 'copy link' }}
         </button>
-        <button class="rail-action" @click="downloadPdf" :disabled="downloading || !report">
-          {{ downloading ? 'building…' : '↓ download PDF' }}
+        <button class="rail-action rail-pdf" @click="onPdfClick" :disabled="downloading || !report">
+          <span v-if="downloading">building…</span>
+          <span v-else-if="isUnlocked">↓ download PDF</span>
+          <span v-else>↓ PDF · ${{ gumroadPrice }}</span>
         </button>
         <router-link to="/new" class="rail-action accent">new roast →</router-link>
       </div>
@@ -163,7 +165,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { roastApi } from '../../api/roast'
 import { generateRoastPDF } from '../../lib/pdf/template'
@@ -257,8 +259,25 @@ async function copyShareUrl() {
   setTimeout(() => (copied.value = false), 1500)
 }
 
+// --- PDF download (gated by Gumroad purchase) ----------------------------
+const GUMROAD_URL = import.meta.env.VITE_GUMROAD_URL || 'https://hp8.gumroad.com/l/swarmie-roast'
+const gumroadPrice = import.meta.env.VITE_GUMROAD_PRICE || '2.50'
+const UNLOCK_KEY = `swarmie_pdf_unlock_${jobId}`
+
 const downloading = ref(false)
-async function downloadPdf() {
+const isUnlocked = ref(false)
+
+function checkUnlock() {
+  try { isUnlocked.value = localStorage.getItem(UNLOCK_KEY) === '1' }
+  catch { isUnlocked.value = false }
+}
+
+function markUnlocked() {
+  try { localStorage.setItem(UNLOCK_KEY, '1') } catch {}
+  isUnlocked.value = true
+}
+
+async function generatePdfNow() {
   if (downloading.value || !report.value) return
   downloading.value = true
   try {
@@ -271,8 +290,47 @@ async function downloadPdf() {
   } catch (e) {
     console.error('PDF gen failed', e)
   } finally {
-    // brief delay so the button state is visible
     setTimeout(() => { downloading.value = false }, 400)
+  }
+}
+
+// Listen for postMessage from Gumroad iframe on successful payment.
+// Gumroad fires { type: 'paid', ...sale } when a buyer completes checkout.
+function onGumroadMessage(e) {
+  if (!e?.data) return
+  if (typeof e.origin === 'string' && !/gumroad\.com$/i.test(new URL(e.origin).hostname)) return
+  const t = e.data?.type || e.data?.event
+  if (t === 'paid' || t === 'purchase' || t === 'gumroad-overlay-purchase') {
+    markUnlocked()
+    // small delay so the overlay can close gracefully before the file save dialog
+    setTimeout(() => generatePdfNow(), 300)
+  }
+}
+
+function openGumroad() {
+  // Use Gumroad's overlay if their JS is loaded; otherwise fall back to a new tab.
+  const url = GUMROAD_URL + (GUMROAD_URL.includes('?') ? '&' : '?') + 'wanted=true'
+  if (window.GumroadOverlay && typeof window.GumroadOverlay.show === 'function') {
+    window.GumroadOverlay.show(url)
+  } else {
+    // gumroad.js auto-attaches to anchor tags with class gumroad-button.
+    // Synthesize one and click it so the overlay opens.
+    const a = document.createElement('a')
+    a.className = 'gumroad-button'
+    a.href = url
+    a.style.display = 'none'
+    document.body.appendChild(a)
+    a.click()
+    setTimeout(() => a.remove(), 1000)
+  }
+}
+
+function onPdfClick() {
+  if (downloading.value || !report.value) return
+  if (isUnlocked.value) {
+    generatePdfNow()
+  } else {
+    openGumroad()
   }
 }
 
@@ -297,7 +355,12 @@ watch(report, (r) => {
   if (r && typeof r.pmf_score === 'number') animateScore(r.pmf_score)
 })
 
-onMounted(load)
+onMounted(() => {
+  checkUnlock()
+  window.addEventListener('message', onGumroadMessage)
+  load()
+})
+onBeforeUnmount(() => window.removeEventListener('message', onGumroadMessage))
 </script>
 
 <style scoped>

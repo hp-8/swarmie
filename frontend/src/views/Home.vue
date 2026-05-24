@@ -116,6 +116,39 @@
         </p>
       </section>
 
+      <!-- FOUNDER · who built this + work-with-me -->
+      <section class="founder">
+        <div class="founder-grid">
+          <div class="founder-left">
+            <span class="h-eyebrow">03 · who made this</span>
+            <h2 class="founder-name h-display">Harsh Patadia.</h2>
+            <p class="founder-bio">
+              I build for founders. Swarmie is the free version of how I think about
+              early-stage validation — fast, brutal, focused on the objection you
+              actually need to hear. If you want a human in the loop — to ship the
+              MVP, sharpen the pitch, or prep the raise — that's the day job.
+            </p>
+            <div class="founder-actions">
+              <a href="https://harshpatadia.space" target="_blank" class="h-btn is-accent">
+                Work with me →
+              </a>
+              <a href="https://harshpatadia.space" target="_blank" class="h-btn is-ghost">
+                harshpatadia.space
+              </a>
+            </div>
+          </div>
+          <aside class="founder-right">
+            <span class="h-eyebrow">elsewhere</span>
+            <ul class="founder-links">
+              <li><a href="https://github.com/hp-8" target="_blank">github.com/hp-8</a></li>
+              <li><a href="https://x.com/harshpatadia_" target="_blank">x.com/harshpatadia_</a></li>
+              <li><a href="https://www.linkedin.com/in/harsh-patadia" target="_blank">linkedin.com/in/harsh-patadia</a></li>
+              <li><a href="https://harshpatadia.space" target="_blank">harshpatadia.space</a></li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
       <!-- CTA STATEMENT -->
       <section class="cta">
         <h2 class="cta-title h-display">
@@ -368,6 +401,59 @@
   letter-spacing: 0.05em;
   color: var(--accent-bright);
 }
+
+/* FOUNDER */
+.founder {
+  max-width: var(--max-content);
+  margin: 0 auto;
+  padding: var(--space-9) var(--space-5);
+  border-top: 1px solid var(--rule);
+}
+.founder-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: var(--space-8);
+  align-items: start;
+}
+@media (max-width: 760px) {
+  .founder-grid { grid-template-columns: 1fr; gap: var(--space-6); }
+}
+.founder-name {
+  font-size: clamp(44px, 7vw, 80px);
+  font-weight: 500;
+  font-variation-settings: 'opsz' 144, 'wght' 500;
+  margin: var(--space-2) 0 var(--space-5);
+  color: var(--ink);
+}
+.founder-bio {
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: 1.65;
+  color: var(--ink);
+  max-width: 540px;
+  margin: 0 0 var(--space-6);
+}
+.founder-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.founder-actions .h-btn { padding: 12px 22px; font-size: var(--text-base); }
+.founder-right { padding-top: var(--space-4); }
+.founder-links {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-3) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.founder-links a {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  letter-spacing: 0.02em;
+  border-bottom: 1px dashed var(--rule-2);
+  padding-bottom: 2px;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.founder-links a:hover { color: var(--accent-bright); border-color: var(--accent); }
 
 /* CTA — statement */
 .cta {
