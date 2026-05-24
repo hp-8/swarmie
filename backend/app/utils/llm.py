@@ -200,7 +200,7 @@ class LLM:
         model: str | None = None,
         tracker: UsageTracker | None = None,
         max_retries: int = 3,
-        timeout: float = 60.0,
+        timeout: float = 30.0,
     ):
         self.tier = tier
         if api_key and base_url and model:
@@ -307,34 +307,60 @@ class LLM:
 
     def _call_with_retry(self, **kwargs):
         last_exc: Exception | None = None
+        payload = {k: v for k, v in kwargs.items() if v is not None}
+        model = payload.get("model", self.model)
+        max_tok = payload.get("max_tokens", "?")
+        # Coarse prompt size for logging — sum of message content lengths.
+        prompt_chars = sum(len((m.get("content") or "")) for m in payload.get("messages", []))
         for attempt in range(self.max_retries):
+            print(
+                f"[llm.{self.tier}] -> {model} max_tokens={max_tok} prompt_chars={prompt_chars} attempt={attempt + 1}",
+                flush=True,
+            )
             try:
-                # Drop empty response_format so providers that don't support it (Ollama) don't choke.
-                payload = {k: v for k, v in kwargs.items() if v is not None}
+                started = time.time()
                 resp = self._sync.chat.completions.create(**payload)
+                dur = time.time() - started
                 if self.tracker:
-                    self.tracker.add(Usage.from_response(resp, model=payload["model"], tier=self.tier))
+                    self.tracker.add(Usage.from_response(resp, model=model, tier=self.tier))
+                pt = getattr(getattr(resp, "usage", None), "prompt_tokens", 0)
+                ct = getattr(getattr(resp, "usage", None), "completion_tokens", 0)
+                print(
+                    f"[llm.{self.tier}] <- {model} in={pt} out={ct} took={dur:.1f}s",
+                    flush=True,
+                )
                 return resp
-            except (RateLimitError, APITimeoutError, APIError) as exc:
+            except APITimeoutError as exc:
+                last_exc = exc
+                print(f"[llm.{self.tier}] TIMEOUT after {self.timeout}s (attempt {attempt + 1})", flush=True)
+            except (RateLimitError, APIError) as exc:
                 last_exc = exc
                 wait = min(2 ** attempt, 30)
-                logger.warning(f"[llm.{self.tier}] attempt {attempt + 1} failed: {exc}; retrying in {wait}s")
+                print(f"[llm.{self.tier}] attempt {attempt + 1} failed: {exc}; retrying in {wait}s", flush=True)
                 time.sleep(wait)
         raise RuntimeError(f"LLM call failed after {self.max_retries} retries: {last_exc}")
 
     async def _acall_with_retry(self, **kwargs):
         last_exc: Exception | None = None
+        payload = {k: v for k, v in kwargs.items() if v is not None}
+        model = payload.get("model", self.model)
         for attempt in range(self.max_retries):
             try:
-                payload = {k: v for k, v in kwargs.items() if v is not None}
+                started = time.time()
                 resp = await self.aclient.chat.completions.create(**payload)
+                dur = time.time() - started
                 if self.tracker:
-                    self.tracker.add(Usage.from_response(resp, model=payload["model"], tier=self.tier))
+                    self.tracker.add(Usage.from_response(resp, model=model, tier=self.tier))
+                if dur > 5.0:
+                    print(f"[llm.{self.tier}/async] slow call took={dur:.1f}s", flush=True)
                 return resp
-            except (RateLimitError, APITimeoutError, APIError) as exc:
+            except APITimeoutError as exc:
+                last_exc = exc
+                print(f"[llm.{self.tier}/async] TIMEOUT after {self.timeout}s", flush=True)
+            except (RateLimitError, APIError) as exc:
                 last_exc = exc
                 wait = min(2 ** attempt, 30)
-                logger.warning(f"[llm.{self.tier}] async attempt {attempt + 1} failed: {exc}; retrying in {wait}s")
+                print(f"[llm.{self.tier}/async] attempt {attempt + 1} failed: {exc}; retrying in {wait}s", flush=True)
                 await asyncio.sleep(wait)
         raise RuntimeError(f"Async LLM call failed after {self.max_retries} retries: {last_exc}")
 

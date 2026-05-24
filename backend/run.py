@@ -5,6 +5,14 @@ Swarmie Backend Entry Point
 import os
 import sys
 
+# Make all print()/log output unbuffered so live diagnostics show up in `npm run dev`.
+os.environ.setdefault("PYTHONUNBUFFERED", "1")
+try:
+    sys.stdout.reconfigure(line_buffering=True)  # py3.7+
+    sys.stderr.reconfigure(line_buffering=True)
+except Exception:
+    pass
+
 # Fix Windows console encoding issue: set UTF-8 before all imports
 if sys.platform == 'win32':
     # Ensure Python uses UTF-8 encoding

@@ -132,37 +132,44 @@ def _push_event(job: RoastJob, event_type: str, payload: Any) -> None:
 
 def _run_pipeline(job: RoastJob) -> None:
     """Run the full pipeline on a background thread. Updates job in place."""
+    print(f"[{job.job_id}] pipeline thread STARTED", flush=True)
     tracker = UsageTracker()
+    t0 = time.time()
+
+    def _stage(name: str, fraction: float) -> float:
+        job.status = name
+        job.progress = fraction
+        _push_event(job, "status", {"status": name, "progress": fraction})
+        elapsed = time.time() - t0
+        print(f"[{job.job_id}] STAGE='{name}' elapsed={elapsed:.1f}s", flush=True)
+        return time.time()
+
     try:
         # Stage 1 — parse pitch
-        job.status = "parsing"
-        job.progress = 0.05
-        _push_event(job, "status", {"status": job.status, "progress": job.progress})
-
+        t = _stage("parsing", 0.05)
         parser = PitchParser(tracker=tracker)
         pitch = parser.parse(job.pitch_text)
         job.parsed_pitch = pitch.to_dict()
         _push_event(job, "parsed_pitch", pitch.to_dict())
+        logger.info(f"[{job.job_id}] parsing done in {time.time()-t:.1f}s")
         if job.cancelled.is_set():
             raise RuntimeError("cancelled")
 
         # Stage 2 — generate archetypes
-        job.status = "generating_archetypes"
-        job.progress = 0.15
-        _push_event(job, "status", {"status": job.status, "progress": job.progress})
-
+        t = _stage("generating_archetypes", 0.15)
         archgen = ArchetypeGenerator(tracker=tracker)
         archetypes = archgen.generate(pitch, n_archetypes=12)
         job.archetypes = [a.to_dict() for a in archetypes]
         _push_event(job, "archetypes", [a.to_dict() for a in archetypes])
+        logger.info(
+            f"[{job.job_id}] archetypes done in {time.time()-t:.1f}s "
+            f"(got {len(archetypes)})"
+        )
         if job.cancelled.is_set():
             raise RuntimeError("cancelled")
 
         # Stage 3 — run swarm
-        job.status = "running_swarm"
-        job.progress = 0.25
-        _push_event(job, "status", {"status": job.status, "progress": job.progress})
-
+        t = _stage("running_swarm", 0.25)
         completed = 0
         total = job.n_agents
 
@@ -172,6 +179,11 @@ def _run_pipeline(job: RoastJob) -> None:
             job.reactions.append(r.to_dict())
             job.progress = 0.25 + (completed / max(total, 1)) * 0.6
             _push_event(job, "reaction", r.to_dict())
+            if completed % 10 == 0:
+                logger.info(
+                    f"[{job.job_id}] swarm progress {completed}/{total} "
+                    f"cost=${tracker.total_cost_usd:.4f}"
+                )
 
         runner = SwarmRunner(tracker=tracker)
         loop = asyncio.new_event_loop()
@@ -187,19 +199,21 @@ def _run_pipeline(job: RoastJob) -> None:
             )
         finally:
             loop.close()
+        logger.info(
+            f"[{job.job_id}] swarm done in {time.time()-t:.1f}s "
+            f"(got {len(reactions)} reactions)"
+        )
 
         if job.cancelled.is_set():
             raise RuntimeError("cancelled")
 
         # Stage 4 — synthesize report
-        job.status = "reporting"
-        job.progress = 0.9
-        _push_event(job, "status", {"status": job.status, "progress": job.progress})
-
+        t = _stage("reporting", 0.9)
         reporter = RoastReporter(tracker=tracker)
         report = reporter.report(pitch, reactions)
         job.report = report.to_dict()
         _push_event(job, "report", report.to_dict())
+        logger.info(f"[{job.job_id}] report done in {time.time()-t:.1f}s")
 
         # Done
         job.status = "completed"
@@ -242,8 +256,10 @@ def create_roast():
     n_agents = max(10, min(n_agents, 500))  # clamp 10..500
 
     job = _store.create(pitch_text=pitch_text, n_agents=n_agents)
+    print(f"[{job.job_id}] creating background thread (n_agents={n_agents})", flush=True)
     thread = threading.Thread(target=_run_pipeline, args=(job,), daemon=True)
     thread.start()
+    print(f"[{job.job_id}] thread.start() returned; thread.is_alive={thread.is_alive()}", flush=True)
 
     return jsonify({"job_id": job.job_id, "status": job.status}), 202
 
