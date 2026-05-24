@@ -1,54 +1,92 @@
 <template>
-  <div class="watching">
-    <header class="nav">
-      <div class="brand" @click="$router.push('/')">SWARMIE</div>
-      <div class="status-pill" :class="statusClass">{{ statusLabel }}</div>
+  <div class="page">
+    <header class="rail">
+      <router-link to="/" class="brand-mark">
+        <span class="dot" :class="{ pulse: isRunning }"></span>
+        <span class="brand-text">SWARMIE</span>
+      </router-link>
+      <span class="rail-context">/ run · {{ jobShort }}</span>
+      <div class="rail-right">
+        <span class="h-chip" :class="statusChipClass">{{ statusLabel }}</span>
+      </div>
     </header>
 
-    <main class="content">
-      <h1 class="title">{{ headline }}</h1>
-      <p class="sub">{{ subline }}</p>
-
-      <div class="progress-track">
-        <div class="progress-fill" :style="{ width: progressPct + '%' }"></div>
-      </div>
-      <div class="progress-meta">{{ progressPct }}% — {{ stageLabel }}</div>
-
-      <div v-if="parsedPitch" class="pitch-summary">
-        <div class="kv"><span>One-liner:</span> {{ parsedPitch.one_liner }}</div>
-        <div class="kv"><span>Target ICP:</span> {{ parsedPitch.target_icp }}</div>
-        <div class="kv segments">
-          <span>Segments:</span>
-          <span v-for="s in parsedPitch.icp_segments" :key="s" class="chip">{{ s }}</span>
+    <main class="doc">
+      <!-- LEFT — anchored pitch summary + progress -->
+      <aside class="anchor">
+        <div class="anchor-head">
+          <span class="h-eyebrow">running</span>
+          <h1 class="anchor-title h-display">{{ headline }}</h1>
         </div>
-      </div>
 
-      <section class="feed">
-        <h2 class="feed-title">Live reactions <span class="count">{{ reactions.length }}</span></h2>
-        <transition-group name="fade" tag="div" class="feed-list">
-          <article
+        <div class="progress-wrap">
+          <div class="progress-track">
+            <div class="progress-fill" :style="{ width: progressPct + '%' }"></div>
+          </div>
+          <div class="progress-meta">
+            <span class="progress-pct">{{ progressPct }}%</span>
+            <span class="progress-stage">{{ stageLabel }}</span>
+          </div>
+        </div>
+
+        <div v-if="parsedPitch" class="pitch-card">
+          <span class="h-eyebrow">parsed pitch</span>
+          <h3 class="pitch-line">{{ parsedPitch.one_liner }}</h3>
+          <div class="pitch-row">
+            <span class="pitch-key">target</span>
+            <span class="pitch-val">{{ parsedPitch.target_icp }}</span>
+          </div>
+          <div v-if="parsedPitch.icp_segments?.length" class="pitch-row pitch-row-segments">
+            <span class="pitch-key">segments</span>
+            <div class="seg-chips">
+              <span v-for="s in parsedPitch.icp_segments" :key="s" class="seg-chip">{{ s }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="counter">
+          <div class="counter-num">{{ reactions.length }}</div>
+          <div class="counter-label">reactions</div>
+        </div>
+
+        <div v-if="error" class="error-box">
+          <strong>Failed.</strong>
+          <span>{{ error }}</span>
+          <button class="h-btn is-ghost retry-btn" @click="$router.push('/new')">try again →</button>
+        </div>
+      </aside>
+
+      <!-- RIGHT — live stream -->
+      <section class="stream">
+        <header class="stream-head">
+          <span class="h-eyebrow">live · agent reactions</span>
+          <span class="stream-count">{{ visibleReactions.length }} shown</span>
+        </header>
+
+        <div v-if="visibleReactions.length === 0" class="stream-empty">
+          <div class="empty-dot pulse"></div>
+          <span>Waiting for the first reaction…</span>
+        </div>
+
+        <transition-group name="slide" tag="ol" class="stream-list">
+          <li
             v-for="r in visibleReactions"
             :key="r.agent_id"
             class="reaction"
             :class="['tone-' + r.tone, 'action-' + r.action]"
           >
-            <div class="r-head">
-              <span class="r-name">@{{ r.name }}</span>
-              <span class="r-tag">{{ r.action }}</span>
+            <div class="r-meta">
+              <span class="r-handle">@{{ r.name }}</span>
+              <span class="r-action">{{ actionGlyph(r.action) }} {{ r.action }}</span>
               <span class="r-seg">{{ r.segment }}</span>
             </div>
-            <div v-if="r.text" class="r-body">{{ r.text }}</div>
+            <div v-if="r.text" class="r-text">{{ r.text }}</div>
             <div v-if="r.objections?.length" class="r-objections">
-              <span v-for="o in r.objections" :key="o" class="obj-chip">{{ o }}</span>
+              <span v-for="o in r.objections" :key="o" class="r-obj">{{ o }}</span>
             </div>
-          </article>
+          </li>
         </transition-group>
       </section>
-
-      <div v-if="error" class="error-box">
-        <strong>Roast failed:</strong> {{ error }}
-        <button class="retry-btn" @click="$router.push('/new')">Try again</button>
-      </div>
     </main>
   </div>
 </template>
@@ -70,26 +108,27 @@ const error = ref('')
 let evtSource = null
 let pollTimer = null
 
+const jobShort = computed(() => (jobId || '').replace('roast_', '').slice(0, 8))
 const progressPct = computed(() => Math.round(progress.value * 100))
 
-const statusLabel = computed(() => {
-  const map = {
-    pending: 'Queued',
-    parsing: 'Parsing pitch',
-    generating_archetypes: 'Designing agents',
-    running_swarm: 'Agents reacting',
-    reporting: 'Synthesizing',
-    completed: 'Done',
-    failed: 'Failed',
-    cancelled: 'Cancelled',
-  }
-  return map[status.value] || status.value
-})
-
-const statusClass = computed(() => {
-  if (['completed'].includes(status.value)) return 'good'
-  if (['failed', 'cancelled'].includes(status.value)) return 'bad'
-  return 'running'
+const STATUS_MAP = {
+  pending: 'Queued',
+  parsing: 'Parsing pitch',
+  generating_archetypes: 'Designing agents',
+  running_swarm: 'Agents reacting',
+  reporting: 'Synthesizing',
+  completed: 'Done',
+  failed: 'Failed',
+  cancelled: 'Cancelled',
+}
+const statusLabel = computed(() => STATUS_MAP[status.value] || status.value)
+const isRunning = computed(() =>
+  !['completed', 'failed', 'cancelled'].includes(status.value),
+)
+const statusChipClass = computed(() => {
+  if (status.value === 'completed') return 'is-live'
+  if (['failed', 'cancelled'].includes(status.value)) return 'is-warn'
+  return 'is-accent'
 })
 
 const stageLabel = computed(() => {
@@ -100,21 +139,23 @@ const stageLabel = computed(() => {
 const headline = computed(() => {
   if (status.value === 'completed') return 'Roast complete.'
   if (status.value === 'failed') return 'Something broke.'
-  return 'Running the swarm…'
-})
-
-const subline = computed(() => {
-  if (status.value === 'completed') return 'Loading your report…'
-  return 'Watch the agents react in real time. This takes about a minute.'
+  if (status.value === 'running_swarm') return 'The swarm is talking.'
+  if (status.value === 'reporting') return 'Reading the room.'
+  if (status.value === 'generating_archetypes') return 'Casting the crowd.'
+  if (status.value === 'parsing') return 'Reading the pitch.'
+  return 'Warming up…'
 })
 
 const visibleReactions = computed(() => {
-  // Newest first, cap to last 50 to keep DOM light.
   return [...reactions.value]
-    .filter((r) => r.text || r.action === 'upvote')
-    .slice(-50)
+    .filter(r => r.text || r.action === 'upvote')
+    .slice(-80)
     .reverse()
 })
+
+function actionGlyph(action) {
+  return { post: '◆', comment: '✎', upvote: '↑', ignore: '·' }[action] || '·'
+}
 
 function handleEvent(eventName, data) {
   if (eventName === 'status') {
@@ -138,15 +179,10 @@ function startStream() {
   evtSource = new EventSource(url)
   for (const name of ['status', 'parsed_pitch', 'archetypes', 'reaction', 'report', 'usage', 'done']) {
     evtSource.addEventListener(name, (e) => {
-      try {
-        handleEvent(name, JSON.parse(e.data))
-      } catch (err) {
-        console.warn('Bad SSE payload', name, err)
-      }
+      try { handleEvent(name, JSON.parse(e.data)) } catch (err) { console.warn('Bad SSE', name, err) }
     })
   }
   evtSource.onerror = () => {
-    // EventSource auto-reconnects; if it doesn't, fall back to polling.
     if (evtSource.readyState === EventSource.CLOSED) startPolling()
   }
 }
@@ -167,16 +203,11 @@ function startPolling() {
         pollTimer = null
         if (j.status === 'completed') router.replace({ name: 'Result', params: { jobId } })
       }
-    } catch (err) {
-      console.warn('poll failed', err)
-    }
+    } catch (err) { console.warn('poll fail', err) }
   }, 2000)
 }
 
-onMounted(() => {
-  startStream()
-})
-
+onMounted(startStream)
 onBeforeUnmount(() => {
   if (evtSource) evtSource.close()
   if (pollTimer) clearInterval(pollTimer)
@@ -184,78 +215,277 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.watching { min-height: 100vh; background: #0b0c10; color: #f4f4f5; font-family: 'Inter', system-ui, sans-serif; }
-.nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 32px; border-bottom: 1px solid rgba(255,255,255,0.08); }
-.brand { font-weight: 800; letter-spacing: 0.18em; font-size: 14px; cursor: pointer; }
-.status-pill { font-size: 12px; padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.12); }
-.status-pill.running { color: #f59e0b; border-color: rgba(245,158,11,0.3); }
-.status-pill.good { color: #4ade80; border-color: rgba(74,222,128,0.3); }
-.status-pill.bad { color: #f87171; border-color: rgba(248,113,113,0.3); }
+/* Hallmark · page: Watching · macrostructure: Live Document (split)
+ * archetypes: N-rail-tight · S-anchored-left · F-stream-right · Ft-none
+ * theme: Midnight+coral (atmospheric)
+ */
 
-.content { max-width: 880px; margin: 0 auto; padding: 48px 32px 96px; }
-.title { font-size: 36px; font-weight: 700; line-height: 1.2; margin: 0 0 8px; }
-.sub { color: rgba(255,255,255,0.5); margin: 0 0 28px; }
+.page { min-height: 100vh; color: var(--ink); }
 
-.progress-track { height: 6px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }
-.progress-fill { height: 100%; background: linear-gradient(90deg, #ff6b35, #f59e0b); transition: width 0.4s ease; }
-.progress-meta { margin-top: 10px; font-size: 13px; color: rgba(255,255,255,0.5); }
-
-.pitch-summary {
-  margin: 32px 0;
-  padding: 16px 20px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 10px;
-  font-size: 14px;
-  display: flex; flex-direction: column; gap: 8px;
+/* Rail */
+.rail {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--rule);
+  position: sticky;
+  top: 0;
+  background: color-mix(in oklch, var(--paper) 88%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 20;
 }
-.kv { color: rgba(255,255,255,0.75); }
-.kv > span:first-child { color: rgba(255,255,255,0.45); margin-right: 8px; }
-.segments { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.chip { background: rgba(245,158,11,0.12); color: #f59e0b; padding: 3px 10px; border-radius: 999px; font-size: 12px; }
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.22em;
+}
+.brand-mark .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 14px var(--accent);
+}
+.brand-mark .dot.pulse {
+  animation: pulse-dot 1.4s var(--ease-in-out) infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 14px var(--accent); }
+  50% { opacity: 0.55; box-shadow: 0 0 28px var(--accent); }
+}
 
-.feed-title { font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.5); margin: 32px 0 16px; }
-.count { color: #f59e0b; }
+.rail-context {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+.rail-right { margin-left: auto; }
 
-.feed-list { display: flex; flex-direction: column; gap: 10px; }
+/* Document layout */
+.doc {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: var(--space-7);
+  max-width: var(--max-content);
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-6) var(--space-9);
+  align-items: start;
+}
+@media (max-width: 920px) { .doc { grid-template-columns: 1fr; gap: var(--space-5); } }
+
+/* Anchor */
+.anchor {
+  position: sticky;
+  top: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+@media (max-width: 920px) { .anchor { position: static; } }
+
+.anchor-head { margin-bottom: 0; }
+.anchor-title {
+  font-size: var(--text-3xl);
+  margin: var(--space-3) 0 0;
+  color: var(--ink);
+}
+
+.progress-wrap { display: flex; flex-direction: column; gap: var(--space-3); }
+.progress-track {
+  height: 4px;
+  background: var(--paper-3);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-bright));
+  transition: width 400ms var(--ease-out);
+}
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.05em;
+}
+.progress-pct { color: var(--accent-bright); font-size: var(--text-sm); }
+.progress-stage { color: var(--ink-3); }
+
+.pitch-card {
+  padding: var(--space-5);
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.pitch-line {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--text-xl);
+  line-height: 1.25;
+  margin: 0;
+  color: var(--ink);
+}
+.pitch-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+  font-size: var(--text-sm);
+}
+.pitch-row-segments { align-items: flex-start; flex-direction: column; gap: var(--space-2); }
+.pitch-key {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  min-width: 70px;
+}
+.pitch-val { color: var(--ink-2); }
+.seg-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg-chip {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: 3px 9px;
+  background: var(--accent-soft);
+  color: var(--accent-bright);
+  border-radius: var(--radius-pill);
+}
+
+.counter {
+  padding: var(--space-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  background: var(--paper-2);
+}
+.counter-num {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--text-3xl);
+  line-height: 1;
+  color: var(--accent-bright);
+}
+.counter-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: var(--space-2);
+}
+
+/* Stream */
+.stream-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: var(--space-4);
+}
+.stream-count {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+}
+.stream-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-7);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+.empty-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.empty-dot.pulse { animation: pulse-dot 1.4s var(--ease-in-out) infinite; }
+
+.stream-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
 .reaction {
-  padding: 14px 16px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-left: 3px solid rgba(255,255,255,0.15);
-  border-radius: 8px;
+  padding: var(--space-4) var(--space-5);
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  border-left: 2px solid var(--ink-4);
 }
-.reaction.tone-skeptical, .reaction.tone-aggressive { border-left-color: #f87171; }
-.reaction.tone-enthusiastic { border-left-color: #4ade80; }
-.reaction.tone-curious { border-left-color: #60a5fa; }
-.reaction.tone-indifferent { border-left-color: rgba(255,255,255,0.2); }
+.reaction.tone-skeptical, .reaction.tone-aggressive { border-left-color: var(--warn); }
+.reaction.tone-enthusiastic { border-left-color: var(--live); }
+.reaction.tone-curious { border-left-color: var(--info); }
+.reaction.tone-indifferent { border-left-color: var(--ink-4); opacity: 0.7; }
 
-.r-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 6px; font-size: 12px; }
-.r-name { font-weight: 600; color: #fff; }
-.r-tag { color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; }
-.r-seg { color: rgba(255,255,255,0.35); margin-left: auto; }
-.r-body { font-size: 14px; line-height: 1.5; color: rgba(255,255,255,0.85); }
-.r-objections { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
-.obj-chip { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(248,113,113,0.1); color: #f87171; text-transform: uppercase; letter-spacing: 0.05em; }
+.r-meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+}
+.r-handle { color: var(--ink); font-weight: 500; }
+.r-action {
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.r-seg { color: var(--ink-4); margin-left: auto; }
 
-.fade-enter-active { transition: all 0.25s; }
-.fade-enter-from { opacity: 0; transform: translateY(-6px); }
+.r-text {
+  font-size: var(--text-md);
+  line-height: 1.6;
+  color: var(--ink);
+  margin-bottom: var(--space-3);
+}
+.r-objections { display: flex; flex-wrap: wrap; gap: 6px; }
+.r-obj {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: 2px 8px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-radius: var(--radius-sm);
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+}
 
 .error-box {
-  margin-top: 32px;
-  padding: 16px;
-  background: rgba(248,113,113,0.08);
-  border: 1px solid rgba(248,113,113,0.2);
-  border-radius: 10px;
-  color: #f87171;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--warn-soft);
+  border: 1px solid color-mix(in oklch, var(--warn) 60%, transparent);
+  border-radius: var(--radius-lg);
+  color: var(--warn);
 }
-.retry-btn {
-  margin-left: 12px;
-  padding: 6px 12px;
-  background: transparent;
-  border: 1px solid currentColor;
-  border-radius: 6px;
-  color: inherit;
-  cursor: pointer;
-}
+.error-box strong { color: var(--ink); font-family: var(--font-display); font-style: italic; font-size: var(--text-lg); }
+.retry-btn { align-self: flex-start; }
+
+/* slide-in for new reactions */
+.slide-enter-active { transition: transform var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out); }
+.slide-enter-from { opacity: 0; transform: translateX(8px); }
 </style>

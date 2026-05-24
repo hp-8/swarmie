@@ -1,253 +1,389 @@
 <template>
-  <div class="home">
+  <div class="page">
+    <!-- nav: floating pill, minimal -->
     <header class="nav">
-      <div class="brand">SWARMIE</div>
-      <nav class="nav-links">
-        <a href="https://github.com/hp-8/swarmie" target="_blank">GitHub ↗</a>
-        <a href="#how-it-works">How it works</a>
-        <router-link to="/new" class="primary-link">Run a roast</router-link>
+      <router-link to="/" class="brand-mark">
+        <span class="dot"></span>
+        <span class="brand-text">SWARMIE</span>
+      </router-link>
+      <nav class="nav-right">
+        <a href="https://github.com/hp-8/swarmie" target="_blank" class="ghost-link">github ↗</a>
+        <router-link to="/new" class="h-btn is-accent">Run a roast</router-link>
       </nav>
     </header>
 
     <main>
+      <!-- HERO · Marquee -->
       <section class="hero">
-        <div class="tag">Open-source · Founder validation</div>
-        <h1>
-          Roast your startup<br />
-          with <span class="accent">500 AI users</span><br />
-          in 60 seconds.
+        <div class="hero-eyebrow">
+          <span class="h-chip is-accent">Open source · Alpha</span>
+          <span class="hero-sub-tag">A founder-validation funnel that doesn't lie nicely.</span>
+        </div>
+
+        <h1 class="hero-title h-display">
+          Roast<span class="hero-dot">.</span><br />
+          your startup<br />
+          with <em class="hero-em">500&nbsp;AI&nbsp;users.</em>
         </h1>
-        <p class="lede">
-          Paste your pitch. We simulate a swarm of real-looking commenters who react
-          like Reddit, HN, and ProductHunt would. Find the top 3 objections before
-          burning real interviews on the wrong pitch.
-        </p>
-        <div class="cta-row">
-          <router-link to="/new" class="cta-primary">Start a roast →</router-link>
-          <a href="https://github.com/hp-8/swarmie" target="_blank" class="cta-secondary">View on GitHub</a>
-        </div>
-        <p class="disclaimer">
-          Alpha. AI agents, not real users. Use as a pre-interview filter — not a replacement for real conversations.
-        </p>
-      </section>
 
-      <section id="how-it-works" class="how">
-        <h2>How it works</h2>
-        <div class="steps">
-          <div class="step">
-            <div class="step-num">01</div>
-            <h3>Paste your pitch</h3>
-            <p>One-pager, deck text, landing-page copy. Whatever you'd show a user.</p>
-          </div>
-          <div class="step">
-            <div class="step-num">02</div>
-            <h3>Swarm reacts</h3>
-            <p>100–500 agents with distinct personas, biases, and tones. Skeptics, lurkers, fans, trolls.</p>
-          </div>
-          <div class="step">
-            <div class="step-num">03</div>
-            <h3>Get the roast</h3>
-            <p>PMF score, top objections, ICP fit, messaging gaps. Shareable card to tweet.</p>
-          </div>
+        <p class="hero-lede">
+          Paste the pitch. Watch a swarm of agents react like a Reddit thread,
+          an HN comment section, and a ProductHunt launch page all yelled at it.
+          Find the three real objections before you burn a single user interview.
+        </p>
+
+        <div class="hero-actions">
+          <router-link to="/new" class="h-btn is-accent">Start a roast →</router-link>
+          <a href="#truth" class="h-btn is-ghost">How it works</a>
+        </div>
+
+        <div class="hero-meta">
+          <span><strong>~60s</strong> per run</span>
+          <span class="hero-dot-sep">·</span>
+          <span><strong>$0</strong> on local Ollama</span>
+          <span class="hero-dot-sep">·</span>
+          <span><strong>AGPL-3.0</strong></span>
         </div>
       </section>
 
+      <!-- TRUTH band — honesty hook -->
+      <section id="truth" class="truth">
+        <p class="truth-line">
+          <span class="h-eyebrow">A note before we start.</span>
+          <span class="truth-text">
+            These are AI agents. <em class="truth-em">Not real users.</em> They are wrong sometimes,
+            agreeable too often, and they don't write your TAM check.
+            Use this to <span class="warm">kill bad positionings before</span> they cost a real conversation —
+            not to declare PMF.
+          </span>
+        </p>
+      </section>
+
+      <!-- HOW · three columns, but each is a different size (irregular grid) -->
+      <section class="how">
+        <header class="section-head">
+          <span class="h-eyebrow">01 · the loop</span>
+          <h2 class="section-title h-display">Three turns. Sixty seconds.</h2>
+        </header>
+
+        <div class="how-grid">
+          <article class="how-card span-2">
+            <div class="how-num">i.</div>
+            <h3 class="how-title">Paste a pitch.</h3>
+            <p class="how-copy">
+              Landing-page copy, deck text, one-pager, half a tweet. Whatever you'd
+              actually show a user. We parse it for ICP, problem, solution, pricing.
+            </p>
+          </article>
+
+          <article class="how-card">
+            <div class="how-num">ii.</div>
+            <h3 class="how-title">Swarm reacts.</h3>
+            <p class="how-copy">
+              100–500 agents with distinct personas, biases, tones. Skeptics, lurkers,
+              fans, trolls. Each one decides to post, comment, upvote, or scroll past.
+            </p>
+          </article>
+
+          <article class="how-card span-2 is-accent-card">
+            <div class="how-num">iii.</div>
+            <h3 class="how-title">Get the roast.</h3>
+            <p class="how-copy">
+              PMF score. Top three objections. Per-segment fit. Messaging gaps. A
+              quotable card you can throw on Twitter the moment you decide to ship.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- STACK · single column statement -->
       <section class="stack">
-        <h2>Built on open source</h2>
-        <p class="stack-lede">
-          Forked from <a href="https://github.com/666ghj/MiroFish" target="_blank">MiroFish</a>.
-          Powered by <a href="https://github.com/camel-ai/oasis" target="_blank">OASIS</a> (CAMEL-AI)
-          and <a href="https://www.getzep.com/" target="_blank">Zep</a>.
-          Works with any OpenAI-compatible LLM — including local Ollama, free.
+        <header class="section-head">
+          <span class="h-eyebrow">02 · what's under</span>
+          <h2 class="section-title h-display">Built on open work.</h2>
+        </header>
+        <p class="stack-copy">
+          Swarmie is a thin orchestration on top of <a href="https://github.com/666ghj/MiroFish" target="_blank">MiroFish</a>,
+          <a href="https://github.com/camel-ai/oasis" target="_blank">OASIS (CAMEL-AI)</a>, and
+          <a href="https://www.getzep.com/" target="_blank">Zep</a>. Any OpenAI-compatible model works —
+          OpenAI, Anthropic via OpenRouter, Groq, Together, DeepSeek, Qwen, or
+          a local Ollama on your laptop for the price of electricity.
         </p>
         <p class="stack-cta">
-          <a href="https://github.com/hp-8/swarmie" target="_blank">Read the code →</a>
+          <a href="https://github.com/hp-8/swarmie" target="_blank" class="stack-link">
+            Read the code →
+          </a>
         </p>
       </section>
 
-      <footer class="footer">
-        <span>Swarmie · open source · AGPL-3.0</span>
-        <span>
+      <!-- CTA STATEMENT -->
+      <section class="cta">
+        <h2 class="cta-title h-display">
+          What would <em>500 strangers</em><br />
+          say about it today?
+        </h2>
+        <router-link to="/new" class="h-btn is-accent cta-btn">Run a roast →</router-link>
+      </section>
+
+      <footer class="foot">
+        <div class="foot-row">
+          <span class="brand-mark"><span class="dot"></span><span class="brand-text">SWARMIE</span></span>
+          <span class="foot-meta">v0.1 · alpha · AGPL-3.0</span>
+        </div>
+        <div class="foot-row foot-sub">
+          <span>Built by <a href="https://github.com/hp-8" target="_blank">@hp-8</a>.</span>
           <a href="https://github.com/hp-8/swarmie" target="_blank">github.com/hp-8/swarmie</a>
-        </span>
+        </div>
       </footer>
     </main>
   </div>
 </template>
 
 <script setup>
-// Static landing page. No state required.
+// Static landing. No state.
 </script>
 
 <style scoped>
-.home {
+/* Hallmark · page: Home · macrostructure: Marquee Hero
+ * archetypes: N5 floating pill · H1 marquee · S2 eyebrow+display · F2 irregular grid · Ft1 statement
+ * theme: Midnight+coral (atmospheric)
+ */
+
+.page {
   min-height: 100vh;
-  background: #0b0c10;
-  color: #f4f4f5;
-  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--ink);
 }
 
+/* NAV — floating pill */
 .nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 32px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   position: sticky;
-  top: 0;
-  background: rgba(11, 12, 16, 0.85);
-  backdrop-filter: blur(8px);
-  z-index: 10;
-}
-
-.brand {
-  font-weight: 800;
-  letter-spacing: 0.2em;
-  font-size: 14px;
-}
-
-.nav-links {
+  top: var(--space-4);
+  z-index: 30;
   display: flex;
-  gap: 22px;
   align-items: center;
-  font-size: 13px;
+  justify-content: space-between;
+  max-width: var(--max-content);
+  margin: var(--space-4) auto 0;
+  padding: 10px 14px 10px 18px;
+  background: color-mix(in oklch, var(--paper-2) 88%, transparent);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-pill);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
-
-.nav-links a {
-  color: rgba(255, 255, 255, 0.6);
-  text-decoration: none;
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.22em;
+  color: var(--ink);
 }
-.nav-links a:hover { color: #fff; }
-
-.primary-link {
-  background: linear-gradient(90deg, #ff6b35, #f59e0b);
-  color: #0b0c10 !important;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: 600;
+.brand-mark .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 14px var(--accent);
 }
-
-main { max-width: 1080px; margin: 0 auto; padding: 0 32px; }
-
-.hero { padding: 96px 0 80px; max-width: 760px; }
-.tag {
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #f59e0b;
-  background: rgba(245, 158, 11, 0.1);
-  padding: 6px 12px;
-  border-radius: 999px;
-  margin-bottom: 24px;
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
 }
-
-.hero h1 {
-  font-size: 64px;
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  margin: 0 0 28px;
+.ghost-link {
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  transition: color var(--dur-fast) var(--ease-out);
 }
+.ghost-link:hover { color: var(--ink); }
+.nav-right .h-btn { padding: 9px 16px; font-size: var(--text-sm); }
 
-.accent {
-  background: linear-gradient(90deg, #ff6b35, #f59e0b);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+/* HERO */
+.hero {
+  max-width: var(--max-content);
+  margin: 0 auto;
+  padding: var(--space-9) var(--space-5) var(--space-8);
 }
-
-.lede {
-  font-size: 19px;
+.hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-7);
+  flex-wrap: wrap;
+}
+.hero-sub-tag {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+.hero-title {
+  font-size: clamp(48px, 11.5vw, var(--text-display));
+  margin: 0 0 var(--space-6);
+  color: var(--ink);
+}
+.hero-em { font-style: italic; color: var(--accent-bright); }
+.hero-dot { color: var(--accent); }
+.hero-lede {
+  max-width: 640px;
+  font-size: var(--text-lg);
   line-height: 1.55;
-  color: rgba(255, 255, 255, 0.65);
-  max-width: 580px;
-  margin: 0 0 40px;
+  color: var(--ink-2);
+  margin: 0 0 var(--space-7);
+}
+.hero-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+.hero-meta {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink-3);
+}
+.hero-meta strong { color: var(--ink); font-weight: 500; }
+.hero-dot-sep { color: var(--rule-2); }
+
+/* TRUTH band */
+.truth {
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: var(--space-7) var(--space-5);
+  background: var(--paper-2);
+}
+.truth-line {
+  max-width: var(--max-narrow);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.truth-text {
+  font-size: var(--text-md);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.truth-em { color: var(--ink); font-style: italic; }
+.warm { color: var(--accent-bright); font-weight: 500; }
+
+/* HOW */
+.how, .stack, .cta {
+  max-width: var(--max-content);
+  margin: 0 auto;
+  padding: var(--space-9) var(--space-5);
+}
+.section-head { margin-bottom: var(--space-7); }
+.section-title {
+  font-size: clamp(36px, 6vw, var(--text-3xl));
+  margin: var(--space-3) 0 0;
+  color: var(--ink);
+}
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.how-card {
+  grid-column: span 1;
+  padding: var(--space-6) var(--space-5);
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+}
+.how-card.span-2 { grid-column: span 2; }
+.how-card.is-accent-card {
+  background: linear-gradient(140deg, var(--accent-soft), var(--paper-2) 70%);
+  border-color: color-mix(in oklch, var(--accent) 60%, var(--rule-2));
+}
+.how-num {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--text-lg);
+  color: var(--accent-bright);
+  margin-bottom: var(--space-4);
+}
+.how-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: var(--text-2xl);
+  margin: 0 0 var(--space-3);
+  color: var(--ink);
+}
+.how-copy { color: var(--ink-2); line-height: 1.6; margin: 0; }
+
+@media (max-width: 760px) {
+  .how-grid { grid-template-columns: 1fr; }
+  .how-card.span-2 { grid-column: span 1; }
 }
 
-.cta-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 28px; }
-
-.cta-primary {
-  background: linear-gradient(90deg, #ff6b35, #f59e0b);
-  color: #0b0c10;
-  font-weight: 700;
-  padding: 14px 28px;
-  border-radius: 10px;
-  text-decoration: none;
-  font-size: 16px;
-  transition: transform 0.1s;
+/* STACK */
+.stack-copy {
+  font-size: var(--text-md);
+  line-height: 1.65;
+  color: var(--ink-2);
+  max-width: var(--max-prose);
+  margin: 0 0 var(--space-5);
 }
-.cta-primary:hover { transform: translateY(-1px); }
-
-.cta-secondary {
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #fff;
-  padding: 14px 22px;
-  border-radius: 10px;
-  text-decoration: none;
-  font-size: 16px;
+.stack-copy a {
+  color: var(--accent-bright);
+  border-bottom: 1px dashed color-mix(in oklch, var(--accent) 50%, transparent);
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
-.cta-secondary:hover { background: rgba(255, 255, 255, 0.04); }
-
-.disclaimer {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.4);
-  max-width: 500px;
-  line-height: 1.55;
-  margin: 0;
+.stack-copy a:hover { color: var(--ink); border-color: var(--ink); }
+.stack-link {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  letter-spacing: 0.05em;
+  color: var(--accent-bright);
 }
 
-.how { padding: 64px 0; border-top: 1px solid rgba(255, 255, 255, 0.05); }
-.how h2 {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 0 0 32px;
-  font-weight: 600;
+/* CTA — statement */
+.cta {
+  text-align: center;
+  border-top: 1px solid var(--rule);
+  padding-top: var(--space-10);
+  padding-bottom: var(--space-10);
 }
-
-.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-@media (max-width: 720px) { .steps { grid-template-columns: 1fr; } }
-
-.step {
-  padding: 28px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
+.cta-title {
+  font-size: clamp(40px, 8vw, 88px);
+  margin: 0 auto var(--space-6);
+  max-width: 720px;
+  color: var(--ink);
 }
-.step-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  color: #f59e0b;
-  letter-spacing: 0.1em;
-  margin-bottom: 14px;
-}
-.step h3 { font-size: 18px; margin: 0 0 8px; font-weight: 600; }
-.step p { font-size: 14px; line-height: 1.55; color: rgba(255, 255, 255, 0.55); margin: 0; }
+.cta-title em { color: var(--accent-bright); }
+.cta-btn { padding: 16px 28px; font-size: var(--text-md); }
 
-.stack { padding: 64px 0; border-top: 1px solid rgba(255, 255, 255, 0.05); }
-.stack h2 {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 0 0 16px;
-  font-weight: 600;
+/* FOOT */
+.foot {
+  max-width: var(--max-content);
+  margin: 0 auto;
+  padding: var(--space-5);
+  border-top: 1px solid var(--rule);
+  color: var(--ink-3);
+  font-size: var(--text-sm);
 }
-.stack-lede { font-size: 16px; line-height: 1.6; color: rgba(255, 255, 255, 0.7); max-width: 720px; margin: 0 0 16px; }
-.stack-lede a, .stack-cta a { color: #f59e0b; text-decoration: none; border-bottom: 1px dashed rgba(245, 158, 11, 0.3); }
-.stack-lede a:hover, .stack-cta a:hover { border-bottom-color: #f59e0b; }
-
-.footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 32px 0;
+.foot-row {
   display: flex;
   justify-content: space-between;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.4);
+  align-items: center;
+  padding: var(--space-3) 0;
+  flex-wrap: wrap;
+  gap: var(--space-3);
 }
-.footer a { color: inherit; text-decoration: none; }
-.footer a:hover { color: #fff; }
+.foot-sub { font-family: var(--font-mono); font-size: var(--text-xs); }
+.foot a { color: var(--ink-2); border-bottom: 1px dashed var(--rule-2); }
+.foot a:hover { color: var(--ink); }
+.foot-meta { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.06em; }
 </style>

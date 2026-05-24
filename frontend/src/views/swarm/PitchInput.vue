@@ -1,53 +1,112 @@
 <template>
-  <div class="pitch-input">
-    <header class="nav">
-      <div class="brand" @click="$router.push('/')">SWARMIE</div>
-      <a class="ghost-link" href="https://github.com/hp-8/swarmie" target="_blank">GitHub ↗</a>
+  <div class="page">
+    <header class="rail">
+      <router-link to="/" class="brand-mark">
+        <span class="dot"></span>
+        <span class="brand-text">SWARMIE</span>
+      </router-link>
+      <span class="rail-context">/ new roast</span>
+      <a href="https://github.com/hp-8/swarmie" target="_blank" class="rail-far">github ↗</a>
     </header>
 
-    <main class="content">
-      <h1 class="title">Roast your startup with <span class="accent">{{ agentCount }}</span> AI users.</h1>
-      <p class="subtitle">
-        Paste your pitch. We'll simulate a swarm of real-looking commenters and surface
-        the top objections in about a minute.
-      </p>
-
-      <form class="form" @submit.prevent="onSubmit">
-        <label class="label" for="pitch-text">Your pitch</label>
-        <textarea
-          id="pitch-text"
-          v-model="pitchText"
-          class="textarea"
-          rows="14"
-          placeholder="Paste your one-pager, deck text, or landing-page copy. Mention the problem, the product, who it's for, and pricing if you have it."
-          :disabled="submitting"
-          maxlength="20000"
-        />
-        <div class="meta">
-          <span>{{ pitchText.length }} / 20000</span>
+    <main class="workbench">
+      <!-- LEFT rail · instrument labels -->
+      <aside class="left-col">
+        <div class="step">
+          <div class="step-num">i.</div>
+          <div class="step-label">The pitch</div>
+          <div class="step-hint">
+            Drop landing copy, deck text, one-pager, or a brutal one-liner.
+            More context = sharper roast.
+          </div>
         </div>
-
-        <div class="row">
-          <label class="label" for="agent-count">Swarm size</label>
-          <input
-            id="agent-count"
-            v-model.number="agentCount"
-            class="number-input"
-            type="number"
-            min="10"
-            max="500"
-            step="10"
-            :disabled="submitting"
-          />
-          <span class="hint">10–500 agents. Bigger swarm = more signal but more cost.</span>
+        <div class="step is-quiet">
+          <div class="step-num">ii.</div>
+          <div class="step-label">Swarm size</div>
+          <div class="step-hint">
+            Bigger swarm = more signal, more cost. We default to 100. 20 is
+            plenty for a sanity check.
+          </div>
         </div>
+        <div class="step is-quiet">
+          <div class="step-num">iii.</div>
+          <div class="step-label">Run</div>
+          <div class="step-hint">
+            About 60 seconds. We stream the reactions live — you don't have
+            to babysit it.
+          </div>
+        </div>
+      </aside>
 
-        <div v-if="error" class="error">{{ error }}</div>
+      <!-- RIGHT · canvas -->
+      <section class="canvas">
+        <header class="canvas-head">
+          <h1 class="canvas-title h-display">What are we roasting?</h1>
+          <p class="canvas-sub">
+            Be specific. <em>"AI for sales"</em> is too thin to react to.
+            <em>"AI inbox triage for B2B AEs hitting &gt;50 cold replies/day, $49/seat"</em>
+            is a pitch.
+          </p>
+        </header>
 
-        <button class="cta" type="submit" :disabled="!canSubmit || submitting">
-          {{ submitting ? 'Starting…' : 'Run the swarm' }}
-        </button>
-      </form>
+        <form class="form" @submit.prevent="onSubmit">
+          <label class="field-wrap">
+            <div class="field-head">
+              <span class="h-eyebrow">i · the pitch</span>
+              <span class="field-meta">{{ pitchText.length.toLocaleString() }} / 20,000</span>
+            </div>
+            <textarea
+              v-model="pitchText"
+              class="textarea"
+              rows="16"
+              placeholder="Paste here. Mention the problem, the product, who it's for, pricing if you have it, and any competitors you keep getting compared to."
+              :disabled="submitting"
+              maxlength="20000"
+            />
+            <div class="field-feedback" :class="{ ok: canSubmit, warn: !canSubmit && pitchText.length > 0 }">
+              {{ canSubmit ? 'Looks roastable.' : pitchText.length === 0 ? '' : 'Need at least 40 characters of context.' }}
+            </div>
+          </label>
+
+          <label class="field-wrap field-wrap-row">
+            <div class="field-head">
+              <span class="h-eyebrow">ii · swarm size</span>
+              <span class="field-meta">{{ agentCount }} agents</span>
+            </div>
+            <div class="size-row">
+              <input
+                v-model.number="agentCount"
+                class="size-slider"
+                type="range"
+                min="20"
+                max="500"
+                step="10"
+                :disabled="submitting"
+              />
+              <div class="size-presets">
+                <button type="button" @click="agentCount = 20" :class="{ active: agentCount === 20 }">20</button>
+                <button type="button" @click="agentCount = 100" :class="{ active: agentCount === 100 }">100</button>
+                <button type="button" @click="agentCount = 250" :class="{ active: agentCount === 250 }">250</button>
+                <button type="button" @click="agentCount = 500" :class="{ active: agentCount === 500 }">500</button>
+              </div>
+            </div>
+            <div class="field-feedback">
+              <span class="cost-est">est. cost: ~${{ costEst }}</span>
+              <span class="cost-note">depends on the model you wired in <code>.env</code></span>
+            </div>
+          </label>
+
+          <div v-if="error" class="error">{{ error }}</div>
+
+          <div class="actions">
+            <button class="h-btn is-accent run-btn" type="submit" :disabled="!canSubmit || submitting">
+              <span v-if="submitting">Starting…</span>
+              <span v-else>iii · run the swarm →</span>
+            </button>
+            <span class="actions-hint">{{ runHint }}</span>
+          </div>
+        </form>
+      </section>
     </main>
   </div>
 </template>
@@ -65,6 +124,20 @@ const submitting = ref(false)
 const error = ref('')
 
 const canSubmit = computed(() => pitchText.value.trim().length >= 40)
+
+// Rough estimate. 1 reaction ≈ 1k tokens at mini-tier. Ignores deep/synth overhead.
+const costEst = computed(() => {
+  const speaking = agentCount.value * 0.2   // ~20% comment+post
+  const tokens = speaking * 1000 + 6000     // + parse + archetypes + synth
+  const usd = (tokens / 1_000_000) * 0.6    // gpt-4o-mini-ish blended
+  return usd < 0.01 ? '<0.01' : usd.toFixed(2)
+})
+
+const runHint = computed(() => {
+  if (submitting.value) return 'sending pitch…'
+  if (!canSubmit.value) return 'fill in the pitch first'
+  return `${agentCount.value} agents · ~60s`
+})
 
 async function onSubmit() {
   if (!canSubmit.value || submitting.value) return
@@ -84,135 +157,252 @@ async function onSubmit() {
 </script>
 
 <style scoped>
-.pitch-input {
-  min-height: 100vh;
-  background: #0b0c10;
-  color: #f4f4f5;
-  font-family: 'Inter', system-ui, sans-serif;
+/* Hallmark · page: PitchInput · macrostructure: Workbench
+ * archetypes: N-rail · S-stepped left · H-form-as-canvas · Ft-inline (none)
+ * theme: Midnight+coral (atmospheric)
+ */
+
+.page { min-height: 100vh; color: var(--ink); }
+
+/* Rail — slim top bar, separate from floating pill */
+.rail {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--rule);
+}
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.22em;
+}
+.brand-mark .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 14px var(--accent);
+}
+.rail-context {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+.rail-far {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+}
+.rail-far:hover { color: var(--ink); }
+
+/* Workbench grid: left margin labels + canvas right */
+.workbench {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--space-8);
+  max-width: var(--max-content);
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-9);
+}
+@media (max-width: 880px) {
+  .workbench { grid-template-columns: 1fr; gap: var(--space-6); padding-top: var(--space-6); }
 }
 
-.nav {
+.left-col {
+  position: sticky;
+  top: var(--space-6);
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.step { padding-right: var(--space-4); }
+.step.is-quiet { opacity: 0.55; }
+.step-num {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--text-xl);
+  color: var(--accent-bright);
+  margin-bottom: var(--space-2);
+}
+.step-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: var(--space-2);
+}
+.step-hint { font-size: var(--text-sm); color: var(--ink-3); line-height: 1.55; }
+
+@media (max-width: 880px) {
+  .left-col { position: static; flex-direction: row; flex-wrap: wrap; }
+  .step { flex: 1; min-width: 180px; }
+}
+
+/* Canvas */
+.canvas-head { margin-bottom: var(--space-7); max-width: 640px; }
+.canvas-title {
+  font-size: clamp(40px, 6vw, 64px);
+  margin: 0 0 var(--space-3);
+  color: var(--ink);
+}
+.canvas-sub {
+  color: var(--ink-2);
+  font-size: var(--text-md);
+  line-height: 1.55;
+  margin: 0;
+}
+.canvas-sub em { color: var(--accent-bright); font-style: italic; }
+
+.form { display: flex; flex-direction: column; gap: var(--space-6); }
+
+.field-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.field-head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 20px 32px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  align-items: baseline;
+  gap: var(--space-3);
 }
-
-.brand {
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.ghost-link {
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 13px;
-  text-decoration: none;
-}
-.ghost-link:hover { color: #fff; }
-
-.content {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 64px 32px 96px;
-}
-
-.title {
-  font-size: 44px;
-  font-weight: 700;
-  line-height: 1.15;
-  margin: 0 0 16px;
-  letter-spacing: -0.02em;
-}
-
-.accent {
-  background: linear-gradient(90deg, #ff6b35, #f59e0b);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.subtitle {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 17px;
-  line-height: 1.55;
-  margin: 0 0 40px;
-  max-width: 580px;
-}
-
-.form { display: flex; flex-direction: column; gap: 18px; }
-
-.label {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
+.field-meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-3);
 }
 
 .textarea {
   width: 100%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 16px;
-  color: inherit;
-  font: 15px/1.55 'JetBrains Mono', ui-monospace, monospace;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  color: var(--ink);
+  font: 15px/1.65 var(--font-mono);
   resize: vertical;
-  min-height: 280px;
+  min-height: 320px;
+  transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
 }
+.textarea::placeholder { color: var(--ink-4); }
 .textarea:focus {
+  border-color: var(--accent);
+  background: color-mix(in oklch, var(--paper-2) 92%, var(--accent-soft));
+}
+.textarea:disabled { opacity: 0.5; }
+
+.field-feedback {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+  min-height: 16px;
+}
+.field-feedback.ok { color: var(--live); }
+.field-feedback.warn { color: var(--warn); }
+
+.size-row {
+  display: flex;
+  gap: var(--space-5);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.size-slider {
+  flex: 1;
+  min-width: 220px;
+  appearance: none;
+  height: 4px;
+  background: var(--paper-3);
+  border-radius: var(--radius-pill);
   outline: none;
-  border-color: rgba(245, 158, 11, 0.4);
-  background: rgba(255, 255, 255, 0.06);
+}
+.size-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--paper);
+  cursor: pointer;
+  box-shadow: 0 0 0 1px var(--accent);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.size-slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.size-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--paper);
+  cursor: pointer;
 }
 
-.meta {
-  text-align: right;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
+.size-presets {
+  display: flex;
+  gap: var(--space-2);
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-pill);
+  padding: 4px;
+}
+.size-presets button {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.05em;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.size-presets button:hover { color: var(--ink); }
+.size-presets button.active {
+  background: var(--accent);
+  color: var(--paper);
 }
 
-.row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-
-.number-input {
-  width: 100px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 10px 12px;
-  color: inherit;
-  font-family: inherit;
-  font-size: 15px;
+.cost-est { color: var(--ink-2); }
+.cost-note code {
+  background: var(--paper-3);
+  padding: 0 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
 }
-
-.hint { color: rgba(255, 255, 255, 0.4); font-size: 13px; }
 
 .error {
-  color: #f87171;
-  font-size: 14px;
-  padding: 10px 14px;
-  background: rgba(248, 113, 113, 0.08);
-  border: 1px solid rgba(248, 113, 113, 0.2);
-  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  padding: var(--space-4);
+  color: var(--warn);
+  background: var(--warn-soft);
+  border: 1px solid color-mix(in oklch, var(--warn) 50%, transparent);
+  border-radius: var(--radius-md);
 }
 
-.cta {
-  margin-top: 12px;
-  align-self: flex-start;
-  padding: 14px 28px;
-  background: linear-gradient(90deg, #ff6b35, #f59e0b);
-  color: #0b0c10;
-  font-weight: 700;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 16px;
-  letter-spacing: 0.01em;
-  transition: transform 0.1s;
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
 }
-.cta:hover:not(:disabled) { transform: translateY(-1px); }
-.cta:disabled { opacity: 0.45; cursor: not-allowed; }
+.run-btn { padding: 16px 28px; font-size: var(--text-md); }
+.actions-hint {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
 </style>
