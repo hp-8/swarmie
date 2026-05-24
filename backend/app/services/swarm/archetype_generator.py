@@ -12,7 +12,9 @@ tagged Reddit/HN/PH corpora.
 
 from __future__ import annotations
 
+import json
 import logging
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -80,7 +82,7 @@ class ArchetypeGenerator:
     def __init__(self, tracker: UsageTracker | None = None):
         self.llm = LLM(tier="deep", tracker=tracker)
 
-    def generate(self, pitch: ParsedPitch, n_archetypes: int = 20) -> list[Archetype]:
+    def generate(self, pitch: ParsedPitch, n_archetypes: int = 12) -> list[Archetype]:
         if not pitch.icp_segments:
             raise ValueError("ParsedPitch has no icp_segments; run PitchParser first")
 
@@ -100,9 +102,19 @@ class ArchetypeGenerator:
             {"role": "system", "content": _SYSTEM_PROMPT},
             {"role": "user", "content": f"INPUT:\n{user_payload}\n\nReturn JSON only."},
         ]
-        data = self.llm.chat_json(messages, temperature=0.7, max_tokens=4096)
 
-        raw = data.get("archetypes", [])
+        # Try the strict json_object path first; fall back to text + partial-recovery
+        # if the LLM truncates output (large archetype counts often blow past max_tokens).
+        try:
+            data = self.llm.chat_json(messages, temperature=0.7, max_tokens=8192)
+            raw = data.get("archetypes", [])
+        except ValueError as exc:
+            logger.warning(f"chat_json failed ({exc}); attempting partial-array recovery")
+            raw_text = self.llm.chat(messages, temperature=0.7, max_tokens=8192)
+            raw = self._extract_archetypes_from_partial(raw_text)
+            if not raw:
+                raise
+
         archetypes: list[Archetype] = []
         for i, a in enumerate(raw):
             try:
@@ -112,6 +124,65 @@ class ArchetypeGenerator:
         if not archetypes:
             raise ValueError("LLM returned no usable archetypes")
         return archetypes
+
+    @staticmethod
+    def _extract_archetypes_from_partial(text: str) -> list[dict[str, Any]]:
+        """Recover as many complete archetype objects as possible from truncated JSON.
+
+        Walks the `"archetypes": [` array and parses each balanced `{...}` block
+        until it can't. Tolerates a truncated final object and an unclosed array.
+        """
+        # Strip code fences if any
+        text = re.sub(r"^```(?:json)?\s*", "", text.strip(), flags=re.IGNORECASE)
+        text = re.sub(r"\s*```\s*$", "", text)
+
+        # Locate the start of the archetypes array.
+        m = re.search(r'"archetypes"\s*:\s*\[', text)
+        if not m:
+            return []
+        i = m.end()
+        n = len(text)
+        items: list[dict[str, Any]] = []
+
+        while i < n:
+            # Skip whitespace and commas between objects.
+            while i < n and text[i] in " \t\n\r,":
+                i += 1
+            if i >= n or text[i] != "{":
+                break
+            # Walk until matching `}` while respecting string boundaries.
+            depth = 0
+            start = i
+            in_str = False
+            escape = False
+            j = i
+            while j < n:
+                ch = text[j]
+                if escape:
+                    escape = False
+                elif ch == "\\" and in_str:
+                    escape = True
+                elif ch == '"':
+                    in_str = not in_str
+                elif not in_str:
+                    if ch == "{":
+                        depth += 1
+                    elif ch == "}":
+                        depth -= 1
+                        if depth == 0:
+                            j += 1
+                            break
+                j += 1
+            if depth != 0:
+                # truncated mid-object — stop
+                break
+            chunk = text[start:j]
+            try:
+                items.append(json.loads(chunk))
+            except json.JSONDecodeError:
+                pass
+            i = j
+        return items
 
     @staticmethod
     def _coerce_archetype(a: dict[str, Any], fallback_id: str) -> Archetype:

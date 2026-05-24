@@ -152,7 +152,7 @@ def _run_pipeline(job: RoastJob) -> None:
         _push_event(job, "status", {"status": job.status, "progress": job.progress})
 
         archgen = ArchetypeGenerator(tracker=tracker)
-        archetypes = archgen.generate(pitch, n_archetypes=20)
+        archetypes = archgen.generate(pitch, n_archetypes=12)
         job.archetypes = [a.to_dict() for a in archetypes]
         _push_event(job, "archetypes", [a.to_dict() for a in archetypes])
         if job.cancelled.is_set():
