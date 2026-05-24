@@ -27,7 +27,7 @@
       <section class="strip strip-hero">
         <div class="cell cell-score">
           <span class="h-eyebrow">PMF · /10</span>
-          <div class="score-num" :style="{ color: scoreColor(report.pmf_score) }">{{ report.pmf_score }}</div>
+          <div class="score-num" :style="{ color: scoreColor(report.pmf_score) }">{{ scoreDisplayed.toFixed(1) }}</div>
           <div class="score-band" :style="{ color: scoreColor(report.pmf_score) }">{{ scoreBand(report.pmf_score) }}</div>
         </div>
         <div class="cell cell-headline">
@@ -121,29 +121,30 @@
 
       <!-- ROW 3 — ICP fit + usage strip -->
       <section class="strip strip-foot">
-        <article class="cell cell-icp" v-if="report.icp_fit && Object.keys(report.icp_fit).length">
-          <header class="cell-head"><span class="h-eyebrow">per-segment fit</span></header>
-          <div class="icp-list scroll-zone-x">
-            <div v-for="(stats, seg) in report.icp_fit" :key="seg" class="icp-tile">
-              <div class="icp-name">{{ seg }}</div>
-              <div class="icp-stats">
-                <span class="icp-stat"><span class="stat-num">{{ stats.count }}</span><span class="stat-label">agents</span></span>
-                <span class="icp-stat"><span class="stat-num" :class="sentClass(stats.avg_sentiment)">{{ stats.avg_sentiment > 0 ? '+' : '' }}{{ stats.avg_sentiment }}</span><span class="stat-label">sent</span></span>
-                <span class="icp-stat"><span class="stat-num small">{{ stats.dominant_action }}</span><span class="stat-label">mostly</span></span>
-              </div>
-            </div>
+        <article class="cell cell-icp" v-if="segmentNames.length">
+          <header class="cell-head">
+            <span class="h-eyebrow">segments</span>
+            <span class="cell-meta">{{ segmentNames.length }}</span>
+          </header>
+          <div class="segment-tags">
+            <span v-for="name in segmentNames" :key="name" class="segment-tag">{{ name }}</span>
           </div>
         </article>
 
         <article v-if="usage" class="cell cell-usage">
-          <header class="cell-head"><span class="h-eyebrow">run cost</span></header>
+          <header class="cell-head">
+            <span class="h-eyebrow">run cost</span>
+            <span v-if="costDisplay.equiv" class="cost-equiv-tag">gpt-4o-mini equiv</span>
+          </header>
           <div class="usage-row">
             <div class="usage-stat">
-              <div class="usage-num">${{ (usage.total_cost_usd || 0).toFixed(4) }}</div>
+              <div class="usage-num">
+                <span v-if="costDisplay.equiv" class="approx">≈</span>${{ costDisplay.value }}
+              </div>
               <div class="usage-label">total</div>
             </div>
             <div class="usage-stat">
-              <div class="usage-num">{{ Math.round((usage.total_tokens || 0) / 1000) }}k</div>
+              <div class="usage-num">{{ formatTokens(usage.total_tokens) }}</div>
               <div class="usage-label">tokens</div>
             </div>
             <div class="usage-stat">
@@ -164,7 +165,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { roastApi } from '../../api/roast'
 
@@ -177,6 +178,34 @@ const report = ref(null)
 const parsedPitch = ref(null)
 const usage = ref(null)
 const copied = ref(false)
+
+// Animated score count-up
+const scoreDisplayed = ref(0)
+
+// Equivalent cost: when real run cost is sub-cent (e.g. local Ollama) we still
+// show what the same workload would have cost on a known commercial model.
+// Reference: gpt-4o-mini blended pricing — input $0.15 / output $0.60 per 1M.
+// Use 0.7×input + 0.3×output as a rough mix.
+const REFERENCE_PRICE_PER_MTOK = (0.7 * 0.15) + (0.3 * 0.60) // = $0.285 / 1M
+
+// Plain list of segment names — display only. No sorting, no ranking.
+const segmentNames = computed(() => {
+  const icp = report.value?.icp_fit
+  if (!icp) return []
+  return Object.keys(icp)
+})
+
+const costDisplay = computed(() => {
+  if (!usage.value) return { value: '0.0000', equiv: false }
+  const real = Number(usage.value.total_cost_usd || 0)
+  if (real >= 0.001) {
+    return { value: real.toFixed(4), equiv: false }
+  }
+  // Derive equivalent from token count
+  const tokens = Number(usage.value.total_tokens || 0)
+  const derived = Math.max(0.0012, (tokens / 1_000_000) * REFERENCE_PRICE_PER_MTOK)
+  return { value: derived.toFixed(4), equiv: true }
+})
 
 const jobShort = computed(() => (jobId || '').replace('roast_', '').slice(0, 8))
 
@@ -218,11 +247,39 @@ function sentClass(v) {
   return ''
 }
 
+function formatTokens(n) {
+  const v = Number(n || 0)
+  if (v < 1000) return v.toLocaleString()
+  if (v < 1_000_000) return (v / 1000).toFixed(v >= 10_000 ? 0 : 1) + 'k'
+  return (v / 1_000_000).toFixed(2) + 'M'
+}
+
 async function copyShareUrl() {
   await navigator.clipboard.writeText(window.location.href)
   copied.value = true
   setTimeout(() => (copied.value = false), 1500)
 }
+
+function animateScore(target) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    scoreDisplayed.value = target
+    return
+  }
+  const start = performance.now()
+  const duration = 900
+  const easeOut = t => 1 - Math.pow(1 - t, 3)
+  function tick(now) {
+    const p = Math.min(1, (now - start) / duration)
+    scoreDisplayed.value = (easeOut(p) * target)
+    if (p < 1) requestAnimationFrame(tick)
+    else scoreDisplayed.value = target
+  }
+  requestAnimationFrame(tick)
+}
+
+watch(report, (r) => {
+  if (r && typeof r.pmf_score === 'number') animateScore(r.pmf_score)
+})
 
 onMounted(load)
 </script>
@@ -257,6 +314,7 @@ onMounted(load)
 }
 .rail-action:hover { color: var(--ink); border-color: var(--ink-2); }
 .rail-action.accent { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+.rail-action:active { transform: scale(0.96); }
 
 /* state msgs */
 .state-msg {
@@ -314,6 +372,18 @@ onMounted(load)
   gap: var(--space-2);
   min-height: 0;
   overflow: hidden;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: cell-in var(--dur-slow) var(--ease-out) forwards;
+}
+.strip-hero .cell { animation-delay: 60ms; }
+.strip-three .cell-narrative { animation-delay: 140ms; }
+.strip-three .cell-objections { animation-delay: 200ms; }
+.strip-three .cell-quotes { animation-delay: 260ms; }
+.strip-foot .cell { animation-delay: 340ms; }
+
+@keyframes cell-in {
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .cell-head {
@@ -395,6 +465,13 @@ onMounted(load)
   background: var(--paper-3);
   border-left: 2px solid var(--ink-4);
   border-radius: var(--radius-sm);
+  transition: transform var(--dur-fast) var(--ease-out),
+              background var(--dur-base) var(--ease-out),
+              border-left-width var(--dur-fast) var(--ease-out);
+}
+.quote:hover {
+  transform: translateX(2px);
+  background: var(--paper-4);
 }
 .quote.tone-skeptical, .quote.tone-aggressive { border-left-color: var(--warn); }
 .quote.tone-enthusiastic { border-left-color: var(--live); }
@@ -407,25 +484,27 @@ onMounted(load)
 .q-meta { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--ink-3); }
 .q-tone { text-transform: uppercase; letter-spacing: 0.08em; }
 
-/* ICP fit horizontal scroller */
+/* ICP fit — plain orange tags. Nothing else. */
 .cell-icp { gap: var(--space-3); }
-.icp-list { display: flex; gap: var(--space-2); overflow-x: auto; padding-bottom: var(--space-1); }
-.icp-tile {
-  flex: 0 0 auto;
-  min-width: 180px;
-  padding: var(--space-3) var(--space-4);
-  background: var(--paper-3);
-  border-radius: var(--radius-md);
-  display: flex; flex-direction: column; gap: var(--space-2);
+.segment-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-right: var(--space-2);
 }
-.icp-name { font-size: var(--text-sm); color: var(--ink); }
-.icp-stats { display: flex; gap: var(--space-4); }
-.icp-stat { display: flex; flex-direction: column; gap: 1px; }
-.stat-num { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink); }
-.stat-num.small { font-size: var(--text-xs); }
-.stat-num.pos { color: var(--live); }
-.stat-num.neg { color: var(--warn); }
-.stat-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-4); }
+.segment-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--accent-bright);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in oklch, var(--accent) 35%, transparent);
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
 
 /* USAGE */
 .cell-usage { gap: var(--space-3); }
@@ -433,6 +512,16 @@ onMounted(load)
 .usage-stat { display: flex; flex-direction: column; gap: 1px; }
 .usage-num { font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: var(--text-xl); color: var(--ink); }
 .usage-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
+.approx { color: var(--ink-3); font-style: normal; margin-right: 2px; }
+.cost-equiv-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--accent-bright);
+  background: var(--accent-soft);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
 
 /* FOOT */
 .foot-strip {
