@@ -1,0 +1,63 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+.eggs/
+*.egg-info/
+dist/
+build/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.cursor/
+.claude/
+
+# Tests / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Working docs (local-only)
+mydoc/
+mytest/
+CLAUDE.md
+CURRENT_IMPLEMENTATION.md
+
+# Logs
+backend/logs/
+*.log
+
+# Uploads / runtime data
+backend/uploads/
+
+# Docker data
+data/
+
+# Build artifacts
+frontend/dist/

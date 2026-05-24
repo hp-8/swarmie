@@ -1,0 +1,37 @@
+Swarmie
+Copyright (C) 2026 Harsh Patadia and contributors
+
+This product is a derivative work of MiroFish:
+  https://github.com/666ghj/MiroFish
+  Copyright (C) 2024-2026 666ghj and MiroFish contributors
+  Licensed under the GNU Affero General Public License v3.0
+
+Swarmie integrates and/or depends on the following open-source projects:
+
+OASIS — Open Agent Social Interaction Simulations
+  https://github.com/camel-ai/oasis
+  Copyright (C) CAMEL-AI.org
+  Licensed under the Apache License 2.0
+
+Zep — Long-term memory for AI agents
+  https://github.com/getzep/zep
+  Copyright (C) Zep Software, Inc.
+  Licensed under the Apache License 2.0
+
+Vue.js
+  https://github.com/vuejs/core
+  Licensed under the MIT License
+
+Flask
+  https://github.com/pallets/flask
+  Licensed under the BSD-3-Clause License
+
+D3.js
+  https://github.com/d3/d3
+  Licensed under the ISC License
+
+The original MiroFish project received strategic support and incubation
+from Shanda Group (https://www.shanda.com/).
+
+All trademarks, service marks, trade names, and logos referenced herein
+belong to their respective owners.
