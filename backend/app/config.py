@@ -1,78 +1,88 @@
-"""
-Configuration Management
-Load all configurations from the root .env file
-"""
+"""Configuration. All env-loaded from project-root `.env`."""
 
 import os
 from dotenv import load_dotenv
 
-# Load .env file from project root
-# Path: Swarmie/.env (relative to backend/app/config.py)
-project_root_env = os.path.join(os.path.dirname(__file__), '../../.env')
-
-if os.path.exists(project_root_env):
-    load_dotenv(project_root_env, override=True)
+# Load .env from project root (../../.env relative to this file).
+_root_env = os.path.join(os.path.dirname(__file__), "../../.env")
+if os.path.exists(_root_env):
+    load_dotenv(_root_env, override=True)
 else:
-    # If no .env in root, fallback to environment variables (for production)
     load_dotenv(override=True)
 
 
+def _bool(name: str, default: bool = False) -> bool:
+    return os.environ.get(name, str(default)).lower() in ("1", "true", "yes", "on")
+
+
 class Config:
-    """Flask Configuration Class"""
-    
-    # Flask configuration
-    _secret = os.environ.get('SECRET_KEY')
+    # --- Flask ---
+    _secret = os.environ.get("SECRET_KEY")
     if not _secret:
         raise ValueError("SECRET_KEY environment variable must be set")
     SECRET_KEY = _secret
-    DEBUG = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
-    
-    # JSON configuration - disable ASCII escaping so text renders properly
-    # (instead of \uXXXX format)
+    DEBUG = _bool("FLASK_DEBUG", False)
     JSON_AS_ASCII = False
-    
-    # LLM configuration (standardized to OpenAI-compatible format)
-    LLM_API_KEY = os.environ.get('LLM_API_KEY')
-    LLM_BASE_URL = os.environ.get('LLM_BASE_URL', 'https://api.openai.com/v1')
-    LLM_MODEL_NAME = os.environ.get('LLM_MODEL_NAME', 'gpt-4o-mini')
-    
-    # Zep configuration
-    ZEP_API_KEY = os.environ.get('ZEP_API_KEY')
-    
-    # File upload configuration
+
+    # --- LLM (default / primary tier) ---
+    LLM_API_KEY = os.environ.get("LLM_API_KEY")
+    LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
+    LLM_MODEL_NAME = os.environ.get("LLM_MODEL_NAME", "gpt-4o-mini")
+
+    # --- LLM tiers (resolved at call time inside utils.llm) ---
+    # cheap = high-volume agent reactions (Haiku / Qwen-turbo / Llama-3.1-8B)
+    # deep  = "influencer" agents that shape the conversation (Sonnet)
+    # synth = final report synthesis (Sonnet / Opus)
+    # Any tier env var that's unset falls back to the LLM_* primary above.
+    LLM_CHEAP_MODEL_NAME = os.environ.get("LLM_CHEAP_MODEL_NAME")
+    LLM_DEEP_MODEL_NAME = os.environ.get("LLM_DEEP_MODEL_NAME")
+    LLM_SYNTH_MODEL_NAME = os.environ.get("LLM_SYNTH_MODEL_NAME")
+
+    # --- Zep ---
+    # Zep is optional. The fast "roast" pipeline runs without it.
+    # Deep simulation (legacy MiroFish path) still requires Zep.
+    ZEP_API_KEY = os.environ.get("ZEP_API_KEY")
+    USE_ZEP = _bool("USE_ZEP", False)  # default OFF for fast pipeline
+
+    # --- Uploads ---
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
-    UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../uploads')
-    ALLOWED_EXTENSIONS = {'pdf', 'md', 'txt', 'markdown'}
-    
-    # Text processing configuration
-    DEFAULT_CHUNK_SIZE = 500  # default chunk size
-    DEFAULT_CHUNK_OVERLAP = 50  # default overlap size
-    
-    # OASIS simulation configuration
-    OASIS_DEFAULT_MAX_ROUNDS = int(os.environ.get('OASIS_DEFAULT_MAX_ROUNDS', '10'))
-    OASIS_SIMULATION_DATA_DIR = os.path.join(os.path.dirname(__file__), '../uploads/simulations')
-    
-    # OASIS platform available actions
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "../uploads")
+    ALLOWED_EXTENSIONS = {"pdf", "md", "txt", "markdown"}
+
+    # --- Text processing ---
+    DEFAULT_CHUNK_SIZE = 500
+    DEFAULT_CHUNK_OVERLAP = 50
+
+    # --- OASIS (deep simulation only) ---
+    OASIS_DEFAULT_MAX_ROUNDS = int(os.environ.get("OASIS_DEFAULT_MAX_ROUNDS", "10"))
+    OASIS_SIMULATION_DATA_DIR = os.path.join(os.path.dirname(__file__), "../uploads/simulations")
     OASIS_TWITTER_ACTIONS = [
-        'CREATE_POST', 'LIKE_POST', 'REPOST', 'FOLLOW', 'DO_NOTHING', 'QUOTE_POST'
+        "CREATE_POST", "LIKE_POST", "REPOST", "FOLLOW", "DO_NOTHING", "QUOTE_POST",
     ]
     OASIS_REDDIT_ACTIONS = [
-        'LIKE_POST', 'DISLIKE_POST', 'CREATE_POST', 'CREATE_COMMENT',
-        'LIKE_COMMENT', 'DISLIKE_COMMENT', 'SEARCH_POSTS', 'SEARCH_USER',
-        'TREND', 'REFRESH', 'DO_NOTHING', 'FOLLOW', 'MUTE'
+        "LIKE_POST", "DISLIKE_POST", "CREATE_POST", "CREATE_COMMENT",
+        "LIKE_COMMENT", "DISLIKE_COMMENT", "SEARCH_POSTS", "SEARCH_USER",
+        "TREND", "REFRESH", "DO_NOTHING", "FOLLOW", "MUTE",
     ]
-    
-    # Report Agent configuration
-    REPORT_AGENT_MAX_TOOL_CALLS = int(os.environ.get('REPORT_AGENT_MAX_TOOL_CALLS', '5'))
-    REPORT_AGENT_MAX_REFLECTION_ROUNDS = int(os.environ.get('REPORT_AGENT_MAX_REFLECTION_ROUNDS', '2'))
-    REPORT_AGENT_TEMPERATURE = float(os.environ.get('REPORT_AGENT_TEMPERATURE', '0.5'))
-    
+
+    # --- Report agent (deep / legacy path) ---
+    REPORT_AGENT_MAX_TOOL_CALLS = int(os.environ.get("REPORT_AGENT_MAX_TOOL_CALLS", "5"))
+    REPORT_AGENT_MAX_REFLECTION_ROUNDS = int(os.environ.get("REPORT_AGENT_MAX_REFLECTION_ROUNDS", "2"))
+    REPORT_AGENT_TEMPERATURE = float(os.environ.get("REPORT_AGENT_TEMPERATURE", "0.5"))
+
+    # --- Roast pipeline (fast path) ---
+    # Number of agents to spawn in the cheap / fast pipeline.
+    ROAST_AGENT_COUNT = int(os.environ.get("ROAST_AGENT_COUNT", "100"))
+    # Concurrency cap for parallel agent reactions (prevents rate-limit hammering).
+    ROAST_CONCURRENCY = int(os.environ.get("ROAST_CONCURRENCY", "20"))
+    # Hard cost ceiling per sim in USD. Aborts mid-run if exceeded.
+    ROAST_MAX_COST_USD = float(os.environ.get("ROAST_MAX_COST_USD", "1.00"))
+
     @classmethod
     def validate(cls):
-        """Validate required configuration"""
         errors = []
         if not cls.LLM_API_KEY:
             errors.append("LLM_API_KEY is not configured")
-        if not cls.ZEP_API_KEY:
-            errors.append("ZEP_API_KEY is not configured")
+        if cls.USE_ZEP and not cls.ZEP_API_KEY:
+            errors.append("USE_ZEP=true but ZEP_API_KEY is not configured")
         return errors
