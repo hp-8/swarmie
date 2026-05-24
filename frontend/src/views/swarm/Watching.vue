@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page page-fixed">
     <header class="rail">
       <router-link to="/" class="brand-mark">
         <span class="dot" :class="{ pulse: isRunning }"></span>
@@ -68,7 +68,7 @@
           <span>Waiting for the first reaction…</span>
         </div>
 
-        <transition-group name="slide" tag="ol" class="stream-list">
+        <transition-group name="slide" tag="ol" class="stream-list scroll-zone">
           <li
             v-for="r in visibleReactions"
             :key="r.agent_id"
@@ -220,20 +220,17 @@ onBeforeUnmount(() => {
  * theme: Midnight+coral (atmospheric)
  */
 
-.page { min-height: 100vh; color: var(--ink); }
+.page { color: var(--ink); background: var(--paper); }
 
 /* Rail */
 .rail {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  padding: var(--space-4) var(--space-6);
+  padding: var(--space-3) var(--space-6);
   border-bottom: 1px solid var(--rule);
-  position: sticky;
-  top: 0;
-  background: color-mix(in oklch, var(--paper) 88%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  flex-shrink: 0;
+  background: var(--paper);
   z-index: 20;
 }
 .brand-mark {
@@ -269,25 +266,28 @@ onBeforeUnmount(() => {
 
 /* Document layout */
 .doc {
+  flex: 1;
   display: grid;
-  grid-template-columns: 380px 1fr;
-  gap: var(--space-7);
+  grid-template-columns: 360px 1fr;
+  gap: var(--space-6);
   max-width: var(--max-content);
+  width: 100%;
   margin: 0 auto;
-  padding: var(--space-7) var(--space-6) var(--space-9);
-  align-items: start;
+  padding: var(--space-5) var(--space-6);
+  align-items: stretch;
+  min-height: 0;
+  overflow: hidden;
 }
-@media (max-width: 920px) { .doc { grid-template-columns: 1fr; gap: var(--space-5); } }
+@media (max-width: 920px) { .doc { grid-template-columns: 1fr; gap: var(--space-3); padding: var(--space-4); } }
 
 /* Anchor */
 .anchor {
-  position: sticky;
-  top: 88px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
+  overflow: hidden;
+  min-height: 0;
 }
-@media (max-width: 920px) { .anchor { position: static; } }
 
 .anchor-head { margin-bottom: 0; }
 .anchor-title {
@@ -388,14 +388,21 @@ onBeforeUnmount(() => {
   margin-top: var(--space-2);
 }
 
-/* Stream */
+/* Stream — fills remaining space, list scrolls */
+.stream {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
 .stream-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--rule);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
+  flex-shrink: 0;
 }
 .stream-count {
   font-family: var(--font-mono);
@@ -422,10 +429,12 @@ onBeforeUnmount(() => {
 .stream-list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 var(--space-3) var(--space-3) 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  flex: 1;
+  min-height: 0;
 }
 
 .reaction {

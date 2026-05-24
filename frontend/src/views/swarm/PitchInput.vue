@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page page-fixed">
     <header class="rail">
       <router-link to="/" class="brand-mark">
         <span class="dot"></span>
@@ -10,47 +10,34 @@
     </header>
 
     <main class="workbench">
-      <!-- LEFT rail · instrument labels -->
       <aside class="left-col">
         <div class="step">
           <div class="step-num">i.</div>
           <div class="step-label">The pitch</div>
-          <div class="step-hint">
-            Drop landing copy, deck text, one-pager, or a brutal one-liner.
-            More context = sharper roast.
-          </div>
+          <div class="step-hint">Landing copy, deck, one-pager. Be specific.</div>
         </div>
         <div class="step is-quiet">
           <div class="step-num">ii.</div>
           <div class="step-label">Swarm size</div>
-          <div class="step-hint">
-            Bigger swarm = more signal, more cost. We default to 100. 20 is
-            plenty for a sanity check.
-          </div>
+          <div class="step-hint">Bigger = more signal, more cost.</div>
         </div>
         <div class="step is-quiet">
           <div class="step-num">iii.</div>
           <div class="step-label">Run</div>
-          <div class="step-hint">
-            About 60 seconds. We stream the reactions live — you don't have
-            to babysit it.
-          </div>
+          <div class="step-hint">~60s. Streams live.</div>
         </div>
       </aside>
 
-      <!-- RIGHT · canvas -->
       <section class="canvas">
         <header class="canvas-head">
           <h1 class="canvas-title h-display">What are we roasting?</h1>
           <p class="canvas-sub">
-            Be specific. <em>"AI for sales"</em> is too thin to react to.
-            <em>"AI inbox triage for B2B AEs hitting &gt;50 cold replies/day, $49/seat"</em>
-            is a pitch.
+            <em>"AI for sales"</em> is too thin. <em>"AI inbox triage for B2B AEs hitting &gt;50 cold replies/day, $49/seat"</em> is a pitch.
           </p>
         </header>
 
         <form class="form" @submit.prevent="onSubmit">
-          <label class="field-wrap">
+          <label class="field-wrap field-pitch">
             <div class="field-head">
               <span class="h-eyebrow">i · the pitch</span>
               <span class="field-meta">{{ pitchText.length.toLocaleString() }} / 20,000</span>
@@ -58,20 +45,16 @@
             <textarea
               v-model="pitchText"
               class="textarea"
-              rows="16"
-              placeholder="Paste here. Mention the problem, the product, who it's for, pricing if you have it, and any competitors you keep getting compared to."
+              placeholder="Paste here. Mention the problem, the product, who it's for, pricing if you have it, and any competitors."
               :disabled="submitting"
               maxlength="20000"
             />
-            <div class="field-feedback" :class="{ ok: canSubmit, warn: !canSubmit && pitchText.length > 0 }">
-              {{ canSubmit ? 'Looks roastable.' : pitchText.length === 0 ? '' : 'Need at least 40 characters of context.' }}
-            </div>
           </label>
 
-          <label class="field-wrap field-wrap-row">
+          <div class="field-wrap field-size">
             <div class="field-head">
               <span class="h-eyebrow">ii · swarm size</span>
-              <span class="field-meta">{{ agentCount }} agents</span>
+              <span class="field-meta">{{ agentCount }} agents · est. ${{ costEst }}</span>
             </div>
             <div class="size-row">
               <input
@@ -90,11 +73,7 @@
                 <button type="button" @click="agentCount = 500" :class="{ active: agentCount === 500 }">500</button>
               </div>
             </div>
-            <div class="field-feedback">
-              <span class="cost-est">est. cost: ~${{ costEst }}</span>
-              <span class="cost-note">depends on the model you wired in <code>.env</code></span>
-            </div>
-          </label>
+          </div>
 
           <div v-if="error" class="error">{{ error }}</div>
 
@@ -117,7 +96,6 @@ import { useRouter } from 'vue-router'
 import { roastApi } from '../../api/roast'
 
 const router = useRouter()
-
 const pitchText = ref('')
 const agentCount = ref(100)
 const submitting = ref(false)
@@ -125,17 +103,16 @@ const error = ref('')
 
 const canSubmit = computed(() => pitchText.value.trim().length >= 40)
 
-// Rough estimate. 1 reaction ≈ 1k tokens at mini-tier. Ignores deep/synth overhead.
 const costEst = computed(() => {
-  const speaking = agentCount.value * 0.2   // ~20% comment+post
-  const tokens = speaking * 1000 + 6000     // + parse + archetypes + synth
-  const usd = (tokens / 1_000_000) * 0.6    // gpt-4o-mini-ish blended
+  const speaking = agentCount.value * 0.2
+  const tokens = speaking * 1000 + 6000
+  const usd = (tokens / 1_000_000) * 0.6
   return usd < 0.01 ? '<0.01' : usd.toFixed(2)
 })
 
 const runHint = computed(() => {
-  if (submitting.value) return 'sending pitch…'
-  if (!canSubmit.value) return 'fill in the pitch first'
+  if (submitting.value) return 'sending…'
+  if (!canSubmit.value) return 'fill the pitch first'
   return `${agentCount.value} agents · ~60s`
 })
 
@@ -157,255 +134,171 @@ async function onSubmit() {
 </script>
 
 <style scoped>
-/* Hallmark · page: PitchInput · macrostructure: Workbench
- * archetypes: N-rail · S-stepped left · H-form-as-canvas · Ft-inline (none)
+/* Hallmark · page: PitchInput · macrostructure: Workbench (fixed-viewport)
  * theme: Midnight+coral (atmospheric)
  */
 
-.page { min-height: 100vh; color: var(--ink); }
+.page { color: var(--ink); background: var(--paper); }
 
-/* Rail — slim top bar, separate from floating pill */
 .rail {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  padding: var(--space-4) var(--space-6);
+  padding: var(--space-3) var(--space-6);
   border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
 }
 .brand-mark {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.22em;
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  font-weight: 600; letter-spacing: 0.22em;
 }
-.brand-mark .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 14px var(--accent);
-}
-.rail-context {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.08em;
-  color: var(--ink-3);
-}
-.rail-far {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--ink-3);
-}
+.brand-mark .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); }
+.rail-context { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.08em; color: var(--ink-2); }
+.rail-far { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-2); }
 .rail-far:hover { color: var(--ink); }
 
-/* Workbench grid: left margin labels + canvas right */
 .workbench {
+  flex: 1;
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: var(--space-8);
+  grid-template-columns: 240px 1fr;
+  gap: var(--space-7);
   max-width: var(--max-content);
+  width: 100%;
   margin: 0 auto;
-  padding: var(--space-8) var(--space-6) var(--space-9);
+  padding: var(--space-6) var(--space-6);
+  min-height: 0;
+  overflow: hidden;
 }
 @media (max-width: 880px) {
-  .workbench { grid-template-columns: 1fr; gap: var(--space-6); padding-top: var(--space-6); }
+  .workbench { grid-template-columns: 1fr; gap: var(--space-3); padding: var(--space-4); }
 }
 
 .left-col {
-  position: sticky;
-  top: var(--space-6);
-  align-self: start;
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-5);
+  align-self: start;
 }
-.step { padding-right: var(--space-4); }
+.step { padding-right: var(--space-3); }
 .step.is-quiet { opacity: 0.55; }
 .step-num {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: var(--text-xl);
-  color: var(--accent-bright);
-  margin-bottom: var(--space-2);
+  font-family: var(--font-display); font-style: italic; font-weight: 500;
+  font-variation-settings: 'opsz' 96, 'wght' 500;
+  font-size: var(--text-lg); color: var(--accent-bright); margin-bottom: var(--space-1);
 }
 .step-label {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink);
-  margin-bottom: var(--space-2);
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink); margin-bottom: var(--space-1);
 }
-.step-hint { font-family: var(--font-body); font-size: var(--text-sm); color: var(--ink-2); line-height: 1.6; }
+.step-hint { font-family: var(--font-body); font-size: var(--text-sm); color: var(--ink-2); line-height: 1.55; }
 
 @media (max-width: 880px) {
-  .left-col { position: static; flex-direction: row; flex-wrap: wrap; }
-  .step { flex: 1; min-width: 180px; }
+  .left-col { flex-direction: row; flex-wrap: wrap; }
+  .step { flex: 1; min-width: 140px; }
 }
 
-/* Canvas */
-.canvas-head { margin-bottom: var(--space-7); max-width: 640px; }
+.canvas {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.canvas-head { margin-bottom: var(--space-4); max-width: 640px; flex-shrink: 0; }
 .canvas-title {
-  font-size: clamp(40px, 6vw, 64px);
-  font-weight: 500;
-  font-variation-settings: 'opsz' 144, 'wght' 500;
-  margin: 0 0 var(--space-3);
-  color: var(--ink);
+  font-size: clamp(28px, 4.5vw, 44px);
+  font-weight: 500; font-variation-settings: 'opsz' 144, 'wght' 500;
+  margin: 0 0 var(--space-2); color: var(--ink);
 }
 .canvas-sub {
   font-family: var(--font-body);
-  color: var(--ink);
-  font-size: var(--text-md);
-  line-height: 1.6;
-  margin: 0;
+  color: var(--ink-2); font-size: var(--text-sm); line-height: 1.5; margin: 0;
 }
 .canvas-sub em { color: var(--accent-bright); font-style: italic; }
 
-.form { display: flex; flex-direction: column; gap: var(--space-6); }
-
-.field-wrap {
+.form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
+  min-height: 0;
+  flex: 1;
 }
+
+.field-wrap { display: flex; flex-direction: column; gap: var(--space-2); }
+.field-pitch { flex: 1; min-height: 0; }
+
 .field-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--space-3);
+  display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3);
 }
-.field-meta {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--ink-3);
-}
+.field-meta { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); }
 
 .textarea {
   width: 100%;
+  flex: 1;
   background: var(--paper-2);
   border: 1px solid var(--rule);
   border-radius: var(--radius-lg);
-  padding: var(--space-5);
+  padding: var(--space-4) var(--space-5);
   color: var(--ink);
-  font: 15px/1.65 var(--font-mono);
-  resize: vertical;
-  min-height: 320px;
+  font: 14px/1.6 var(--font-mono);
+  resize: none;
+  min-height: 0;
   transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
 }
 .textarea::placeholder { color: var(--ink-4); }
 .textarea:focus {
+  outline: none;
   border-color: var(--accent);
   background: color-mix(in oklch, var(--paper-2) 92%, var(--accent-soft));
 }
 .textarea:disabled { opacity: 0.5; }
 
-.field-feedback {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--ink-3);
-  min-height: 16px;
-}
-.field-feedback.ok { color: var(--live); }
-.field-feedback.warn { color: var(--warn); }
-
-.size-row {
-  display: flex;
-  gap: var(--space-5);
-  align-items: center;
-  flex-wrap: wrap;
-}
+.size-row { display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap; }
 .size-slider {
-  flex: 1;
-  min-width: 220px;
-  appearance: none;
-  height: 4px;
-  background: var(--paper-3);
-  border-radius: var(--radius-pill);
-  outline: none;
+  flex: 1; min-width: 200px;
+  appearance: none; height: 4px;
+  background: var(--paper-3); border-radius: var(--radius-pill); outline: none;
 }
 .size-slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--accent);
-  border: 2px solid var(--paper);
-  cursor: pointer;
-  box-shadow: 0 0 0 1px var(--accent);
+  appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--paper);
+  cursor: pointer; box-shadow: 0 0 0 1px var(--accent);
   transition: transform var(--dur-fast) var(--ease-out);
 }
 .size-slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
 .size-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--accent);
-  border: 2px solid var(--paper);
-  cursor: pointer;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--paper); cursor: pointer;
 }
 
 .size-presets {
-  display: flex;
-  gap: var(--space-2);
-  background: var(--paper-2);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-pill);
-  padding: 4px;
+  display: flex; gap: 4px;
+  background: var(--paper-2); border: 1px solid var(--rule);
+  border-radius: var(--radius-pill); padding: 3px;
 }
 .size-presets button {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.05em;
-  padding: 6px 12px;
-  border: none;
-  background: transparent;
-  color: var(--ink-2);
-  border-radius: var(--radius-pill);
-  cursor: pointer;
+  font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.05em;
+  padding: 5px 11px; border: none; background: transparent; color: var(--ink-2);
+  border-radius: var(--radius-pill); cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
 }
 .size-presets button:hover { color: var(--ink); }
-.size-presets button.active {
-  background: var(--accent);
-  color: var(--paper);
-}
-
-.cost-est { color: var(--ink-2); }
-.cost-note code {
-  background: var(--paper-3);
-  padding: 0 6px;
-  border-radius: 4px;
-  font-family: var(--font-mono);
-}
+.size-presets button.active { background: var(--accent); color: var(--paper); }
 
 .error {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  padding: var(--space-4);
-  color: var(--warn);
+  font-family: var(--font-mono); font-size: var(--text-sm);
+  padding: var(--space-3) var(--space-4); color: var(--warn);
   background: var(--warn-soft);
   border: 1px solid color-mix(in oklch, var(--warn) 50%, transparent);
   border-radius: var(--radius-md);
 }
 
 .actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-  margin-top: var(--space-3);
+  display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap;
 }
-.run-btn { padding: 16px 28px; font-size: var(--text-md); }
+.run-btn { padding: 14px 24px; font-size: var(--text-base); }
 .actions-hint {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.06em;
-  color: var(--ink-3);
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  letter-spacing: 0.06em; color: var(--ink-3);
 }
 </style>

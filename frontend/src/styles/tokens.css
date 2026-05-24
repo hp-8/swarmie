@@ -92,6 +92,7 @@ html, body {
   overflow-x: clip;
   background: var(--paper);
   color: var(--ink);
+  height: 100%;
 }
 html {
   font-family: var(--font-body);
@@ -200,6 +201,23 @@ a { color: inherit; text-decoration: none; }
   border-color: var(--rule-2);
 }
 .h-btn.is-ghost:hover { background: var(--paper-2); }
+
+/* Fixed-viewport page shell — no body scroll. Internal panes scroll. */
+.page-fixed {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.scroll-zone {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  min-height: 0;
+}
+.scroll-zone::-webkit-scrollbar { width: 8px; }
+.scroll-zone::-webkit-scrollbar-track { background: transparent; }
+.scroll-zone::-webkit-scrollbar-thumb { background: var(--paper-4); border-radius: 999px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
