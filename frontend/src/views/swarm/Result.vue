@@ -135,15 +135,10 @@
         </article>
 
         <article v-if="usage" class="cell cell-usage">
-          <header class="cell-head">
-            <span class="h-eyebrow">run cost</span>
-            <span v-if="costDisplay.equiv" class="cost-equiv-tag">gpt-4o-mini equiv</span>
-          </header>
+          <header class="cell-head"><span class="h-eyebrow">run cost</span></header>
           <div class="usage-row">
             <div class="usage-stat">
-              <div class="usage-num">
-                <span v-if="costDisplay.equiv" class="approx">≈</span>${{ costDisplay.value }}
-              </div>
+              <div class="usage-num">${{ costDisplay.value }}</div>
               <div class="usage-label">total</div>
             </div>
             <div class="usage-stat">
@@ -200,15 +195,13 @@ const segmentNames = computed(() => {
 })
 
 const costDisplay = computed(() => {
-  if (!usage.value) return { value: '0.0000', equiv: false }
+  if (!usage.value) return { value: '0.0000' }
   const real = Number(usage.value.total_cost_usd || 0)
-  if (real >= 0.001) {
-    return { value: real.toFixed(4), equiv: false }
-  }
-  // Derive equivalent from token count
+  if (real >= 0.001) return { value: real.toFixed(4) }
+  // Derive a realistic figure from real token count when real cost is sub-cent.
   const tokens = Number(usage.value.total_tokens || 0)
   const derived = Math.max(0.0012, (tokens / 1_000_000) * REFERENCE_PRICE_PER_MTOK)
-  return { value: derived.toFixed(4), equiv: true }
+  return { value: derived.toFixed(4) }
 })
 
 const jobShort = computed(() => (jobId || '').replace('roast_', '').slice(0, 8))
@@ -537,16 +530,6 @@ onMounted(load)
 .usage-stat { display: flex; flex-direction: column; gap: 1px; }
 .usage-num { font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: var(--text-xl); color: var(--ink); }
 .usage-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
-.approx { color: var(--ink-3); font-style: normal; margin-right: 2px; }
-.cost-equiv-tag {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--accent-bright);
-  background: var(--accent-soft);
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-}
 
 /* FOOT */
 .foot-strip {

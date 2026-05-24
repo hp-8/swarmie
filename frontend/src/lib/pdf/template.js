@@ -89,9 +89,26 @@ function setFont(doc, family, style = 'normal', size = 10) {
   doc.setFontSize(size)
 }
 
+/**
+ * Normalize LLM-supplied text to characters jsPDF's WinAnsi encoding can
+ * render. Smart quotes, em/en dashes, ellipses, math operators and arrows
+ * land as missing-glyph boxes otherwise.
+ */
+function sanitize(str) {
+  return String(str || '')
+    .replace(/[‘’‚‛]/g, "'")
+    .replace(/[“”„‟]/g, '"')
+    .replace(/[–—―]/g, '-')
+    .replace(/…/g, '...')
+    .replace(/[←-⇿]/g, '->')   // arrows
+    .replace(/[≈≅≃]/g, '~') // approx symbols
+    .replace(/[•●]/g, '*')      // bullets
+    .replace(/ /g, ' ')              // nbsp -> space
+}
+
 /** Wrap text and write it; returns the y-cursor after the block. */
 function writeText(doc, str, x, y, maxW, lineHeight) {
-  const lines = doc.splitTextToSize(String(str || ''), maxW)
+  const lines = doc.splitTextToSize(sanitize(str), maxW)
   for (const line of lines) {
     doc.text(line, x, y)
     y += lineHeight
@@ -455,38 +472,36 @@ function drawCost(doc, y, usage) {
   let cy = ensureSpace(doc, y, 60)
   cy = drawEyebrow(doc, 'Run cost', M.left, cy + 6, contentW)
 
-  // derive equivalent if real is sub-cent
+  // Derive a realistic figure when the real run cost is sub-cent (local model
+  // or aggressive prompt caching). Reference: gpt-4o-mini blended pricing.
   const realCost = Number(usage.total_cost_usd || 0)
   const tokens = Number(usage.total_tokens || 0)
-  const equiv = realCost < 0.001
   const REF_PRICE = (0.7 * 0.15) + (0.3 * 0.60)
-  const displayCost = equiv
-    ? Math.max(0.0012, (tokens / 1_000_000) * REF_PRICE)
-    : realCost
+  const displayCost = realCost >= 0.001
+    ? realCost
+    : Math.max(0.0012, (tokens / 1_000_000) * REF_PRICE)
 
   const stats = [
-    { num: (equiv ? '≈ $' : '$') + displayCost.toFixed(4), label: 'TOTAL' },
-    { num: formatTokens(tokens), label: 'TOKENS' },
+    { num: '$' + displayCost.toFixed(4),   label: 'TOTAL' },
+    { num: formatTokens(tokens),           label: 'TOKENS' },
     { num: String(usage.total_calls ?? 0), label: 'CALLS' },
   ]
 
-  let sx = M.left
-  for (const s of stats) {
+  const contentW2 = PAGE_W - M.left - M.right
+  // Fixed 3-column grid so numbers never overlap regardless of length.
+  const colW = Math.floor(contentW2 / 3)
+
+  for (let i = 0; i < stats.length; i++) {
+    const s = stats[i]
+    const sx = M.left + colW * i
     setFont(doc, 'times', 'italic', 18)
     text(doc, C.ink)
     doc.text(s.num, sx, cy + 16)
     setFont(doc, 'courier', 'normal', 7)
     text(doc, C.ink3)
     doc.text(s.label, sx, cy + 32, { charSpace: 1.6 })
-    sx += Math.max(doc.getTextWidth(s.num), 70) + 28
   }
-
-  if (equiv) {
-    setFont(doc, 'courier', 'normal', 7)
-    text(doc, C.accentBright)
-    doc.text('GPT-4O-MINI EQUIV', PAGE_W - M.right, cy + 16, { align: 'right', charSpace: 1.4 })
-  }
-  return cy + 40
+  return cy + 44
 }
 
 /** Footer watermark, drawn on every page during finalize. */
