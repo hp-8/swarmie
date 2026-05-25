@@ -50,9 +50,11 @@ Be realistic. Real audiences include:
   - skeptics and trolls (15-20%)
   - the curious but uncommitted (35-40%)
   - genuine enthusiasts (10-15%)
-  - the indifferent who'd scroll past (30-40%)
+  - the indifferent who'd scroll past (15-20%)
 
 Distribute archetypes accordingly. Do NOT make everyone polite or agreeable.
+This is a FEEDBACK simulation — every agent was asked to evaluate the pitch.
+Most should engage (comment, post, or upvote), not silently ignore.
 
 Output strict JSON:
 {
@@ -70,8 +72,10 @@ Output strict JSON:
   ]
 }
 
-action_likelihood must sum to ~1.0. Realistic baseline: ignore≈0.7, upvote≈0.15,
-comment≈0.12, post≈0.03. Adjust per archetype but keep the population realistic.
+action_likelihood must sum to ~1.0. Baseline: comment≈0.40, upvote≈0.25,
+ignore≈0.20, post≈0.15. Keep ignore between 0.15–0.30 for ALL archetypes.
+Adjust per archetype — skeptics comment more, enthusiasts upvote/post more,
+indifferent ones lean toward ignore (but never above 0.30).
 
 Respond with JSON only."""
 
@@ -193,6 +197,24 @@ class ArchetypeGenerator:
         # ensure all four keys present
         for k in ("post", "comment", "upvote", "ignore"):
             normalized.setdefault(k, 0.0)
+        # clamp ignore to [0.15, 0.30] and redistribute excess
+        ign = normalized.get("ignore", 0.0)
+        if ign > 0.30:
+            excess = ign - 0.30
+            normalized["ignore"] = 0.30
+            others = [k for k in ("post", "comment", "upvote") if normalized[k] > 0]
+            if others:
+                share = excess / len(others)
+                for k in others:
+                    normalized[k] += share
+        elif ign < 0.15:
+            deficit = 0.15 - ign
+            normalized["ignore"] = 0.15
+            others = [k for k in ("post", "comment", "upvote") if normalized[k] > deficit / 3]
+            if others:
+                share = deficit / len(others)
+                for k in others:
+                    normalized[k] -= share
 
         return Archetype(
             id=str(a.get("id") or fallback_id),

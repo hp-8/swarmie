@@ -40,15 +40,25 @@
           <label class="field-wrap field-pitch">
             <div class="field-head">
               <span class="h-eyebrow">i · the pitch</span>
-              <span class="field-meta">{{ pitchText.length.toLocaleString() }} / 20,000</span>
+              <div class="field-head-right">
+                <button v-if="!pitchText.trim()" type="button" class="template-btn" @click="fillTemplate">use template</button>
+                <span class="field-meta">{{ pitchText.length.toLocaleString() }} / 20,000</span>
+              </div>
             </div>
             <textarea
               v-model="pitchText"
               class="textarea"
-              placeholder="Paste here. Mention the problem, the product, who it's for, pricing if you have it, and any competitors."
+              :placeholder="pitchPlaceholder"
               :disabled="submitting"
               maxlength="20000"
             />
+            <div class="pitch-checklist">
+              <span class="check-item" :class="{ done: hasSection('problem') }">problem</span>
+              <span class="check-item" :class="{ done: hasSection('product') }">product</span>
+              <span class="check-item" :class="{ done: hasSection('audience') }">audience</span>
+              <span class="check-item" :class="{ done: hasSection('pricing') }">pricing</span>
+              <span class="check-item" :class="{ done: hasSection('competitor') }">competitors</span>
+            </div>
           </label>
 
           <div class="field-wrap field-size">
@@ -92,6 +102,19 @@
         </form>
       </section>
     </main>
+
+    <!-- Launch overlay -->
+    <transition name="launch">
+      <div v-if="launching" class="launch-overlay">
+        <div class="launch-content">
+          <div class="launch-ring"></div>
+          <div class="launch-text">
+            <span class="launch-label">Assembling the swarm</span>
+            <span class="launch-sub">{{ agentCount }} agents · parsing your pitch</span>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -106,9 +129,46 @@ const router = useRouter()
 const pitchText = ref('')
 const agentCount = ref(100)
 const submitting = ref(false)
+const launching = ref(false)
 const error = ref('')
 
 const canSubmit = computed(() => pitchText.value.trim().length >= 40)
+
+const pitchPlaceholder = `PROBLEM: What pain are you solving? Who feels it?
+
+PRODUCT: What does your product do? One-liner + key features.
+
+AUDIENCE: Who is this for? Be specific — role, company size, industry.
+
+PRICING: How much? Free tier? Per-seat? Usage-based?
+
+COMPETITORS: Who else solves this? Why are you different?`
+
+const TEMPLATE = `PROBLEM:
+
+PRODUCT:
+
+AUDIENCE:
+
+PRICING:
+
+COMPETITORS: `
+
+function fillTemplate() {
+  pitchText.value = TEMPLATE
+}
+
+function hasSection(key) {
+  const t = pitchText.value.toLowerCase()
+  const patterns = {
+    problem: /problem[:\s].*\S/,
+    product: /product[:\s].*\S/,
+    audience: /audience[:\s].*\S|target[:\s].*\S|who[:\s].*\S|icp[:\s].*\S/,
+    pricing: /pric(e|ing)[:\s].*\S|\$\d/,
+    competitor: /competitor[:\s].*\S|vs\.?\s|alternative|compared to/,
+  }
+  return patterns[key]?.test(t) || false
+}
 
 const costEst = computed(() => {
   const speaking = agentCount.value * 0.2
@@ -127,14 +187,17 @@ async function onSubmit() {
   if (!canSubmit.value || submitting.value) return
   error.value = ''
   submitting.value = true
+  launching.value = true
   try {
     const res = await roastApi.create(pitchText.value.trim(), agentCount.value)
     const jobId = res.job_id || res.data?.job_id
     if (!jobId) throw new Error('No job_id in response')
     trackRoastStart(jobId, { pitchLength: pitchText.value.trim().length }).catch(() => {})
+    await new Promise(r => setTimeout(r, 800))
     router.push({ name: 'Watching', params: { jobId } })
   } catch (e) {
     error.value = e?.response?.data?.error || e?.message || 'Failed to start roast'
+    launching.value = false
   } finally {
     submitting.value = false
   }
@@ -238,7 +301,31 @@ async function onSubmit() {
 .field-head {
   display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3);
 }
+.field-head-right { display: flex; align-items: baseline; gap: var(--space-3); }
 .field-meta { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); }
+
+.template-btn {
+  font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.06em;
+  padding: 4px 10px; background: transparent;
+  border: 1px solid var(--rule-2); color: var(--accent-bright);
+  border-radius: var(--radius-pill); cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.template-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+
+.pitch-checklist {
+  display: flex; gap: var(--space-2); flex-wrap: wrap; padding-top: var(--space-1);
+}
+.check-item {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; padding: 3px 8px;
+  border-radius: var(--radius-pill); border: 1px solid var(--rule);
+  color: var(--ink-4); transition: all var(--dur-base) var(--ease-out);
+}
+.check-item.done {
+  color: var(--live); border-color: color-mix(in oklch, var(--live) 40%, transparent);
+  background: color-mix(in oklch, var(--live) 8%, transparent);
+}
 
 .textarea {
   width: 100%;
@@ -321,4 +408,41 @@ async function onSubmit() {
   gap: 6px;
 }
 .ai-note em { font-style: italic; color: var(--ink); }
+
+/* Launch overlay */
+.launch-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+}
+.launch-content {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-5);
+}
+.launch-ring {
+  width: 56px; height: 56px; border-radius: 50%;
+  border: 2px solid var(--rule);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.launch-text { text-align: center; display: flex; flex-direction: column; gap: var(--space-1); }
+.launch-label {
+  font-family: var(--font-display); font-style: italic; font-weight: 500;
+  font-size: var(--text-xl); color: var(--ink);
+}
+.launch-sub {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  letter-spacing: 0.08em; color: var(--ink-3);
+}
+
+.launch-enter-active { animation: launch-in 300ms var(--ease-out); }
+.launch-leave-active { animation: launch-out 200ms var(--ease-out); }
+@keyframes launch-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes launch-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
 </style>
