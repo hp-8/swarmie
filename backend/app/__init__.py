@@ -42,11 +42,15 @@ def create_app(config_class=Config):
     # Enable CORS
     CORS(app, resources={r"/api/*": {"origins": "*"}})
     
-    # Register simulation process cleanup (ensure all processes terminate on shutdown)
-    from .services.simulation_runner import SimulationRunner
-    SimulationRunner.register_cleanup()
-    if should_log_startup:
-        logger.info("Simulation process cleanup registered")
+    # Legacy simulation process cleanup — only when heavy deps are installed.
+    try:
+        from .services.simulation_runner import SimulationRunner
+        SimulationRunner.register_cleanup()
+        if should_log_startup:
+            logger.info("Simulation process cleanup registered")
+    except ImportError as exc:
+        if should_log_startup:
+            logger.warning(f"Legacy simulation runner unavailable (slim install): {exc}")
     
     # Request logging middleware
     @app.before_request

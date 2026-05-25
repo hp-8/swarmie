@@ -1,73 +1,12 @@
 """
-业务服务模块
+业务服务模块.
+
+This package intentionally does NOT re-export submodules. The legacy
+MiroFish pipeline (graph_builder, simulation_runner, zep_*, oasis_*)
+depends on heavy optional packages (camel-ai, zep-cloud, oasis) that are
+not installed in slim production builds for the Swarmie roast pipeline.
+
+Import submodules directly:
+    from .services.swarm import SwarmRunner          # always available
+    from .services.simulation_runner import ...      # legacy only
 """
-
-from .ontology_generator import OntologyGenerator
-from .graph_builder import GraphBuilderService
-from .text_processor import TextProcessor
-from .zep_entity_reader import ZepEntityReader, EntityNode, FilteredEntities
-from .oasis_profile_generator import OasisProfileGenerator, OasisAgentProfile
-from .simulation_manager import SimulationManager, SimulationState, SimulationStatus
-from .simulation_config_generator import (
-    SimulationConfigGenerator, 
-    SimulationParameters,
-    AgentActivityConfig,
-    TimeSimulationConfig,
-    EventConfig,
-    PlatformConfig
-)
-from .simulation_runner import (
-    SimulationRunner,
-    SimulationRunState,
-    RunnerStatus,
-    AgentAction,
-    RoundSummary
-)
-from .zep_graph_memory_updater import (
-    ZepGraphMemoryUpdater,
-    ZepGraphMemoryManager,
-    AgentActivity
-)
-from .simulation_ipc import (
-    SimulationIPCClient,
-    SimulationIPCServer,
-    IPCCommand,
-    IPCResponse,
-    CommandType,
-    CommandStatus
-)
-
-__all__ = [
-    'OntologyGenerator', 
-    'GraphBuilderService', 
-    'TextProcessor',
-    'ZepEntityReader',
-    'EntityNode',
-    'FilteredEntities',
-    'OasisProfileGenerator',
-    'OasisAgentProfile',
-    'SimulationManager',
-    'SimulationState',
-    'SimulationStatus',
-    'SimulationConfigGenerator',
-    'SimulationParameters',
-    'AgentActivityConfig',
-    'TimeSimulationConfig',
-    'EventConfig',
-    'PlatformConfig',
-    'SimulationRunner',
-    'SimulationRunState',
-    'RunnerStatus',
-    'AgentAction',
-    'RoundSummary',
-    'ZepGraphMemoryUpdater',
-    'ZepGraphMemoryManager',
-    'AgentActivity',
-    'SimulationIPCClient',
-    'SimulationIPCServer',
-    'IPCCommand',
-    'IPCResponse',
-    'CommandType',
-    'CommandStatus',
-]
-
