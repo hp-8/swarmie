@@ -65,4 +65,7 @@ frontend/dist/
 # remotion — track source + music, ignore deps + rendered outputs
 remotion/node_modules/
 remotion/out/
-remotion/.remotion/CASE_STUDY.md
+remotion/.remotion/
+
+# Local-only docs
+CASE_STUDY.md
