@@ -6,9 +6,12 @@
 
 Founder validation through grounded agent simulation. Upload a pitch, describe your ICP, and watch a swarm of AI users react like real people would — with objections, questions, snark, and silence.
 
+[![Live demo](https://img.shields.io/badge/Live-swarmie.vercel.app-ff6b35?logo=vercel&logoColor=white)](https://swarmie.vercel.app)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 [![Status: Alpha](https://img.shields.io/badge/Status-Alpha-orange.svg)]()
+
+**👉 Try it live: [swarmie.vercel.app](https://swarmie.vercel.app)**
 
 <br />
 
