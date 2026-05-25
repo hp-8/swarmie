@@ -46,7 +46,8 @@ def main():
     
     # Get runtime configuration
     host = os.environ.get('FLASK_HOST', '0.0.0.0')
-    port = int(os.environ.get('FLASK_PORT', 5001))
+    # Render/Heroku/Fly all inject PORT; honor it first.
+    port = int(os.environ.get('PORT') or os.environ.get('FLASK_PORT') or 5001)
     debug = Config.DEBUG
     
     # Start server
