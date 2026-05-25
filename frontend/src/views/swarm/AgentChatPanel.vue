@@ -22,10 +22,9 @@
       </div>
     </div>
 
-    <div v-if="overCap" class="paywall">
-      <strong>past free limit</strong>
-      <p>unlock unlimited chats — $2.55 one-time</p>
-      <a class="h-btn is-accent" :href="gumroad" target="_blank" rel="noopener">unlock →</a>
+    <div v-if="overCap" class="cap-notice">
+      <strong>chat limit reached</strong>
+      <p>You've hit the {{ softCap }}-turn cap for this agent. Open a new roast to start fresh.</p>
     </div>
 
     <form class="chat-input" @submit.prevent="send">
@@ -63,8 +62,6 @@ const softCap = ref(10)
 const overCap = ref(false)
 const error = ref('')
 const scrollRef = ref(null)
-
-const gumroad = import.meta.env.VITE_GUMROAD_URL || 'https://hp8.gumroad.com/l/azose'
 
 async function load() {
   error.value = ''
@@ -211,16 +208,16 @@ onMounted(load)
   color: var(--warn, #ff5470);
   font-family: var(--font-mono);
 }
-.paywall {
+.cap-notice {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
+  gap: 4px;
   padding: var(--space-3);
   border-radius: 10px;
-  background: color-mix(in oklch, var(--accent) 10%, transparent);
-  border: 1px dashed var(--accent);
+  background: color-mix(in oklch, var(--ink) 4%, transparent);
+  border: 1px dashed var(--rule);
+  color: var(--ink-3);
 }
-.paywall strong { font-family: var(--font-display); font-style: italic; font-size: var(--text-lg); color: var(--ink); }
-.paywall p { margin: 0; font-size: var(--text-sm); color: var(--ink); }
+.cap-notice strong { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink); }
+.cap-notice p { margin: 0; font-size: var(--text-sm); color: var(--ink-3); }
 </style>
