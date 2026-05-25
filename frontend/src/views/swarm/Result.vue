@@ -239,6 +239,7 @@ import AiDisclosure from '../../components/AiDisclosure.vue'
 import { useRoute } from 'vue-router'
 import { roastApi } from '../../api/roast'
 import { generateRoastPDF } from '../../lib/pdf/template'
+import { trackRoastComplete, trackPdfDownload } from '../../lib/analytics'
 
 const route = useRoute()
 const jobId = route.params.jobId
@@ -295,6 +296,7 @@ async function load() {
     const res = await roastApi.get(jobId)
     const j = res.data || res
     if (j.status === 'failed') {
+      trackRoastComplete(jobId, { error: j.error || 'unknown' }).catch(() => {})
       error.value = j.error || 'Roast failed'
     } else if (j.status !== 'completed') {
       error.value = `Job not finished (status: ${j.status})`
@@ -304,6 +306,14 @@ async function load() {
       usage.value = j.usage
       archetypes.value = Array.isArray(j.archetypes) ? j.archetypes : []
       reactions.value = Array.isArray(j.reactions) ? j.reactions : []
+      trackRoastComplete(jobId, {
+        agentCount: reactions.value.length,
+        promptTokens: j.usage?.prompt_tokens,
+        completionTokens: j.usage?.completion_tokens,
+        totalTokens: j.usage?.total_tokens,
+        costUsd: j.usage?.total_cost_usd,
+        model: j.usage?.breakdown?.[0]?.model,
+      }).catch(() => {})
       const m = new Map()
       for (const r of reactions.value) {
         m.set(r.agent_id, {
@@ -371,6 +381,7 @@ async function downloadPdf() {
       usage: usage.value,
       jobId,
     })
+    trackPdfDownload(jobId).catch(() => {})
   } catch (e) {
     console.error('PDF gen failed', e)
   } finally {

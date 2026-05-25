@@ -100,6 +100,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { roastApi } from '../../api/roast'
 import AiDisclosure from '../../components/AiDisclosure.vue'
+import { trackRoastStart } from '../../lib/analytics'
 
 const router = useRouter()
 const pitchText = ref('')
@@ -130,6 +131,7 @@ async function onSubmit() {
     const res = await roastApi.create(pitchText.value.trim(), agentCount.value)
     const jobId = res.job_id || res.data?.job_id
     if (!jobId) throw new Error('No job_id in response')
+    trackRoastStart(jobId, { pitchLength: pitchText.value.trim().length }).catch(() => {})
     router.push({ name: 'Watching', params: { jobId } })
   } catch (e) {
     error.value = e?.response?.data?.error || e?.message || 'Failed to start roast'

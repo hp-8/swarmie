@@ -69,3 +69,4 @@ remotion/.remotion/
 
 # Local-only docs
 CASE_STUDY.md
+.vercel
