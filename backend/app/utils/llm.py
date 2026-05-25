@@ -136,6 +136,24 @@ class UsageTracker:
 
 # --- tier resolution ---
 
+def _resolve_fallback() -> tuple[str, str, str] | None:
+    """Resolve fallback provider creds, if configured.
+
+    Env: LLM_FALLBACK_API_KEY, LLM_FALLBACK_BASE_URL, LLM_FALLBACK_MODEL_NAME.
+    Returns None if no fallback configured. Designed for Gemini's
+    OpenAI-compatible endpoint but works for any OpenAI-compatible API.
+    """
+    api_key = os.environ.get("LLM_FALLBACK_API_KEY")
+    if not api_key:
+        return None
+    base_url = os.environ.get(
+        "LLM_FALLBACK_BASE_URL",
+        "https://generativelanguage.googleapis.com/v1beta/openai/",
+    )
+    model = os.environ.get("LLM_FALLBACK_MODEL_NAME", "gemini-2.0-flash")
+    return api_key, base_url, model
+
+
 def _resolve_model(tier: str) -> tuple[str, str, str]:
     """Resolve tier -> (api_key, base_url, model).
 
@@ -214,11 +232,32 @@ class LLM:
         self._sync = OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=timeout)
         self._async: AsyncOpenAI | None = None  # lazy
 
+        # Fallback provider (e.g. Gemini). Used after primary exhausts retries.
+        self._fallback = _resolve_fallback()
+        self._fallback_sync: OpenAI | None = None
+        self._fallback_async: AsyncOpenAI | None = None
+
     @property
     def aclient(self) -> AsyncOpenAI:
         if self._async is None:
             self._async = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url, timeout=self.timeout)
         return self._async
+
+    def _fb_sync_client(self) -> OpenAI | None:
+        if not self._fallback:
+            return None
+        if self._fallback_sync is None:
+            k, b, _ = self._fallback
+            self._fallback_sync = OpenAI(api_key=k, base_url=b, timeout=self.timeout)
+        return self._fallback_sync
+
+    def _fb_async_client(self) -> AsyncOpenAI | None:
+        if not self._fallback:
+            return None
+        if self._fallback_async is None:
+            k, b, _ = self._fallback
+            self._fallback_async = AsyncOpenAI(api_key=k, base_url=b, timeout=self.timeout)
+        return self._fallback_async
 
     # --- core sync API ---
 
@@ -338,6 +377,20 @@ class LLM:
                 wait = min(2 ** attempt, 30)
                 print(f"[llm.{self.tier}] attempt {attempt + 1} failed: {exc}; retrying in {wait}s", flush=True)
                 time.sleep(wait)
+        # Primary exhausted — try fallback provider once
+        fb = self._fb_sync_client()
+        if fb is not None:
+            fb_model = self._fallback[2]  # type: ignore[index]
+            fb_payload = {**payload, "model": fb_model}
+            print(f"[llm.{self.tier}] FALLBACK -> {fb_model}", flush=True)
+            try:
+                resp = fb.chat.completions.create(**fb_payload)
+                if self.tracker:
+                    self.tracker.add(Usage.from_response(resp, model=fb_model, tier=f"{self.tier}/fallback"))
+                return resp
+            except Exception as exc:
+                last_exc = exc
+                print(f"[llm.{self.tier}] fallback failed: {exc}", flush=True)
         raise RuntimeError(f"LLM call failed after {self.max_retries} retries: {last_exc}")
 
     async def _acall_with_retry(self, **kwargs):
@@ -362,6 +415,20 @@ class LLM:
                 wait = min(2 ** attempt, 30)
                 print(f"[llm.{self.tier}/async] attempt {attempt + 1} failed: {exc}; retrying in {wait}s", flush=True)
                 await asyncio.sleep(wait)
+        # Primary exhausted — try fallback provider once (async)
+        fb = self._fb_async_client()
+        if fb is not None:
+            fb_model = self._fallback[2]  # type: ignore[index]
+            fb_payload = {**payload, "model": fb_model}
+            print(f"[llm.{self.tier}/async] FALLBACK -> {fb_model}", flush=True)
+            try:
+                resp = await fb.chat.completions.create(**fb_payload)
+                if self.tracker:
+                    self.tracker.add(Usage.from_response(resp, model=fb_model, tier=f"{self.tier}/fallback"))
+                return resp
+            except Exception as exc:
+                last_exc = exc
+                print(f"[llm.{self.tier}/async] fallback failed: {exc}", flush=True)
         raise RuntimeError(f"Async LLM call failed after {self.max_retries} retries: {last_exc}")
 
     # --- batch helper ---
