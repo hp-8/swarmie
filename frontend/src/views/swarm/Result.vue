@@ -239,7 +239,7 @@ import AiDisclosure from '../../components/AiDisclosure.vue'
 import { useRoute } from 'vue-router'
 import { roastApi } from '../../api/roast'
 import { generateRoastPDF } from '../../lib/pdf/template'
-import { trackRoastComplete, trackPdfDownload } from '../../lib/analytics'
+import { trackRoastComplete, trackParsedPitch, trackReport, trackReactions, trackPdfDownload } from '../../lib/analytics'
 
 const route = useRoute()
 const jobId = route.params.jobId
@@ -314,6 +314,9 @@ async function load() {
         costUsd: j.usage?.total_cost_usd,
         model: j.usage?.breakdown?.[0]?.model,
       }).catch(() => {})
+      trackParsedPitch(jobId, j.parsed_pitch).catch(() => {})
+      trackReport(jobId, j.report).catch(() => {})
+      trackReactions(jobId, j.reactions).catch(() => {})
       const m = new Map()
       for (const r of reactions.value) {
         m.set(r.agent_id, {

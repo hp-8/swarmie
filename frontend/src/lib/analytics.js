@@ -36,7 +36,7 @@ export async function registerDevice() {
   return fingerprint
 }
 
-export async function trackRoastStart(jobId, { pitchLength, model } = {}) {
+export async function trackRoastStart(jobId, { pitchText, pitchLength, nAgents } = {}) {
   if (!supabase) return
   const fingerprint = await getFingerprint()
 
@@ -47,7 +47,8 @@ export async function trackRoastStart(jobId, { pitchLength, model } = {}) {
       fingerprint_id: fingerprint,
       status: 'started',
       pitch_length: pitchLength || null,
-      model: model || null,
+      pitch_text: pitchText || null,
+      n_agents_requested: nAgents || null,
     })
 
   if (error) console.warn('[analytics] trackRoastStart failed:', error.message)
@@ -74,6 +75,83 @@ export async function trackRoastComplete(jobId, { agentCount, promptTokens, comp
     .eq('job_id', jobId)
 
   if (error) console.warn('[analytics] trackRoastComplete failed:', error.message)
+}
+
+export async function trackParsedPitch(jobId, pitch) {
+  if (!supabase || !pitch) return
+
+  const { error } = await supabase
+    .from('roast_pitches')
+    .upsert({
+      job_id: jobId,
+      one_liner: pitch.one_liner || null,
+      problem: pitch.problem || null,
+      solution: pitch.solution || null,
+      target_icp: pitch.target_icp || null,
+      pricing: pitch.pricing || null,
+      icp_segments: pitch.icp_segments || [],
+      competitors: pitch.competitors || [],
+      channels: pitch.channels || [],
+      founder_ask: pitch.founder_ask || null,
+    }, { onConflict: 'job_id' })
+
+  if (error) console.warn('[analytics] trackParsedPitch failed:', error.message)
+}
+
+export async function trackReport(jobId, report) {
+  if (!supabase || !report) return
+
+  const { error } = await supabase
+    .from('roast_reports')
+    .upsert({
+      job_id: jobId,
+      pmf_score: report.pmf_score ?? null,
+      headline: report.headline || null,
+      narrative: report.narrative || null,
+      sentiment_positive: report.sentiment_split?.positive ?? null,
+      sentiment_neutral: report.sentiment_split?.neutral ?? null,
+      sentiment_negative: report.sentiment_split?.negative ?? null,
+      action_post: report.action_split?.post ?? 0,
+      action_comment: report.action_split?.comment ?? 0,
+      action_upvote: report.action_split?.upvote ?? 0,
+      action_ignore: report.action_split?.ignore ?? 0,
+      top_objections: report.top_objections || [],
+      messaging_gaps: report.messaging_gaps || [],
+      icp_fit: report.icp_fit || {},
+      quoted_reactions: report.quoted_reactions || [],
+    }, { onConflict: 'job_id' })
+
+  if (error) console.warn('[analytics] trackReport failed:', error.message)
+}
+
+export async function trackReactions(jobId, reactions) {
+  if (!supabase || !reactions?.length) return
+
+  const rows = reactions.map(r => ({
+    job_id: jobId,
+    agent_id: r.agent_id,
+    archetype_id: r.archetype_id || null,
+    segment: r.segment || null,
+    name: r.name || null,
+    tone: r.tone || null,
+    action: r.action || null,
+    reaction_text: r.text || null,
+    sentiment: r.sentiment ?? null,
+    objections: r.objections || [],
+  }))
+
+  // batch in chunks of 100
+  for (let i = 0; i < rows.length; i += 100) {
+    const chunk = rows.slice(i, i + 100)
+    const { error } = await supabase
+      .from('roast_reactions')
+      .upsert(chunk, { onConflict: 'job_id,agent_id' })
+
+    if (error) {
+      console.warn('[analytics] trackReactions failed:', error.message)
+      break
+    }
+  }
 }
 
 export async function trackPdfDownload(jobId) {

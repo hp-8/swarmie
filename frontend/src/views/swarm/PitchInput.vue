@@ -192,7 +192,11 @@ async function onSubmit() {
     const res = await roastApi.create(pitchText.value.trim(), agentCount.value)
     const jobId = res.job_id || res.data?.job_id
     if (!jobId) throw new Error('No job_id in response')
-    trackRoastStart(jobId, { pitchLength: pitchText.value.trim().length }).catch(() => {})
+    trackRoastStart(jobId, {
+      pitchText: pitchText.value.trim(),
+      pitchLength: pitchText.value.trim().length,
+      nAgents: agentCount.value,
+    }).catch(() => {})
     await new Promise(r => setTimeout(r, 800))
     router.push({ name: 'Watching', params: { jobId } })
   } catch (e) {
