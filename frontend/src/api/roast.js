@@ -40,4 +40,14 @@ export const roastApi = {
     const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001'
     return `${base}/api/roast/${jobId}/stream`
   },
+
+  /** Send chat message to a specific agent. */
+  chat(jobId, agentId, message) {
+    return service.post(`/api/roast/${jobId}/agents/${agentId}/chat`, { message })
+  },
+
+  /** Fetch existing chat history with an agent. */
+  getChat(jobId, agentId) {
+    return service.get(`/api/roast/${jobId}/agents/${agentId}/chat`)
+  },
 }

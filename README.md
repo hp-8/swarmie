@@ -10,6 +10,16 @@ Founder validation through grounded agent simulation. Upload a pitch, describe y
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 [![Status: Alpha](https://img.shields.io/badge/Status-Alpha-orange.svg)]()
 
+<br />
+
+<video src="https://github.com/hp-8/swarmie/raw/main/frontend/public/swarmie-promo.mp4" autoplay loop muted playsinline width="820">
+  <a href="./frontend/public/swarmie-promo.mp4">
+    <img src="./frontend/public/swarmie-promo-poster.jpg" alt="Swarmie demo — pitch in, 500 AI users react, insights out" width="820" />
+  </a>
+</video>
+
+<sub><em>Pitch in → 500 AI users react → insights out. 14s demo · <a href="./frontend/public/swarmie-promo.mp4">download mp4</a></em></sub>
+
 </div>
 
 ---

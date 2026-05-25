@@ -61,3 +61,8 @@ data/
 
 # Build artifacts
 frontend/dist/
+
+# remotion — track source + music, ignore deps + rendered outputs
+remotion/node_modules/
+remotion/out/
+remotion/.remotion/

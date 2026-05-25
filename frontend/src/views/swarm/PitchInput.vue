@@ -84,6 +84,11 @@
             </button>
             <span class="actions-hint">{{ runHint }}</span>
           </div>
+
+          <p class="ai-note">
+            Reactions are produced by AI agents — <em>not real users</em>.
+            <AiDisclosure variant="text" label="how this was generated" />
+          </p>
         </form>
       </section>
     </main>
@@ -94,6 +99,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { roastApi } from '../../api/roast'
+import AiDisclosure from '../../components/AiDisclosure.vue'
 
 const router = useRouter()
 const pitchText = ref('')
@@ -301,4 +307,16 @@ async function onSubmit() {
   font-family: var(--font-mono); font-size: var(--text-xs);
   letter-spacing: 0.06em; color: var(--ink-3);
 }
+.ai-note {
+  margin: var(--space-3) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ai-note em { font-style: italic; color: var(--ink); }
 </style>

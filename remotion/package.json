@@ -1,0 +1,23 @@
+{
+  "name": "swarmie-remotion",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render",
+    "build:hero": "remotion render Brain out/hero.mp4 --codec h264 && remotion render Brain out/hero.webm --codec vp9 --crf 32"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.466",
+    "@remotion/cli": "^4.0.466",
+    "@remotion/google-fonts": "^4.0.466",
+    "@remotion/renderer": "^4.0.466",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "remotion": "^4.0.466",
+    "typescript": "^6.0.3"
+  }
+}

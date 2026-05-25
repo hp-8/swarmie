@@ -28,9 +28,11 @@ from ..config import Config
 from ..services.swarm import (
     AgentReaction,
     ArchetypeGenerator,
+    CHAT_SOFT_CAP,
     PitchParser,
     RoastReporter,
     SwarmRunner,
+    chat_with_agent,
 )
 from ..utils.llm import UsageTracker
 
@@ -62,6 +64,9 @@ class RoastJob:
     # streaming
     event_queue: queue.Queue[dict] = field(default_factory=queue.Queue)
     cancelled: threading.Event = field(default_factory=threading.Event)
+
+    # per-agent chat history: agent_id -> list[{role, content}]
+    chats: dict[str, list[dict[str, str]]] = field(default_factory=dict)
 
     def to_dict(self, include_full: bool = False) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -173,6 +178,16 @@ def _run_pipeline(job: RoastJob) -> None:
         completed = 0
         total = job.n_agents
 
+        def _on_thinking(agent_id: str, arch, action: str) -> None:
+            _push_event(job, "thinking", {
+                "agent_id": agent_id,
+                "archetype_id": arch.id,
+                "segment": arch.segment,
+                "name": arch.name,
+                "tone": arch.tone,
+                "action": action,
+            })
+
         def _on_reaction(r: AgentReaction) -> None:
             nonlocal completed
             completed += 1
@@ -195,6 +210,7 @@ def _run_pipeline(job: RoastJob) -> None:
                     archetypes=archetypes,
                     n_agents=job.n_agents,
                     on_reaction=_on_reaction,
+                    on_thinking=_on_thinking,
                 )
             )
         finally:
@@ -324,3 +340,84 @@ def cancel_roast(job_id: str):
 def _sse(event: dict) -> str:
     """Format an SSE message."""
     return f"event: {event['type']}\ndata: {json.dumps(event['data'])}\n\n"
+
+
+@roast_bp.route("/<job_id>/agents/<agent_id>/chat", methods=["POST"])
+def chat_agent(job_id: str, agent_id: str):
+    """Send a follow-up message to a specific agent.
+
+    Body: {"message": "<text>"}
+    Returns: {"reply": "<text>", "turns": <int>, "soft_cap": <int>, "over_cap": <bool>}
+    """
+    job = _store.get(job_id)
+    if not job:
+        return jsonify({"error": "job not found"}), 404
+    if job.status != "completed":
+        return jsonify({"error": "job not complete"}), 400
+
+    body = request.get_json(silent=True) or {}
+    message = (body.get("message") or "").strip()
+    if not message:
+        return jsonify({"error": "message required"}), 400
+    if len(message) > 2000:
+        return jsonify({"error": "message too long (max 2000)"}), 400
+
+    # locate reaction + archetype
+    reaction = next((r for r in job.reactions if r.get("agent_id") == agent_id), None)
+    if not reaction:
+        return jsonify({"error": "agent not found"}), 404
+    archetype = next((a for a in job.archetypes if a.get("id") == reaction.get("archetype_id")), None)
+    if not archetype:
+        return jsonify({"error": "archetype missing"}), 404
+
+    history = job.chats.setdefault(agent_id, [])
+    user_turns = sum(1 for t in history if t.get("role") == "user")
+
+    tracker = UsageTracker()
+    try:
+        loop = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(loop)
+            reply = loop.run_until_complete(
+                chat_with_agent(
+                    pitch=job.parsed_pitch or {},
+                    archetype=archetype,
+                    original_reaction=reaction,
+                    history=history,
+                    user_message=message,
+                    tracker=tracker,
+                )
+            )
+        finally:
+            loop.close()
+    except Exception as exc:
+        logger.exception("chat failed for %s/%s", job_id, agent_id)
+        return jsonify({"error": str(exc)}), 500
+
+    history.append({"role": "user", "content": message})
+    history.append({"role": "assistant", "content": reply})
+    user_turns += 1
+
+    return jsonify({
+        "reply": reply,
+        "turns": user_turns,
+        "soft_cap": CHAT_SOFT_CAP,
+        "over_cap": user_turns > CHAT_SOFT_CAP,
+        "cost_usd": round(tracker.total_cost_usd, 6),
+    }), 200
+
+
+@roast_bp.route("/<job_id>/agents/<agent_id>/chat", methods=["GET"])
+def get_chat(job_id: str, agent_id: str):
+    """Fetch existing chat history for an agent (used on reload)."""
+    job = _store.get(job_id)
+    if not job:
+        return jsonify({"error": "job not found"}), 404
+    history = job.chats.get(agent_id, [])
+    user_turns = sum(1 for t in history if t.get("role") == "user")
+    return jsonify({
+        "history": history,
+        "turns": user_turns,
+        "soft_cap": CHAT_SOFT_CAP,
+        "over_cap": user_turns > CHAT_SOFT_CAP,
+    }), 200

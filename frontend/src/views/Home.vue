@@ -15,41 +15,67 @@
     <main>
       <!-- HERO · Marquee -->
       <section class="hero">
-        <div class="hero-eyebrow">
-          <span class="h-chip is-accent">Open source · Alpha</span>
-          <span class="hero-sub-tag">A founder-validation funnel that doesn't lie nicely.</span>
-        </div>
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <div class="hero-eyebrow">
+              <span class="h-chip is-accent">Open source · Alpha</span>
+              <span class="hero-sub-tag">A founder-validation funnel that doesn't lie nicely.</span>
+            </div>
 
-        <h1 class="hero-title h-display">
-          Roast<span class="hero-dot">.</span><br />
-          your startup<br />
-          with <em class="hero-em">500&nbsp;AI&nbsp;users.</em>
-        </h1>
+            <h1 class="hero-title h-display">
+              Roast<span class="hero-dot">.</span><br />
+              your startup<br />
+              with <em class="hero-em">500&nbsp;AI&nbsp;users.</em>
+            </h1>
 
-        <p class="hero-lede">
-          Paste the pitch. Watch a swarm of agents react like a Reddit thread,
-          an HN comment section, and a ProductHunt launch page all yelled at it.
-          Find the three real objections before you burn a single user interview.
-        </p>
+            <p class="hero-lede">
+              Paste the pitch. Watch a swarm of agents react like a Reddit thread,
+              an HN comment section, and a ProductHunt launch page all yelled at it.
+              Find the three real objections before you burn a single user interview.
+            </p>
 
-        <div class="hero-actions">
-          <router-link to="/new" class="h-btn is-accent">Start a roast →</router-link>
-          <a href="#truth" class="h-btn is-ghost">How it works</a>
-        </div>
+            <div class="hero-actions">
+              <router-link to="/new" class="h-btn is-accent">Start a roast →</router-link>
+              <a href="#truth" class="h-btn is-ghost">How it works</a>
+            </div>
 
-        <div class="hero-meta">
-          <span><strong>~60s</strong> per run</span>
-          <span class="hero-dot-sep">·</span>
-          <span><strong>$0</strong> on local Ollama</span>
-          <span class="hero-dot-sep">·</span>
-          <span><strong>AGPL-3.0</strong></span>
+            <div class="hero-meta">
+              <span><strong>~60s</strong> per run</span>
+              <span class="hero-dot-sep">·</span>
+              <span><strong>$0</strong> on local Ollama</span>
+              <span class="hero-dot-sep">·</span>
+              <span><strong>AGPL-3.0</strong></span>
+            </div>
+          </div>
+
+          <aside class="hero-media">
+            <figure class="hero-video">
+              <video
+                class="hero-video-el"
+                autoplay
+                muted
+                loop
+                playsinline
+                preload="metadata"
+                poster="/swarmie-promo-poster.jpg"
+                aria-label="Swarmie product walkthrough — pitch, swarm reaction, insight"
+              >
+                <source src="/swarmie-promo.webm" type="video/webm" />
+                <source src="/swarmie-promo.mp4" type="video/mp4" />
+              </video>
+            </figure>
+            <figcaption class="hero-media-cap">
+              <span class="hmc-label">Product walkthrough</span>
+              <span class="hmc-meta">Pitch &rarr; swarm &rarr; insight</span>
+            </figcaption>
+          </aside>
         </div>
       </section>
 
       <!-- TRUTH band — honesty hook -->
       <section id="truth" class="truth">
         <p class="truth-line">
-          <span class="h-eyebrow">A note before we start.</span>
+          <span class="h-eyebrow">A note before we start. <AiDisclosure aria-label="How this was generated" /></span>
           <span class="truth-text">
             These are AI agents. <em class="truth-em">Not real users.</em> They are wrong sometimes,
             agreeable too often, and they don't write your TAM check.
@@ -173,7 +199,7 @@
 </template>
 
 <script setup>
-// Static landing. No state.
+import AiDisclosure from '../components/AiDisclosure.vue'
 </script>
 
 <style scoped>
@@ -240,13 +266,13 @@
 .hero {
   max-width: var(--max-content);
   margin: 0 auto;
-  padding: var(--space-9) var(--space-5) var(--space-8);
+  padding: var(--space-6) var(--space-5) var(--space-7);
 }
 .hero-eyebrow {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  margin-bottom: var(--space-7);
+  margin-bottom: 0;
   flex-wrap: wrap;
 }
 .hero-sub-tag {
@@ -256,11 +282,18 @@
   color: var(--ink-3);
 }
 .hero-title {
-  font-size: clamp(56px, 10vw, 112px);
+  font-size: clamp(40px, 5.2vw, 72px);
+  line-height: 0.98;
+  letter-spacing: -0.015em;
   font-weight: 600;
   font-variation-settings: 'opsz' 144, 'wght' 600;
-  margin: 0 0 var(--space-6);
+  margin: var(--space-4) 0 var(--space-4);
   color: var(--ink);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+@media (max-width: 1024px) {
+  .hero-title { font-size: clamp(48px, 8vw, 88px); }
 }
 .hero-em {
   font-style: italic;
@@ -269,18 +302,18 @@
 }
 .hero-dot { color: var(--accent); }
 .hero-lede {
-  max-width: 640px;
+  max-width: 560px;
   font-family: var(--font-body);
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: 400;
-  line-height: 1.55;
+  line-height: 1.5;
   color: var(--ink);
-  margin: 0 0 var(--space-7);
+  margin: 0 0 var(--space-5);
 }
 .hero-actions {
   display: flex;
   gap: var(--space-3);
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
   flex-wrap: wrap;
 }
 .hero-meta {
@@ -494,4 +527,81 @@
 .foot a { color: var(--ink-2); border-bottom: 1px dashed var(--rule-2); }
 .foot a:hover { color: var(--ink); }
 .foot-meta { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.06em; }
+
+/* hero split — copy left, media right */
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(var(--space-6), 5vw, var(--space-9));
+  align-items: center;
+}
+.hero-copy { min-width: 0; }
+.hero-media {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-self: center;
+}
+.hero-video {
+  margin: 0;
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  background: #f5efe2;
+  box-shadow:
+    0 1px 0 0 color-mix(in oklch, var(--ink) 4%, transparent) inset,
+    0 40px 90px -30px rgba(0, 0, 0, 0.55),
+    0 12px 32px -12px rgba(0, 0, 0, 0.35);
+  aspect-ratio: 16 / 10;
+}
+.hero-video::after {
+  /* refined inner hairline */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.hero-video-el {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.hero-media-cap {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.hmc-label { color: var(--ink-2, var(--ink)); }
+.hmc-meta { color: var(--ink-3); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-video-el { display: none; }
+  .hero-video {
+    background-image: url('/swarmie-promo-poster.jpg');
+    background-size: cover;
+    background-position: center;
+  }
+}
+
+@media (max-width: 1024px) {
+  .hero-grid { grid-template-columns: 1fr; gap: var(--space-7); }
+  .hero-media { order: 2; }
+  .hero-copy { order: 1; }
+}
+@media (max-width: 720px) {
+  .hero-video { border-radius: 12px; aspect-ratio: 16 / 9; }
+  .hero-media-cap { font-size: 10px; letter-spacing: 0.14em; }
+}
 </style>

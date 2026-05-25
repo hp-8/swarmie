@@ -109,6 +109,7 @@ class SwarmRunner:
         n_agents: int | None = None,
         concurrency: int | None = None,
         on_reaction: Callable[[AgentReaction], None] | None = None,
+        on_thinking: Callable[[str, Archetype, str], None] | None = None,
         influencer_ratio: float = 0.10,
     ) -> list[AgentReaction]:
         """Run the swarm. Returns the full list of reactions.
@@ -163,7 +164,7 @@ class SwarmRunner:
 
         async def _one(idx: int, aid: str, arch: Archetype, action: str) -> AgentReaction:
             llm = self.deep if idx in deep_set else self.cheap
-            return await self._generate_reaction(llm, pitch, aid, arch, action, sem, on_reaction)
+            return await self._generate_reaction(llm, pitch, aid, arch, action, sem, on_reaction, on_thinking)
 
         # Hard cost ceiling: poll tracker periodically and bail.
         task_objs = [
@@ -189,8 +190,14 @@ class SwarmRunner:
         action: str,
         sem: asyncio.Semaphore,
         on_reaction: Callable[[AgentReaction], None] | None,
+        on_thinking: Callable[[str, Archetype, str], None] | None = None,
     ) -> AgentReaction:
         async with sem:
+            if on_thinking:
+                try:
+                    on_thinking(agent_id, arch, action)
+                except Exception:
+                    pass
             user_prompt = (
                 f"PRODUCT PITCH:\n"
                 f"- one_liner: {pitch.one_liner}\n"
