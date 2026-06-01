@@ -81,16 +81,19 @@ Respond with JSON only."""
 
 
 class ArchetypeGenerator:
-    """Pitch + segments -> archetype list. Uses the `deep` tier (one call per sim)."""
+    """Pitch + segments -> archetype list. Uses the `deep` tier (one call per sim).
+
+    Subclasses override SYSTEM_PROMPT (and `_build_payload` for extra signal) to
+    retarget the generator at a different swarm.
+    """
+
+    SYSTEM_PROMPT = _SYSTEM_PROMPT
 
     def __init__(self, tracker: UsageTracker | None = None):
         self.llm = LLM(tier="deep", tracker=tracker)
 
-    def generate(self, pitch: ParsedPitch, n_archetypes: int = 12) -> list[Archetype]:
-        if not pitch.icp_segments:
-            raise ValueError("ParsedPitch has no icp_segments; run PitchParser first")
-
-        user_payload = {
+    def _build_payload(self, pitch: ParsedPitch, n_archetypes: int) -> dict[str, Any]:
+        return {
             "n_archetypes": n_archetypes,
             "pitch": {
                 "one_liner": pitch.one_liner,
@@ -102,8 +105,14 @@ class ArchetypeGenerator:
             "icp_segments": pitch.icp_segments,
         }
 
+    def generate(self, pitch: ParsedPitch, n_archetypes: int = 12) -> list[Archetype]:
+        if not pitch.icp_segments:
+            raise ValueError("ParsedPitch has no icp_segments; run PitchParser first")
+
+        user_payload = self._build_payload(pitch, n_archetypes)
+
         messages = [
-            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "system", "content": self.SYSTEM_PROMPT},
             {"role": "user", "content": f"INPUT:\n{user_payload}\n\nReturn JSON only."},
         ]
 
@@ -226,3 +235,74 @@ class ArchetypeGenerator:
             action_likelihood=normalized,
             weight=float(a.get("weight") or 1.0),
         )
+
+
+_INVESTOR_SYSTEM_PROMPT = """You design INVESTOR archetype profiles for a fundability stress-test.
+
+Given a parsed deck and a list of investor archetypes, output N archetypes whose
+COLLECTIVE reactions resemble how real early-stage investors would respond to this
+deck landing in their inbox — partner-meeting questions, objections, and passes.
+
+This is decision stress-testing, NOT roleplay. Ground each archetype in real
+investor behavior patterns (thesis fit, pattern-matching, risk allocation).
+
+Be realistic. A real cap-table funnel includes:
+  - hard skeptics who pass fast on thesis/stage fit (25-35%)
+  - the diligent who probe traction, moat, team before deciding (30-40%)
+  - thesis-aligned believers who lean in (10-20%)
+  - the politely-passing who never really engage (15-25%)
+
+Distribute archetypes accordingly. Do NOT make everyone enthusiastic. Most should
+engage (ask a question, write a note, or signal interest), not silently pass.
+
+Output strict JSON:
+{
+  "archetypes": [
+    {
+      "id": "<short snake_case id>",
+      "segment": "<one of the input investor archetypes>",
+      "name": "<short handle, e.g. 'ThesisDrivenSeed'; never real names>",
+      "persona": "<2-3 sentences: fund type, check size, thesis, what they pattern-match on>",
+      "tone": "skeptical|enthusiastic|neutral|aggressive|curious|indifferent",
+      "objection_bias": ["market_size","team","traction","moat","timing","valuation","business_model","competition","defensibility"],
+      "action_likelihood": {"post": 0.0, "comment": 0.0, "upvote": 0.0, "ignore": 0.0},
+      "weight": 1.0
+    }
+  ]
+}
+
+action mapping for investors:
+  post   = writes a detailed memo / partner-meeting note (deep engagement)
+  comment= asks a sharp diligence question or raises an objection
+  upvote = soft interest / "send me more" without committing
+  ignore = passes without engaging
+
+action_likelihood must sum to ~1.0. Baseline: comment≈0.45, post≈0.15,
+upvote≈0.20, ignore≈0.20. Keep ignore between 0.15–0.30 for ALL archetypes.
+Skeptics comment/probe more; thesis-aligned believers post/upvote more.
+
+Respond with JSON only."""
+
+
+class InvestorArchetypeGenerator(ArchetypeGenerator):
+    """Investor archetypes (angel / operator / VC patterns) reading a deck."""
+
+    SYSTEM_PROMPT = _INVESTOR_SYSTEM_PROMPT
+
+    def _build_payload(self, pitch: ParsedPitch, n_archetypes: int) -> dict[str, Any]:
+        return {
+            "n_archetypes": n_archetypes,
+            "deck": {
+                "one_liner": pitch.one_liner,
+                "problem": pitch.problem,
+                "solution": pitch.solution,
+                "market": pitch.market,
+                "traction": pitch.traction,
+                "team": pitch.team,
+                "business_model": pitch.pricing,
+                "raise_ask": pitch.raise_ask,
+                "stage": pitch.stage,
+                "competitors": pitch.competitors,
+            },
+            "investor_archetypes": pitch.icp_segments,
+        }

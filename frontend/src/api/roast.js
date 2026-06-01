@@ -8,10 +8,16 @@ export const roastApi = {
    * Start a roast job.
    * @param {string} pitch - Pitch text to roast.
    * @param {number} [nAgents=100] - Number of agents to simulate (10..500).
+   * @param {string} [swarmType='validate'] - Which swarm to run (validate | investor).
    * @returns {Promise<{job_id: string, status: string}>}
    */
-  create(pitch, nAgents = 100) {
-    return service.post('/api/roast', { pitch, n_agents: nAgents })
+  create(pitch, nAgents = 100, swarmType = 'validate') {
+    return service.post('/api/roast', { pitch, n_agents: nAgents, swarm_type: swarmType })
+  },
+
+  /** List available swarms for the input picker. */
+  swarms() {
+    return service.get('/api/roast/swarms')
   },
 
   /**

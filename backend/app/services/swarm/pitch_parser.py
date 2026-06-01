@@ -38,6 +38,13 @@ class ParsedPitch:
     # What the founder is asking the simulation to evaluate.
     founder_ask: str = ""
 
+    # --- investor-swarm fields (filled only by InvestorPitchParser; empty otherwise) ---
+    traction: str = ""   # revenue, users, growth, retention signals if any
+    team: str = ""       # founder/team background, why-them
+    market: str = ""     # market size / TAM framing
+    raise_ask: str = ""  # round + amount being raised, if stated
+    stage: str = ""      # pre-seed | seed | series-a | … (inferred ok)
+
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
@@ -68,7 +75,12 @@ class PitchParser:
 
     Uses the `deep` tier because pitch extraction quality cascades into every
     downstream stage. Cost is bounded — one call per sim run.
+
+    Subclasses override SYSTEM_PROMPT (and `_build` if they populate extra
+    ParsedPitch fields) to retarget the parser at a different swarm.
     """
+
+    SYSTEM_PROMPT = _SYSTEM_PROMPT
 
     def __init__(self, tracker: UsageTracker | None = None):
         self.llm = LLM(tier="deep", tracker=tracker)
@@ -78,11 +90,13 @@ class PitchParser:
             raise ValueError("pitch_text is empty")
 
         messages = [
-            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "system", "content": self.SYSTEM_PROMPT},
             {"role": "user", "content": f"PITCH:\n\n{pitch_text.strip()}"},
         ]
         data = self.llm.chat_json(messages, temperature=0.2, max_tokens=1500)
+        return self._build(data)
 
+    def _build(self, data: dict[str, Any]) -> ParsedPitch:
         return ParsedPitch(
             one_liner=data.get("one_liner", "").strip(),
             problem=data.get("problem", "").strip(),
@@ -95,3 +109,46 @@ class PitchParser:
             founder_ask=data.get("founder_ask", "").strip()
                 or "Will this resonate with the target ICP?",
         )
+
+
+_INVESTOR_SYSTEM_PROMPT = """You are a venture analyst. You read a founder's pitch/deck and extract the structured signal an investor swarm needs to pressure-test fundability.
+
+Output strict JSON with these keys (no extras):
+  one_liner       : string  — single sentence, founder's own framing if present
+  problem         : string  — pain being solved, plain language
+  solution        : string  — how the product solves it, the wedge
+  target_icp      : string  — the customer ICP in one short phrase
+  icp_segments    : array of 4-6 strings — INVESTOR archetypes who'd see this deck
+                    (e.g. "operator angel who scaled a SaaS", "thesis-driven seed VC",
+                    "generalist pre-seed fund associate", "skeptical multistage partner")
+  pricing         : string  — business/revenue model if mentioned, else ""
+  channels        : array   — go-to-market channels if mentioned, else []
+  competitors     : array   — competitors / alternatives if mentioned, else []
+  founder_ask     : string  — the raise framing (default: "Is this fundable at this stage?")
+  traction        : string  — revenue / users / growth / retention signals, else ""
+  team            : string  — founder & team background, why-them, else ""
+  market          : string  — market size / TAM framing if stated, else ""
+  raise_ask       : string  — round + amount being raised if stated, else ""
+  stage           : string  — pre-seed | seed | series-a | … (infer if unstated)
+
+icp_segments here are INVESTOR personas, NOT customer segments. If the pitch is
+vague, infer reasonably but mark inferred fields with "[inferred]" prefix.
+Never invent traction or competitors that weren't mentioned.
+
+Respond with JSON only. No prose, no markdown fences."""
+
+
+class InvestorPitchParser(PitchParser):
+    """Parse a deck for the investor swarm: investor archetypes + fundability signal."""
+
+    SYSTEM_PROMPT = _INVESTOR_SYSTEM_PROMPT
+
+    def _build(self, data: dict[str, Any]) -> ParsedPitch:
+        pitch = super()._build(data)
+        pitch.founder_ask = data.get("founder_ask", "").strip() or "Is this fundable at this stage?"
+        pitch.traction = data.get("traction", "").strip()
+        pitch.team = data.get("team", "").strip()
+        pitch.market = data.get("market", "").strip()
+        pitch.raise_ask = data.get("raise_ask", "").strip()
+        pitch.stage = data.get("stage", "").strip()
+        return pitch

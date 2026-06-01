@@ -29,17 +29,32 @@
       </aside>
 
       <section class="canvas">
+        <div class="swarm-picker" role="tablist" aria-label="Choose a swarm">
+          <button
+            v-for="s in SWARMS"
+            :key="s.key"
+            type="button"
+            role="tab"
+            class="swarm-tab"
+            :class="{ active: s.key === swarmType, locked: !s.enabled }"
+            :aria-selected="s.key === swarmType"
+            :disabled="!s.enabled || submitting"
+            @click="selectSwarm(s)"
+          >
+            <span class="swarm-tab-label">{{ s.label }}</span>
+            <span v-if="!s.enabled" class="swarm-tab-soon">soon</span>
+          </button>
+        </div>
+
         <header class="canvas-head">
-          <h1 class="canvas-title h-display">What are we roasting?</h1>
-          <p class="canvas-sub">
-            <em>"AI for sales"</em> is too thin. <em>"AI inbox triage for B2B AEs hitting &gt;50 cold replies/day, $49/seat"</em> is a pitch.
-          </p>
+          <h1 class="canvas-title h-display">{{ activeSwarm.title }}</h1>
+          <p class="canvas-sub" v-html="activeSwarm.sub"></p>
         </header>
 
         <form class="form" @submit.prevent="onSubmit">
           <label class="field-wrap field-pitch">
             <div class="field-head">
-              <span class="h-eyebrow">i · the pitch</span>
+              <span class="h-eyebrow">i · {{ swarmType === 'investor' ? 'the deck' : 'the pitch' }}</span>
               <div class="field-head-right">
                 <button v-if="!pitchText.trim()" type="button" class="template-btn" @click="fillTemplate">use template</button>
                 <span class="field-meta">{{ pitchText.length.toLocaleString() }} / 20,000</span>
@@ -48,16 +63,17 @@
             <textarea
               v-model="pitchText"
               class="textarea"
-              :placeholder="pitchPlaceholder"
+              :placeholder="activeSwarm.placeholder"
               :disabled="submitting"
               maxlength="20000"
             />
             <div class="pitch-checklist">
-              <span class="check-item" :class="{ done: hasSection('problem') }">problem</span>
-              <span class="check-item" :class="{ done: hasSection('product') }">product</span>
-              <span class="check-item" :class="{ done: hasSection('audience') }">audience</span>
-              <span class="check-item" :class="{ done: hasSection('pricing') }">pricing</span>
-              <span class="check-item" :class="{ done: hasSection('competitor') }">competitors</span>
+              <span
+                v-for="c in activeSwarm.checks"
+                :key="c.key"
+                class="check-item"
+                :class="{ done: hasSection(c) }"
+              >{{ c.label }}</span>
             </div>
           </label>
 
@@ -110,7 +126,7 @@
           <div class="launch-ring"></div>
           <div class="launch-text">
             <span class="launch-label">Assembling the swarm</span>
-            <span class="launch-sub">{{ agentCount }} agents · parsing your pitch</span>
+            <span class="launch-sub">{{ agentCount }} {{ activeSwarm.agentNoun }} · parsing your pitch</span>
           </div>
         </div>
       </div>
@@ -126,15 +142,25 @@ import AiDisclosure from '../../components/AiDisclosure.vue'
 import { trackRoastStart } from '../../lib/analytics'
 
 const router = useRouter()
+const swarmType = ref('validate')
 const pitchText = ref('')
 const agentCount = ref(100)
 const submitting = ref(false)
 const launching = ref(false)
 const error = ref('')
 
-const canSubmit = computed(() => pitchText.value.trim().length >= 40)
-
-const pitchPlaceholder = `PROBLEM: What pain are you solving? Who feels it?
+// Each swarm answers one founder decision and carries its own input voice.
+// `enabled: false` shows the option as "soon" — Launch ships with the signal layer.
+const SWARMS = [
+  {
+    key: 'validate',
+    label: 'Validate',
+    blurb: 'Will the market care?',
+    enabled: true,
+    agentNoun: 'agents',
+    title: 'What are we roasting?',
+    sub: '<em>"AI for sales"</em> is too thin. <em>"AI inbox triage for B2B AEs hitting &gt;50 cold replies/day, $49/seat"</em> is a pitch.',
+    placeholder: `PROBLEM: What pain are you solving? Who feels it?
 
 PRODUCT: What does your product do? One-liner + key features.
 
@@ -142,32 +168,68 @@ AUDIENCE: Who is this for? Be specific — role, company size, industry.
 
 PRICING: How much? Free tier? Per-seat? Usage-based?
 
-COMPETITORS: Who else solves this? Why are you different?`
+COMPETITORS: Who else solves this? Why are you different?`,
+    template: `PROBLEM:\n\nPRODUCT:\n\nAUDIENCE:\n\nPRICING:\n\nCOMPETITORS: `,
+    checks: [
+      { key: 'problem', label: 'problem', pattern: /problem[:\s].*\S/ },
+      { key: 'product', label: 'product', pattern: /product[:\s].*\S/ },
+      { key: 'audience', label: 'audience', pattern: /audience[:\s].*\S|target[:\s].*\S|who[:\s].*\S|icp[:\s].*\S/ },
+      { key: 'pricing', label: 'pricing', pattern: /pric(e|ing)[:\s].*\S|\$\d/ },
+      { key: 'competitor', label: 'competitors', pattern: /competitor[:\s].*\S|vs\.?\s|alternative|compared to/ },
+    ],
+  },
+  {
+    key: 'investor',
+    label: 'Investor',
+    blurb: 'Is it fundable?',
+    enabled: true,
+    agentNoun: 'investors',
+    title: 'What deck are we stress-testing?',
+    sub: 'A swarm of investor archetypes reads your deck like inbox #47. You get the likely questions, the missing proof, and the pass reasons before a real partner does.',
+    placeholder: `PROBLEM: What pain, and why is it urgent now?
 
-const TEMPLATE = `PROBLEM:
+SOLUTION: The product + the wedge. Why you win.
 
-PRODUCT:
+MARKET: How big, and why venture-scale?
 
-AUDIENCE:
+TRACTION: Revenue, users, growth, retention — real numbers.
 
-PRICING:
+TEAM: Who you are, why you'll win this.
 
-COMPETITORS: `
+RAISE: Stage + amount + what it buys.`,
+    template: `PROBLEM:\n\nSOLUTION:\n\nMARKET:\n\nTRACTION:\n\nTEAM:\n\nRAISE: `,
+    checks: [
+      { key: 'problem', label: 'problem', pattern: /problem[:\s].*\S/ },
+      { key: 'market', label: 'market', pattern: /market[:\s].*\S|tam[:\s].*\S/ },
+      { key: 'traction', label: 'traction', pattern: /traction[:\s].*\S|revenue|users|mrr|arr|growth|retention/ },
+      { key: 'team', label: 'team', pattern: /team[:\s].*\S|founder[:\s].*\S/ },
+      { key: 'raise', label: 'raise', pattern: /rais(e|ing)[:\s].*\S|round[:\s].*\S|pre-?seed|seed|series\s/ },
+    ],
+  },
+  {
+    key: 'launch',
+    label: 'Launch',
+    blurb: 'soon',
+    enabled: false,
+    agentNoun: 'agents',
+  },
+]
 
-function fillTemplate() {
-  pitchText.value = TEMPLATE
+const activeSwarm = computed(() => SWARMS.find(s => s.key === swarmType.value) || SWARMS[0])
+
+function selectSwarm(s) {
+  if (!s.enabled || submitting.value) return
+  swarmType.value = s.key
 }
 
-function hasSection(key) {
-  const t = pitchText.value.toLowerCase()
-  const patterns = {
-    problem: /problem[:\s].*\S/,
-    product: /product[:\s].*\S/,
-    audience: /audience[:\s].*\S|target[:\s].*\S|who[:\s].*\S|icp[:\s].*\S/,
-    pricing: /pric(e|ing)[:\s].*\S|\$\d/,
-    competitor: /competitor[:\s].*\S|vs\.?\s|alternative|compared to/,
-  }
-  return patterns[key]?.test(t) || false
+const canSubmit = computed(() => pitchText.value.trim().length >= 40)
+
+function fillTemplate() {
+  pitchText.value = activeSwarm.value.template
+}
+
+function hasSection(check) {
+  return check.pattern?.test(pitchText.value.toLowerCase()) || false
 }
 
 const costEst = computed(() => {
@@ -180,7 +242,7 @@ const costEst = computed(() => {
 const runHint = computed(() => {
   if (submitting.value) return 'sending…'
   if (!canSubmit.value) return 'fill the pitch first'
-  return `${agentCount.value} agents · ~60s`
+  return `${agentCount.value} ${activeSwarm.value.agentNoun} · ~60s`
 })
 
 async function onSubmit() {
@@ -189,13 +251,14 @@ async function onSubmit() {
   submitting.value = true
   launching.value = true
   try {
-    const res = await roastApi.create(pitchText.value.trim(), agentCount.value)
+    const res = await roastApi.create(pitchText.value.trim(), agentCount.value, swarmType.value)
     const jobId = res.job_id || res.data?.job_id
     if (!jobId) throw new Error('No job_id in response')
     trackRoastStart(jobId, {
       pitchText: pitchText.value.trim(),
       pitchLength: pitchText.value.trim().length,
       nAgents: agentCount.value,
+      swarmType: swarmType.value,
     }).catch(() => {})
     await new Promise(r => setTimeout(r, 800))
     router.push({ name: 'Watching', params: { jobId } })
@@ -279,6 +342,56 @@ async function onSubmit() {
   min-height: 0;
   overflow: hidden;
 }
+/* Swarm picker — compact segmented control. One swarm = one founder decision.
+ * Label-only: the active swarm's purpose is carried by the canvas title + sub. */
+.swarm-picker {
+  display: inline-flex;
+  gap: 3px;
+  margin-bottom: var(--space-4);
+  padding: 3px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+  align-self: start;
+}
+.swarm-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 7px 16px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+.swarm-tab:hover:not(:disabled) { color: var(--ink); }
+.swarm-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.swarm-tab:active:not(:disabled) { transform: translateY(1px); }
+.swarm-tab.active {
+  background: var(--accent);
+  color: var(--paper);
+}
+.swarm-tab.locked { opacity: 0.4; cursor: not-allowed; }
+.swarm-tab-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.swarm-tab-soon {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
 .canvas-head { margin-bottom: var(--space-4); max-width: 640px; flex-shrink: 0; }
 .canvas-title {
   font-size: clamp(28px, 4.5vw, 44px);

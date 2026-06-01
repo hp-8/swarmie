@@ -27,12 +27,11 @@ from flask import Blueprint, Response, jsonify, request, stream_with_context
 from ..config import Config
 from ..services.swarm import (
     AgentReaction,
-    ArchetypeGenerator,
     CHAT_SOFT_CAP,
-    PitchParser,
-    RoastReporter,
-    SwarmRunner,
+    DEFAULT_SWARM,
+    SWARMS,
     chat_with_agent,
+    get_swarm,
 )
 from ..utils.llm import UsageTracker
 
@@ -49,6 +48,7 @@ class RoastJob:
     status: str = "pending"  # pending | parsing | generating_archetypes | running_swarm | reporting | completed | failed | cancelled
     progress: float = 0.0  # 0..1
     pitch_text: str = ""
+    swarm_type: str = DEFAULT_SWARM
     n_agents: int = 0
     error: str | None = None
     started_at: float = field(default_factory=time.time)
@@ -73,6 +73,7 @@ class RoastJob:
             "job_id": self.job_id,
             "status": self.status,
             "progress": round(self.progress, 3),
+            "swarm_type": self.swarm_type,
             "n_agents": self.n_agents,
             "started_at": self.started_at,
             "finished_at": self.finished_at,
@@ -92,9 +93,9 @@ class _JobStore:
         self._jobs: dict[str, RoastJob] = {}
         self._lock = threading.Lock()
 
-    def create(self, pitch_text: str, n_agents: int) -> RoastJob:
+    def create(self, pitch_text: str, n_agents: int, swarm_type: str = DEFAULT_SWARM) -> RoastJob:
         job_id = f"roast_{uuid.uuid4().hex[:16]}"
-        job = RoastJob(job_id=job_id, pitch_text=pitch_text, n_agents=n_agents)
+        job = RoastJob(job_id=job_id, pitch_text=pitch_text, n_agents=n_agents, swarm_type=swarm_type)
         with self._lock:
             self._jobs[job_id] = job
         return job
@@ -138,6 +139,7 @@ def _push_event(job: RoastJob, event_type: str, payload: Any) -> None:
 def _run_pipeline(job: RoastJob) -> None:
     """Run the full pipeline on a background thread. Updates job in place."""
     print(f"[{job.job_id}] pipeline thread STARTED", flush=True)
+    spec = get_swarm(job.swarm_type)
     tracker = UsageTracker()
     t0 = time.time()
 
@@ -152,7 +154,7 @@ def _run_pipeline(job: RoastJob) -> None:
     try:
         # Stage 1 — parse pitch
         t = _stage("parsing", 0.05)
-        parser = PitchParser(tracker=tracker)
+        parser = spec.parser_cls(tracker=tracker)
         pitch = parser.parse(job.pitch_text)
         job.parsed_pitch = pitch.to_dict()
         _push_event(job, "parsed_pitch", pitch.to_dict())
@@ -162,8 +164,8 @@ def _run_pipeline(job: RoastJob) -> None:
 
         # Stage 2 — generate archetypes
         t = _stage("generating_archetypes", 0.15)
-        archgen = ArchetypeGenerator(tracker=tracker)
-        archetypes = archgen.generate(pitch, n_archetypes=12)
+        archgen = spec.archgen_cls(tracker=tracker)
+        archetypes = archgen.generate(pitch, n_archetypes=spec.n_archetypes)
         job.archetypes = [a.to_dict() for a in archetypes]
         _push_event(job, "archetypes", [a.to_dict() for a in archetypes])
         logger.info(
@@ -200,7 +202,7 @@ def _run_pipeline(job: RoastJob) -> None:
                     f"cost=${tracker.total_cost_usd:.4f}"
                 )
 
-        runner = SwarmRunner(tracker=tracker)
+        runner = spec.runner_cls(tracker=tracker)
         loop = asyncio.new_event_loop()
         try:
             asyncio.set_event_loop(loop)
@@ -225,7 +227,7 @@ def _run_pipeline(job: RoastJob) -> None:
 
         # Stage 4 — synthesize report
         t = _stage("reporting", 0.9)
-        reporter = RoastReporter(tracker=tracker)
+        reporter = spec.reporter_cls(tracker=tracker)
         report = reporter.report(pitch, reactions)
         job.report = report.to_dict()
         _push_event(job, "report", report.to_dict())
@@ -254,6 +256,15 @@ def _run_pipeline(job: RoastJob) -> None:
 
 # ---------- routes ----------
 
+@roast_bp.route("/swarms", methods=["GET"])
+def list_swarms():
+    """List available swarms for the input picker."""
+    return jsonify({
+        "swarms": [SWARMS[k].to_dict() for k in SWARMS],
+        "default": DEFAULT_SWARM,
+    }), 200
+
+
 @roast_bp.route("", methods=["POST"])
 def create_roast():
     """Start a new roast job.
@@ -268,10 +279,14 @@ def create_roast():
     if len(pitch_text) > 20000:
         return jsonify({"error": "pitch too long (max 20000 chars)"}), 400
 
+    swarm_type = (body.get("swarm_type") or DEFAULT_SWARM).strip().lower()
+    if swarm_type not in SWARMS:
+        return jsonify({"error": f"unknown swarm_type '{swarm_type}'"}), 400
+
     n_agents = int(body.get("n_agents") or Config.ROAST_AGENT_COUNT)
     n_agents = max(10, min(n_agents, 500))  # clamp 10..500
 
-    job = _store.create(pitch_text=pitch_text, n_agents=n_agents)
+    job = _store.create(pitch_text=pitch_text, n_agents=n_agents, swarm_type=swarm_type)
     print(f"[{job.job_id}] creating background thread (n_agents={n_agents})", flush=True)
     thread = threading.Thread(target=_run_pipeline, args=(job,), daemon=True)
     thread.start()

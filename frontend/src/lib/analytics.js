@@ -36,7 +36,7 @@ export async function registerDevice() {
   return fingerprint
 }
 
-export async function trackRoastStart(jobId, { pitchText, pitchLength, nAgents } = {}) {
+export async function trackRoastStart(jobId, { pitchText, pitchLength, nAgents, swarmType } = {}) {
   if (!supabase) return
   const fingerprint = await getFingerprint()
 
@@ -49,6 +49,7 @@ export async function trackRoastStart(jobId, { pitchText, pitchLength, nAgents }
       pitch_length: pitchLength || null,
       pitch_text: pitchText || null,
       n_agents_requested: nAgents || null,
+      swarm_type: swarmType || 'validate',
     })
 
   if (error) console.warn('[analytics] trackRoastStart failed:', error.message)
@@ -166,4 +167,40 @@ export async function trackPdfDownload(jobId) {
     })
 
   if (error) console.warn('[analytics] trackPdfDownload failed:', error.message)
+}
+
+// vote: +1 | -1. Upsert so re-vote overwrites.
+export async function trackObjectionFeedback(jobId, objectionCategory, vote) {
+  if (!supabase) return
+  const fingerprint = await getFingerprint()
+
+  const { error } = await supabase
+    .from('objection_feedback')
+    .upsert({
+      job_id: jobId,
+      fingerprint_id: fingerprint,
+      objection_category: objectionCategory,
+      vote,
+    }, { onConflict: 'job_id,fingerprint_id,objection_category' })
+
+  if (error) console.warn('[analytics] trackObjectionFeedback failed:', error.message)
+}
+
+// { helpful: bool, comment?: string, email?: string, trigger: 'button'|'popup' }
+export async function trackProductFeedback(jobId, { helpful, comment, email, trigger }) {
+  if (!supabase) return
+  const fingerprint = await getFingerprint()
+
+  const { error } = await supabase
+    .from('product_feedback')
+    .insert({
+      job_id: jobId,
+      fingerprint_id: fingerprint,
+      helpful: helpful ?? null,
+      comment: comment || null,
+      email: email || null,
+      trigger: trigger || null,
+    })
+
+  if (error) console.warn('[analytics] trackProductFeedback failed:', error.message)
 }

@@ -37,7 +37,7 @@
         @select-agent="onSelectAgent"
       />
       <div class="brain-stats">
-        <span><b>{{ agentMap.size }}</b> agents</span>
+        <span><b>{{ agentMap.size }}</b> {{ copy.agents }}</span>
         <span><b>{{ archetypes.length }}</b> archetypes</span>
         <span><b>{{ reactions.length }}</b> reactions</span>
       </div>
@@ -67,6 +67,7 @@
             <div class="nd-block">
               <span class="h-eyebrow">reaction</span>
               <p v-if="selected.text" class="nd-text">"{{ selected.text }}"</p>
+              <p v-else-if="selected.ignore_reason" class="nd-text">scrolled past — "{{ selected.ignore_reason }}"</p>
               <p v-else class="nd-text muted">silent · {{ selected.action }}</p>
               <div class="nd-sent">
                 <span class="h-eyebrow tiny">sentiment {{ (selected.sentiment ?? 0).toFixed(2) }}</span>
@@ -95,42 +96,45 @@
     <main v-else-if="report" class="dash">
       <!-- ROW 1 — Hero strip: score + headline + sentiment bar -->
       <section class="strip strip-hero">
-        <div class="cell cell-score">
-          <span class="h-eyebrow">PMF · /10 <AiDisclosure aria-label="About this PMF score" /></span>
-          <div class="score-num" :style="{ color: scoreColor(report.pmf_score) }">{{ scoreDisplayed.toFixed(1) }}</div>
-          <div class="score-band" :style="{ color: scoreColor(report.pmf_score) }">{{ scoreBand(report.pmf_score) }}</div>
+        <div class="cell cell-verdict">
+          <span class="h-eyebrow">verdict <AiDisclosure aria-label="About this verdict" /></span>
+          <template v-if="report.verdict">
+            <div class="verdict-chip" :class="verdictMeta(report.verdict).cls">{{ verdictMeta(report.verdict).label }}</div>
+            <div class="verdict-meta" :title="report.confidence_reason || ''">confidence {{ report.confidence || '—' }} · signal {{ scoreDisplayed.toFixed(1) }}/10</div>
+          </template>
+          <template v-else>
+            <div class="score-num" :style="{ color: scoreColor(report.pmf_score) }">{{ scoreDisplayed.toFixed(1) }}</div>
+            <div class="score-band" :style="{ color: scoreColor(report.pmf_score) }">{{ scoreBand(report.pmf_score) }}</div>
+          </template>
         </div>
-        <div class="cell cell-headline">
-          <span class="h-eyebrow">headline</span>
-          <h1 class="score-headline h-display">{{ report.headline }}</h1>
+        <div class="cell cell-next">
+          <span class="h-eyebrow">{{ report.next_action ? 'do this next' : 'headline' }}</span>
+          <h1 v-if="report.next_action" class="next-action h-display">{{ report.next_action }}</h1>
+          <h1 v-else class="score-headline h-display">{{ report.headline }}</h1>
+          <p v-if="report.verdict_reason" class="verdict-reason">{{ report.verdict_reason }}</p>
+          <p v-else-if="report.next_action && report.headline" class="verdict-reason">{{ report.headline }}</p>
           <p v-if="parsedPitch" class="score-target">
             <span class="target-key">target:</span>
             <span class="target-val">{{ parsedPitch.target_icp }}</span>
           </p>
         </div>
         <div class="cell cell-sentiment">
-          <span class="h-eyebrow">sentiment</span>
+          <span class="h-eyebrow">sentiment of those who spoke</span>
           <div class="sent-bar">
             <div class="sent-seg pos" :style="{ flex: report.sentiment_split.positive }">
-              <span v-if="report.sentiment_split.positive >= 10">{{ report.sentiment_split.positive }}%</span>
+              <span v-if="report.sentiment_split.positive >= 8">{{ report.sentiment_split.positive }}%</span>
             </div>
             <div class="sent-seg neu" :style="{ flex: report.sentiment_split.neutral }">
-              <span v-if="report.sentiment_split.neutral >= 10">{{ report.sentiment_split.neutral }}%</span>
+              <span v-if="report.sentiment_split.neutral >= 8">{{ report.sentiment_split.neutral }}%</span>
             </div>
             <div class="sent-seg neg" :style="{ flex: report.sentiment_split.negative }">
-              <span v-if="report.sentiment_split.negative >= 10">{{ report.sentiment_split.negative }}%</span>
+              <span v-if="report.sentiment_split.negative >= 8">{{ report.sentiment_split.negative }}%</span>
             </div>
           </div>
-          <div class="sent-legend">
-            <span><i class="dot pos"></i>{{ report.sentiment_split.positive }}%</span>
-            <span><i class="dot neu"></i>{{ report.sentiment_split.neutral }}%</span>
-            <span><i class="dot neg"></i>{{ report.sentiment_split.negative }}%</span>
-          </div>
-          <div class="action-mini">
-            <span v-for="(count, key) in report.action_split" :key="key" class="action-mini-cell">
-              <span class="amc-num">{{ count }}</span>
-              <span class="amc-lbl">{{ key }}</span>
-            </span>
+          <div class="sent-key">
+            <span><i class="dot pos"></i>positive</span>
+            <span><i class="dot neu"></i>neutral</span>
+            <span><i class="dot neg"></i>negative</span>
           </div>
         </div>
       </section>
@@ -147,12 +151,25 @@
                 <li v-for="g in report.messaging_gaps" :key="g">{{ g }}</li>
               </ul>
             </div>
+            <div v-if="report.ignore_reasons?.length" class="silence">
+              <span class="h-eyebrow">{{ copy.silence(report.silent_share_pct) }}</span>
+              <ul class="silence-list">
+                <li v-for="ir in report.ignore_reasons" :key="ir.category" class="silence-row">
+                  <div class="silence-head">
+                    <span class="silence-label">{{ ir.label }}</span>
+                    <span class="silence-share">{{ ir.share_pct }}%</span>
+                  </div>
+                  <p v-if="ir.example" class="silence-ex">"{{ ir.example }}"</p>
+                  <p v-if="ir.implication" class="silence-imp">{{ ir.implication }}</p>
+                </li>
+              </ul>
+            </div>
           </div>
         </article>
 
         <article class="cell cell-objections">
           <header class="cell-head">
-            <span class="h-eyebrow">top objections</span>
+            <span class="h-eyebrow">{{ copy.objections }}</span>
             <span class="cell-meta">{{ report.top_objections?.length || 0 }}</span>
           </header>
           <ol v-if="report.top_objections?.length" class="obj-list scroll-zone">
@@ -164,6 +181,16 @@
                   <span class="obj-count">{{ obj.count }}×</span>
                 </div>
                 <p v-if="obj.example_quote" class="obj-quote">"{{ obj.example_quote }}"</p>
+                <div v-if="obj.real_test" class="obj-test">
+                  <button class="obj-test-q" @click="copyTest(obj)" title="Copy this question">
+                    <span class="obj-tag">{{ copy.askTag }}</span>
+                    <span class="obj-test-text">{{ obj.real_test }}</span>
+                    <span class="obj-copy">{{ copiedTest === obj.category ? '✓' : '⧉' }}</span>
+                  </button>
+                </div>
+                <p v-if="obj.kill_criteria" class="obj-kill"><span class="obj-tag warn">{{ copy.killTag }}</span>{{ obj.kill_criteria }}</p>
+                <p v-if="obj.suggested_fix" class="obj-fix"><span class="obj-tag accent">fix</span>{{ obj.suggested_fix }}</p>
+                <ObjectionVote :job-id="jobId" :objection-category="obj.category" />
               </div>
             </li>
           </ol>
@@ -172,7 +199,7 @@
 
         <article class="cell cell-quotes">
           <header class="cell-head">
-            <span class="h-eyebrow">loudest voices</span>
+            <span class="h-eyebrow">{{ copy.voices }}</span>
             <span class="cell-meta">{{ report.quoted_reactions?.length || 0 }}</span>
           </header>
           <div class="quotes-list scroll-zone">
@@ -193,7 +220,7 @@
       <section class="strip strip-foot">
         <article class="cell cell-icp" v-if="segmentNames.length">
           <header class="cell-head">
-            <span class="h-eyebrow">segments</span>
+            <span class="h-eyebrow">{{ copy.segments }}</span>
             <span class="cell-meta">{{ segmentNames.length }}</span>
           </header>
           <div class="segment-tags">
@@ -228,6 +255,8 @@
       <span class="foot-sep">·</span>
       <router-link to="/new" class="foot-cta">run another →</router-link>
     </footer>
+
+    <FeedbackWidget v-if="report && tab === 'report'" :job-id="jobId" />
   </div>
 </template>
 
@@ -236,6 +265,8 @@ import { ref, shallowRef, computed, onMounted, watch } from 'vue'
 import BrainGraph from './BrainGraph.vue'
 import AgentChatPanel from './AgentChatPanel.vue'
 import AiDisclosure from '../../components/AiDisclosure.vue'
+import ObjectionVote from '../../components/feedback/ObjectionVote.vue'
+import FeedbackWidget from '../../components/feedback/FeedbackWidget.vue'
 import { useRoute } from 'vue-router'
 import { roastApi } from '../../api/roast'
 import { generateRoastPDF } from '../../lib/pdf/template'
@@ -304,6 +335,7 @@ async function load() {
       report.value = j.report
       parsedPitch.value = j.parsed_pitch
       usage.value = j.usage
+      swarmType.value = j.swarm_type || 'validate'
       archetypes.value = Array.isArray(j.archetypes) ? j.archetypes : []
       reactions.value = Array.isArray(j.reactions) ? j.reactions : []
       trackRoastComplete(jobId, {
@@ -328,6 +360,7 @@ async function load() {
           text: r.text,
           objections: r.objections,
           sentiment: r.sentiment,
+          ignore_reason: r.ignore_reason,
           state: 'reacted',
         })
       }
@@ -338,6 +371,54 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+const VERDICT_META = {
+  // validate swarm
+  ship_it: { label: 'ship it', cls: 'is-ship' },
+  sharpen_positioning: { label: 'sharpen', cls: 'is-sharpen' },
+  wrong_audience: { label: 'wrong audience', cls: 'is-wrong' },
+  kill: { label: 'kill', cls: 'is-kill' },
+  // investor swarm
+  fundable: { label: 'fundable', cls: 'is-ship' },
+  sharpen_story: { label: 'sharpen story', cls: 'is-sharpen' },
+  wrong_stage: { label: 'wrong stage', cls: 'is-wrong' },
+  not_fundable: { label: 'not fundable', cls: 'is-kill' },
+}
+function verdictMeta(v) {
+  return VERDICT_META[v] || { label: v || '—', cls: 'is-sharpen' }
+}
+
+// Per-swarm display vocabulary. Data shape is identical across swarms — only
+// the founder-facing labels change.
+const COPY = {
+  validate: {
+    objections: 'top objections',
+    voices: 'loudest voices',
+    segments: 'segments',
+    agents: 'agents',
+    silence: (pct) => `why ${pct}% scrolled past`,
+    askTag: 'ask 5 users',
+    killTag: 'kill signal',
+  },
+  investor: {
+    objections: 'questions & objections',
+    voices: 'in the room',
+    segments: 'investor types',
+    agents: 'investors',
+    silence: (pct) => `why ${pct}% passed`,
+    askTag: 'get proof',
+    killTag: 'stall signal',
+  },
+}
+const swarmType = ref('validate')
+const copy = computed(() => COPY[swarmType.value] || COPY.validate)
+
+const copiedTest = ref(null)
+async function copyTest(obj) {
+  try { await navigator.clipboard.writeText(obj.real_test || '') } catch { /* clipboard blocked */ }
+  copiedTest.value = obj.category
+  setTimeout(() => { if (copiedTest.value === obj.category) copiedTest.value = null }, 1500)
 }
 
 function scoreColor(s) {
@@ -483,19 +564,33 @@ onMounted(() => {
 }
 
 .strip { display: grid; gap: var(--space-3); min-height: 0; }
-.strip-hero { grid-template-columns: 220px 1.4fr 1fr; }
-.strip-three { grid-template-columns: 1fr 1fr 1fr; }
+.strip-hero { grid-template-columns: 200px 1.5fr minmax(184px, 216px); }
+.strip-three { grid-template-columns: 0.92fr 1.32fr 0.82fr; }
 .strip-foot { grid-template-columns: 1.6fr 1fr; }
 
 @media (max-width: 1100px) {
-  .strip-hero { grid-template-columns: 180px 1fr 1fr; }
-  .strip-three { grid-template-columns: 1fr 1fr; }
+  .strip-hero { grid-template-columns: 180px 1fr 196px; }
+  .strip-three { grid-template-columns: 0.85fr 1.15fr; }
   .strip-three .cell-quotes { display: none; }
 }
 @media (max-width: 760px) {
   .dash { grid-template-rows: auto auto auto; overflow-y: auto; }
   .page.page-fixed { height: auto; overflow: auto; }
   .strip-hero, .strip-three, .strip-foot { grid-template-columns: 1fr; }
+}
+
+/* iPad / tablet (portrait + landscape) — relax the fixed-viewport dashboard
+ * into a comfortable scrolling 2-column flow. */
+@media (min-width: 761px) and (max-width: 1024px) {
+  .page.page-fixed { height: auto; overflow: auto; }
+  .dash { grid-template-rows: auto; overflow: visible; max-width: 920px; }
+  .cell { overflow: visible; }
+  .scroll-zone { overflow: visible; }
+  .strip-hero { grid-template-columns: 200px 1fr; }
+  .strip-hero .cell-sentiment { grid-column: 1 / -1; }
+  .strip-three { grid-template-columns: 1fr 1fr; }
+  .strip-three .cell-quotes { display: flex; grid-column: 1 / -1; }
+  .strip-foot { grid-template-columns: 1fr 1fr; }
 }
 
 .cell {
@@ -552,20 +647,49 @@ onMounted(() => {
 .target-key { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; }
 .target-val { color: var(--ink-2); }
 
+/* VERDICT (reframed hero) */
+.cell-verdict { text-align: center; justify-content: center; align-items: center; padding: var(--space-3); gap: var(--space-2); }
+.verdict-chip {
+  font-family: var(--font-display); font-style: italic; font-weight: 600;
+  font-variation-settings: 'opsz' 144, 'wght' 600;
+  font-size: clamp(28px, 5vh, 50px); line-height: 0.95; letter-spacing: -0.02em;
+  text-transform: uppercase; text-shadow: 0 0 40px currentColor;
+}
+.verdict-chip.is-ship { color: var(--live); }
+.verdict-chip.is-sharpen { color: var(--accent-bright); }
+.verdict-chip.is-wrong { color: var(--warn); }
+.verdict-chip.is-kill { color: var(--warn); text-shadow: 0 0 55px var(--warn); }
+.verdict-meta { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); cursor: help; }
+
+/* NEXT ACTION */
+.cell-next { gap: var(--space-2); justify-content: center; }
+.next-action {
+  font-size: clamp(20px, 2.8vh, 32px); font-weight: 500;
+  font-variation-settings: 'opsz' 144, 'wght' 500; margin: 0; color: var(--ink); line-height: 1.15;
+}
+.verdict-reason { margin: 0; font-size: var(--text-sm); color: var(--ink-2); line-height: 1.5; }
+
+/* OBJECTION enrichment */
+.obj-tag { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin-right: var(--space-2); padding: 1px 5px; border: 1px solid var(--rule); border-radius: 4px; white-space: nowrap; }
+.obj-tag.warn { color: var(--warn); border-color: color-mix(in oklch, var(--warn) 35%, transparent); }
+.obj-tag.accent { color: var(--accent-bright); border-color: color-mix(in oklch, var(--accent) 35%, transparent); }
+.obj-test { margin-top: var(--space-2); }
+.obj-test-q { display: flex; align-items: baseline; gap: var(--space-2); width: 100%; text-align: left; background: var(--paper-3); border: 1px solid var(--rule); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out); }
+.obj-test-q:hover { border-color: var(--ink-3); }
+.obj-test-text { flex: 1; font-size: var(--text-md); color: var(--ink); line-height: 1.45; }
+.obj-copy { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); }
+.obj-kill, .obj-fix { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--ink); line-height: 1.55; }
+
 /* SENTIMENT cell */
-.cell-sentiment { gap: var(--space-2); }
-.sent-bar { display: flex; height: 22px; border-radius: var(--radius-sm); overflow: hidden; background: var(--paper-3); }
+.cell-sentiment { gap: var(--space-3); justify-content: center; }
+.sent-bar { display: flex; height: 26px; border-radius: var(--radius-sm); overflow: hidden; background: var(--paper-3); }
 .sent-seg { display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 10px; font-weight: 700; min-width: 0; transition: flex 480ms var(--ease-out); }
 .sent-seg.pos { background: var(--live); color: var(--paper); }
 .sent-seg.neu { background: var(--ink-4); color: var(--ink); }
 .sent-seg.neg { background: var(--warn); color: var(--paper); }
-.sent-legend { display: flex; gap: var(--space-4); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-2); }
-.sent-legend i.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
-.sent-legend i.dot.pos { background: var(--live); } .sent-legend i.dot.neu { background: var(--ink-4); } .sent-legend i.dot.neg { background: var(--warn); }
-.action-mini { display: flex; gap: var(--space-4); margin-top: var(--space-1); }
-.action-mini-cell { display: flex; flex-direction: column; gap: 1px; }
-.amc-num { font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: var(--text-md); color: var(--ink); }
-.amc-lbl { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
+.sent-key { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.sent-key i.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.sent-key i.dot.pos { background: var(--live); } .sent-key i.dot.neu { background: var(--ink-4); } .sent-key i.dot.neg { background: var(--warn); }
 
 /* NARRATIVE */
 .narrative-scroll { padding-right: var(--space-3); }
@@ -578,20 +702,31 @@ onMounted(() => {
 .fix-list { margin: 0; padding-left: var(--space-4); line-height: 1.55; color: var(--ink); font-size: var(--text-sm); }
 .fix-list li::marker { color: var(--accent-bright); }
 
+/* SILENCE — why agents scrolled past */
+.silence { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--rule); }
+.silence-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.silence-row { display: flex; flex-direction: column; gap: 2px; }
+.silence-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2); }
+.silence-label { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
+.silence-share { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); }
+.silence-ex { margin: 0; font-family: var(--font-display); font-style: italic; font-size: var(--text-sm); line-height: 1.4; color: var(--ink-2); }
+.silence-imp { margin: 0; font-size: var(--text-sm); line-height: 1.5; color: var(--ink); }
+
 /* OBJECTIONS */
-.obj-list { list-style: none; padding: 0 var(--space-3) 0 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-3); }
-.obj-row { display: grid; grid-template-columns: 28px 1fr; gap: var(--space-3); align-items: start; }
+.obj-list { list-style: none; padding: 0 var(--space-3) 0 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+.obj-row { display: grid; grid-template-columns: 34px 1fr; gap: var(--space-3); align-items: start; padding-bottom: var(--space-4); border-bottom: 1px solid var(--rule); }
+.obj-row:last-child { border-bottom: 0; padding-bottom: 0; }
 .obj-rank {
-  font-family: var(--font-display); font-style: italic; font-weight: 500;
-  font-size: var(--text-lg); color: var(--accent-bright); line-height: 1;
+  font-family: var(--font-display); font-style: italic; font-weight: 600;
+  font-size: var(--text-2xl); color: var(--accent-bright); line-height: 0.9;
 }
-.obj-head-row { display: flex; justify-content: space-between; gap: var(--space-3); margin-bottom: 2px; }
-.obj-cat { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); }
-.obj-count { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); }
+.obj-head-row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); margin-bottom: var(--space-1); }
+.obj-cat { font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
+.obj-count { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); flex-shrink: 0; }
 .obj-quote {
   font-family: var(--font-display); font-style: italic; font-weight: 500;
-  font-variation-settings: 'opsz' 72, 'wght' 500;
-  font-size: var(--text-sm); line-height: 1.5; color: var(--ink-2); margin: 0;
+  font-variation-settings: 'opsz' 96, 'wght' 500;
+  font-size: var(--text-md); line-height: 1.45; color: var(--ink); margin: 0;
 }
 
 /* QUOTES */

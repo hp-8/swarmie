@@ -42,6 +42,9 @@ class AgentReaction:
     text: str = ""  # empty for upvote/ignore
     objections: list[str] = field(default_factory=list)
     sentiment: float = 0.0  # -1..1
+    # Why a sampled ignore was scrolled past (empty for silent ignores / speakers).
+    ignore_reason: str = ""
+    ignore_reason_category: str = ""  # one of _IGNORE_CATEGORIES
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -70,6 +73,42 @@ Rules:
 Respond with JSON only."""
 
 
+# --- Ignore-reason sampling (workstream B) ---
+# Silence is signal. We don't LLM-call every ignore (that would break the
+# zero-token cost model), but we sample a small, capped fraction to get a
+# grounded, non-vague reason. The reporter extrapolates the distribution.
+IGNORE_SAMPLE_RATE = 0.15
+IGNORE_SAMPLE_CAP = 20
+_IGNORE_CATEGORIES = (
+    "not_my_problem",    # targeting / ICP wrong
+    "unclear_value",     # messaging / clarity gap
+    "seen_before",       # differentiation gap
+    "dont_care",         # weak pain — vitamin, not painkiller
+    "price_or_effort",   # positioning / anchor
+    "wrong_timing",      # not relevant right now
+)
+
+_IGNORE_SYSTEM = """You are one member of an online community who just SCROLLED PAST a startup product without engaging. You did not comment, did not upvote — you ignored it.
+
+In your authentic persona voice, say in ONE blunt first-person sentence why you scrolled past. Be specific to THIS product — never generic. Then classify the reason.
+
+Output strict JSON:
+{
+  "reason": "<one blunt first-person sentence, lowercase ok, specific to the pitch>",
+  "category": "<one of: not_my_problem | unclear_value | seen_before | dont_care | price_or_effort | wrong_timing>"
+}
+
+Category guide:
+- not_my_problem: I don't have this problem / not for someone like me
+- unclear_value: couldn't tell what it does or why it matters
+- seen_before: nothing new, already exists, saturated
+- dont_care: mild problem, not worth my attention
+- price_or_effort: cost or switching effort not worth a closer look
+- wrong_timing: relevant someday but not now
+
+Respond with JSON only."""
+
+
 def _sample_concrete_agents(archetypes: list[Archetype], n_agents: int) -> list[tuple[str, Archetype]]:
     """Sample N concrete agent instances from archetypes by weight."""
     weights = [a.weight for a in archetypes]
@@ -88,7 +127,49 @@ def _decide_action(archetype: Archetype) -> str:
 
 
 class SwarmRunner:
-    """Fan-out agent reactions in parallel with strict cost + concurrency caps."""
+    """Fan-out agent reactions in parallel with strict cost + concurrency caps.
+
+    Per-swarm variation lives in the overridable class attrs (REACTION_SYSTEM,
+    IGNORE_SYSTEM, IGNORE_CATEGORIES, DEFAULT_IGNORE_CATEGORY) and the prompt
+    builders (`_build_reaction_prompt`, `_build_ignore_prompt`). All cost,
+    concurrency, sampling and watchdog logic is shared.
+    """
+
+    REACTION_SYSTEM = _REACTION_SYSTEM
+    IGNORE_SYSTEM = _IGNORE_SYSTEM
+    IGNORE_CATEGORIES = _IGNORE_CATEGORIES
+    DEFAULT_IGNORE_CATEGORY = "dont_care"
+
+    def _build_reaction_prompt(self, pitch: ParsedPitch, arch: Archetype, action: str) -> str:
+        return (
+            f"PRODUCT PITCH:\n"
+            f"- one_liner: {pitch.one_liner}\n"
+            f"- problem: {pitch.problem}\n"
+            f"- solution: {pitch.solution}\n"
+            f"- pricing: {pitch.pricing or 'unspecified'}\n"
+            f"- competitors: {', '.join(pitch.competitors) or 'none mentioned'}\n\n"
+            f"YOU ARE:\n"
+            f"- name: {arch.name} (from segment: {arch.segment})\n"
+            f"- persona: {arch.persona}\n"
+            f"- tone: {arch.tone}\n"
+            f"- biases (objections you typically raise): {', '.join(arch.objection_bias)}\n"
+            f"- action: {action}\n\n"
+            f"Reply in character. JSON only."
+        )
+
+    def _build_ignore_prompt(self, pitch: ParsedPitch, arch: Archetype) -> str:
+        return (
+            f"PRODUCT PITCH:\n"
+            f"- one_liner: {pitch.one_liner}\n"
+            f"- problem: {pitch.problem}\n"
+            f"- solution: {pitch.solution}\n"
+            f"- pricing: {pitch.pricing or 'unspecified'}\n\n"
+            f"YOU ARE:\n"
+            f"- name: {arch.name} (from segment: {arch.segment})\n"
+            f"- persona: {arch.persona}\n"
+            f"- tone: {arch.tone}\n\n"
+            f"You scrolled past without engaging. Why? JSON only."
+        )
 
     def __init__(
         self,
@@ -135,9 +216,18 @@ class SwarmRunner:
         upvotes: list[tuple[str, Archetype, str]] = [r for r in rolled if r[2] == "upvote"]
         speaking: list[tuple[str, Archetype, str]] = [r for r in rolled if r[2] in ("comment", "post")]
 
-        # ignores + upvotes => zero LLM calls; build reactions immediately.
+        # Sample a capped fraction of ignores for a grounded "why I scrolled past"
+        # reason (cheap tier). The rest stay silent and cost zero tokens.
+        random.shuffle(ignores)
+        sample_rate = getattr(Config, "ROAST_IGNORE_SAMPLE_RATE", IGNORE_SAMPLE_RATE)
+        sample_cap = getattr(Config, "ROAST_IGNORE_SAMPLE_CAP", IGNORE_SAMPLE_CAP)
+        n_ignore_sample = min(int(sample_cap), int(len(ignores) * float(sample_rate)))
+        ignore_sampled: list[tuple[str, Archetype, str]] = ignores[:n_ignore_sample]
+        ignore_silent: list[tuple[str, Archetype, str]] = ignores[n_ignore_sample:]
+
+        # silent ignores + upvotes => zero LLM calls; build reactions immediately.
         reactions: list[AgentReaction] = []
-        for aid, arch, action in ignores:
+        for aid, arch, action in ignore_silent:
             r = AgentReaction(
                 agent_id=aid, archetype_id=arch.id, segment=arch.segment,
                 name=arch.name, tone=arch.tone, action="ignore",
@@ -166,10 +256,18 @@ class SwarmRunner:
             llm = self.deep if idx in deep_set else self.cheap
             return await self._generate_reaction(llm, pitch, aid, arch, action, sem, on_reaction, on_thinking)
 
+        async def _one_ignore(aid: str, arch: Archetype) -> AgentReaction:
+            return await self._generate_ignore_reason(self.cheap, pitch, aid, arch, sem, on_reaction, on_thinking)
+
         # Hard cost ceiling: poll tracker periodically and bail.
         task_objs = [
             asyncio.create_task(_one(i, aid, arch, action))
             for i, (aid, arch, action) in enumerate(speaking)
+        ]
+        # Sampled ignores share the same semaphore, watchdog, and cost ceiling.
+        task_objs += [
+            asyncio.create_task(_one_ignore(aid, arch))
+            for aid, arch, _action in ignore_sampled
         ]
 
         watchdog = asyncio.create_task(self._cost_watchdog(task_objs))
@@ -198,25 +296,11 @@ class SwarmRunner:
                     on_thinking(agent_id, arch, action)
                 except Exception:
                     pass
-            user_prompt = (
-                f"PRODUCT PITCH:\n"
-                f"- one_liner: {pitch.one_liner}\n"
-                f"- problem: {pitch.problem}\n"
-                f"- solution: {pitch.solution}\n"
-                f"- pricing: {pitch.pricing or 'unspecified'}\n"
-                f"- competitors: {', '.join(pitch.competitors) or 'none mentioned'}\n\n"
-                f"YOU ARE:\n"
-                f"- name: {arch.name} (from segment: {arch.segment})\n"
-                f"- persona: {arch.persona}\n"
-                f"- tone: {arch.tone}\n"
-                f"- biases (objections you typically raise): {', '.join(arch.objection_bias)}\n"
-                f"- action: {action}\n\n"
-                f"Reply in character. JSON only."
-            )
+            user_prompt = self._build_reaction_prompt(pitch, arch, action)
             try:
                 data = await llm.achat_json(
                     [
-                        {"role": "system", "content": _REACTION_SYSTEM},
+                        {"role": "system", "content": self.REACTION_SYSTEM},
                         {"role": "user", "content": user_prompt},
                     ],
                     temperature=0.85,
@@ -243,6 +327,49 @@ class SwarmRunner:
                 on_reaction(reaction)
             return reaction
 
+    async def _generate_ignore_reason(
+        self,
+        llm: LLM,
+        pitch: ParsedPitch,
+        agent_id: str,
+        arch: Archetype,
+        sem: asyncio.Semaphore,
+        on_reaction: Callable[[AgentReaction], None] | None,
+        on_thinking: Callable[[str, Archetype, str], None] | None = None,
+    ) -> AgentReaction:
+        """One cheap-tier call: why this persona scrolled past. Grounded ignore signal."""
+        async with sem:
+            if on_thinking:
+                try:
+                    on_thinking(agent_id, arch, "ignore")
+                except Exception:
+                    pass
+            user_prompt = self._build_ignore_prompt(pitch, arch)
+            reason = ""
+            category = ""
+            try:
+                data = await llm.achat_json(
+                    [
+                        {"role": "system", "content": self.IGNORE_SYSTEM},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    temperature=0.8,
+                    max_tokens=120,
+                )
+                reason = str(data.get("reason", "")).strip()
+                cat = str(data.get("category", "")).strip()
+                category = cat if cat in self.IGNORE_CATEGORIES else self.DEFAULT_IGNORE_CATEGORY
+            except Exception as exc:
+                logger.warning(f"ignore-reason failed for {agent_id}/{arch.id}: {exc}")
+            reaction = AgentReaction(
+                agent_id=agent_id, archetype_id=arch.id, segment=arch.segment,
+                name=arch.name, tone=arch.tone, action="ignore",
+                ignore_reason=reason, ignore_reason_category=category,
+            )
+            if on_reaction:
+                on_reaction(reaction)
+            return reaction
+
     async def _cost_watchdog(self, tasks: list[asyncio.Task]) -> None:
         """Cancel outstanding tasks if cumulative cost exceeds ceiling."""
         while True:
@@ -256,3 +383,107 @@ class SwarmRunner:
                     if not t.done():
                         t.cancel()
                 return
+
+
+# --- Investor swarm overrides ---
+
+_INVESTOR_REACTION_SYSTEM = """You roleplay a single early-stage INVESTOR reacting to a startup deck.
+
+This is a fundability stress-test, not a pitch meeting. React the way this investor
+actually would — pattern-matching on thesis fit, team, market, traction, moat.
+Be blunt. Real investors are time-pressed and skeptical; most decks get a pass.
+
+Speak in this investor's authentic voice. Do NOT be encouraging by default —
+match the persona's tone exactly. Reference specifics from the deck.
+
+Output strict JSON:
+{
+  "text": "<your reaction: a diligence question, partner-meeting objection, or memo note — 1-3 sentences>",
+  "objections": ["<short concern tag>", ...],  // 0-3, e.g. ["market_size","traction"]
+  "sentiment": <float -1..1>                     // -1 = hard pass, +1 = would take the meeting
+}
+
+Rules:
+- Stay in character. Tone overrides niceness.
+- If action is `comment`, ask the single sharpest diligence question you'd raise.
+- If action is `post`, write the partner-meeting note (would I champion this? why/why not).
+- Concern tags from: market_size, team, traction, moat, timing, valuation, business_model, competition, defensibility.
+- Never break character or mention the simulation.
+
+Respond with JSON only."""
+
+_INVESTOR_IGNORE_SYSTEM = """You are an early-stage INVESTOR who just PASSED on a startup deck without engaging. No meeting, no reply — you moved on.
+
+In your authentic investor voice, say in ONE blunt first-person sentence why you passed. Be specific to THIS deck — never generic. Then classify the reason.
+
+Output strict JSON:
+{
+  "reason": "<one blunt first-person sentence, specific to the deck>",
+  "category": "<one of: thesis_mismatch | market_too_small | team_risk | no_moat | crowded | traction_thin>"
+}
+
+Category guide:
+- thesis_mismatch: wrong stage / sector / not our thesis
+- market_too_small: TAM doesn't support venture-scale returns
+- team_risk: team/founder-market-fit concerns
+- no_moat: no defensibility, easily copied
+- crowded: me-too, saturated, no clear wedge
+- traction_thin: too early, no proof, nothing to underwrite
+
+Respond with JSON only."""
+
+_INVESTOR_IGNORE_CATEGORIES = (
+    "thesis_mismatch",
+    "market_too_small",
+    "team_risk",
+    "no_moat",
+    "crowded",
+    "traction_thin",
+)
+
+
+class InvestorSwarmRunner(SwarmRunner):
+    """Investor swarm: deck-reading investors raise questions, objections, and passes."""
+
+    REACTION_SYSTEM = _INVESTOR_REACTION_SYSTEM
+    IGNORE_SYSTEM = _INVESTOR_IGNORE_SYSTEM
+    IGNORE_CATEGORIES = _INVESTOR_IGNORE_CATEGORIES
+    DEFAULT_IGNORE_CATEGORY = "thesis_mismatch"
+
+    def _build_reaction_prompt(self, pitch: ParsedPitch, arch: Archetype, action: str) -> str:
+        return (
+            f"STARTUP DECK:\n"
+            f"- one_liner: {pitch.one_liner}\n"
+            f"- problem: {pitch.problem}\n"
+            f"- solution: {pitch.solution}\n"
+            f"- market: {pitch.market or 'unspecified'}\n"
+            f"- traction: {pitch.traction or 'none stated'}\n"
+            f"- team: {pitch.team or 'unspecified'}\n"
+            f"- business_model: {pitch.pricing or 'unspecified'}\n"
+            f"- raise: {pitch.raise_ask or 'unspecified'} (stage: {pitch.stage or 'unspecified'})\n"
+            f"- competitors: {', '.join(pitch.competitors) or 'none mentioned'}\n\n"
+            f"YOU ARE:\n"
+            f"- name: {arch.name} ({arch.segment})\n"
+            f"- persona: {arch.persona}\n"
+            f"- tone: {arch.tone}\n"
+            f"- concerns you typically raise: {', '.join(arch.objection_bias)}\n"
+            f"- action: {action}\n\n"
+            f"React as this investor. JSON only."
+        )
+
+    def _build_ignore_prompt(self, pitch: ParsedPitch, arch: Archetype) -> str:
+        return (
+            f"STARTUP DECK:\n"
+            f"- one_liner: {pitch.one_liner}\n"
+            f"- problem: {pitch.problem}\n"
+            f"- solution: {pitch.solution}\n"
+            f"- market: {pitch.market or 'unspecified'}\n"
+            f"- traction: {pitch.traction or 'none stated'}\n"
+            f"- team: {pitch.team or 'unspecified'}\n"
+            f"- stage: {pitch.stage or 'unspecified'}\n\n"
+            f"YOU ARE:\n"
+            f"- name: {arch.name} ({arch.segment})\n"
+            f"- persona: {arch.persona}\n"
+            f"- tone: {arch.tone}\n\n"
+            f"You passed without engaging. Why? JSON only."
+        )
