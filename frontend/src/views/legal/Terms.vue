@@ -13,10 +13,6 @@
       <h1 class="doc-title h-display">Terms of Service</h1>
       <p class="doc-meta">Last Updated: June 1, 2026</p>
 
-      <p class="draft-flag">
-        IMPORTANT: These Terms are a template for an MVP-stage product and should be reviewed by qualified legal counsel before commercial launch.
-      </p>
-
       <section>
         <h2>1. Acceptance of Terms</h2>
         <p>By accessing or using Swarmie ("the Service"), you agree to be bound by these Terms of Service and our <router-link to="/privacy">Privacy Policy</router-link>. If you do not agree, you may not use the Service.</p>
@@ -180,12 +176,6 @@
 .rail-far:hover { color: var(--ink); }
 
 .doc { max-width: 720px; margin: 0 auto; padding: var(--space-7) var(--space-6) var(--space-9); }
-.draft-flag {
-  font-family: var(--font-mono); font-size: var(--text-xs); line-height: 1.5;
-  padding: var(--space-3) var(--space-4); margin: 0 0 var(--space-6);
-  border: 1px solid color-mix(in oklch, var(--warn) 45%, transparent);
-  background: var(--warn-soft); color: var(--ink); border-radius: var(--radius-md);
-}
 .doc-title { font-size: clamp(32px, 6vw, 52px); font-weight: 500; margin: 0 0 var(--space-2); }
 .doc-meta { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); margin: 0 0 var(--space-5); }
 .doc section { margin-bottom: var(--space-5); }
