@@ -4,7 +4,7 @@
 
 **Roast your startup with 500 AI users in 60 seconds.**
 
-Founder validation through grounded agent simulation. Upload a pitch, describe your ICP, and watch a swarm of AI users react like real people would — with objections, questions, snark, and silence.
+Founder validation through AI swarm simulation. Paste a pitch and watch 100–500 AI users react like a real Reddit / HN / Product Hunt thread — objections, questions, snark, and silence — then walk away with a **decision brief**: ship, sharpen, or kill, plus the exact questions to ask real users next.
 
 [![Live demo](https://img.shields.io/badge/Live-swarmie.vercel.app-ff6b35?logo=vercel&logoColor=white)](https://swarmie.vercel.app)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
@@ -43,15 +43,22 @@ Swarmie isn't a replacement for talking to real users. It's a **pre-interview fi
 
 ## How It Works
 
-1. **Upload** your pitch, deck, or one-pager
-2. Swarmie extracts ICP signals → builds a swarm of agents with distinct personas, biases, and tone
-3. Agents react: comment, ignore, ask questions, raise objections — like a real Reddit / HN / ProductHunt thread
-4. You get a **PMF scorecard**: top objections, sentiment split, ICP fit, messaging gaps
+1. **Paste** your pitch (problem / product / audience / pricing / competitors).
+2. Swarmie parses it, then builds a swarm of 100–500 agents with distinct personas, biases, and tone.
+3. Agents react: post, comment, upvote, ask questions, raise objections — or scroll past. ~60% ignore (matching real social base rates) and cost zero tokens.
+4. You get a **decision brief**, not a vanity score:
+   - **Verdict** — `ship it` / `sharpen` / `wrong audience` / `kill`, with a confidence band.
+   - **Next action** — the single most important move before writing more code.
+   - **Top objections** — each with the exact question to ask 5 real users, a kill-criteria, and a suggested fix.
+   - **Why they scrolled past** — clustered, decision-useful reasons the silent majority ignored you.
+   - Supporting signal: sentiment split, per-ICP fit, messaging gaps.
+5. Click any agent to read its persona and **chat with it**. Thumbs-up/down each objection to train the swarm.
 
 Powered by:
-- **[OASIS](https://github.com/camel-ai/oasis)** (CAMEL-AI) — the underlying social simulation engine
-- **[Zep](https://www.getzep.com/)** — agent long-term memory and knowledge graph
-- Any OpenAI-compatible LLM (OpenAI, Anthropic via OpenRouter, Groq, Together, **Ollama for local/free**)
+- A lean, in-process **async LLM swarm** (no heavy simulation deps) with a hard cost ceiling.
+- **Two-tier model routing** (cheap reactions / deep agents + synthesis) and a transparent **Gemini fallback**.
+- Any OpenAI-compatible LLM (OpenAI, Anthropic via OpenRouter, Groq, Together, DeepSeek, **Ollama for local/free**).
+- **Supabase** for privacy-light analytics, run history, and feedback (optional).
 
 ---
 
@@ -74,7 +81,10 @@ cd swarmie
 
 # 2. Configure
 cp .env.example .env
-# edit .env — add your LLM_API_KEY and ZEP_API_KEY
+# edit .env — add your LLM_API_KEY (required).
+# Optional: LLM_FALLBACK_API_KEY (Gemini fallback), ROAST_MAX_COST_USD (cost cap),
+# VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY (analytics + feedback).
+# Leave LLM_API_KEY pointed at a local Ollama to run for $0.
 
 # 3. Install everything
 npm run setup:all
@@ -96,7 +106,11 @@ docker compose up -d
 
 ## Status
 
-🚧 **Alpha.** Forked from [MiroFish](https://github.com/666ghj/MiroFish) — a Chinese-language swarm-prediction engine — and pivoted toward founder validation. The core simulation works end-to-end. The founder-focused UX, grounded ICP corpora, and backtest calibration are actively in development.
+🚧 **Alpha.** Forked from [MiroFish](https://github.com/666ghj/MiroFish) — a Chinese-language swarm-prediction engine — and pivoted toward founder validation, then rebuilt on a slim in-process LLM swarm (the heavy OASIS/Zep stack is legacy, import-guarded, and no longer required).
+
+**Shipped:** end-to-end 60s pipeline · decision-brief output (verdict + per-objection user-tests + kill-criteria) · "why they scrolled past" silence analysis · per-agent chat · two feedback layers (per-objection votes + product feedback) feeding calibration · atmospheric, fully-responsive marketing site · PDF export · Supabase analytics.
+
+**In development:** live grounding in real Reddit/HN/review chatter, public backtest calibration, and the paid tiers (live voice interviews, continuous monitoring, real-user bridge).
 
 See **[ROADMAP.md](./ROADMAP.md)** for what's coming.
 
@@ -110,8 +124,8 @@ Swarmie keeps MiroFish's strong sim core (OASIS + Zep + multi-step pipeline) but
 |-----------|----------|---------|
 | **Audience** | General prediction (news, novels, policy) | Pre-launch founders |
 | **Input** | Any seed document | Pitch / deck / one-pager |
-| **Output** | Long-form prediction report | PMF scorecard + objection clusters |
-| **Realism** | LLM personas from raw graph | Grounded in real Reddit/HN/PH corpora (WIP) |
+| **Output** | Long-form prediction report | Decision brief: verdict + objection user-tests + silence analysis |
+| **Realism** | LLM personas from raw graph | Sampled, cited silence reasons today; live grounding (WIP) |
 | **Calibration** | None | Public backtest scoreboard (WIP) |
 | **Language** | Chinese-first | English-first |
 | **Cost focus** | Frontier models | Tiered routing + local-model default |

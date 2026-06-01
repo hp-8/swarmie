@@ -1,6 +1,6 @@
 <template>
-  <div class="page">
-    <!-- nav: floating pill, minimal -->
+  <div class="page home">
+    <!-- NAV — floating pill -->
     <header class="nav">
       <router-link to="/" class="brand-mark">
         <span class="dot"></span>
@@ -8,159 +8,125 @@
       </router-link>
       <nav class="nav-right">
         <a href="https://github.com/hp-8/swarmie" target="_blank" class="ghost-link">github ↗</a>
-        <router-link to="/new" class="h-btn is-accent">Run a roast</router-link>
+        <router-link to="/new" class="h-btn is-accent nav-cta">Run a roast</router-link>
       </nav>
     </header>
 
     <main>
-      <!-- HERO · Marquee -->
+      <!-- HERO — living swarm canvas, text overlaid low -->
       <section class="hero">
-        <div class="hero-grid">
+        <HeroSwarm class="hero-swarm" />
+        <div class="hero-scrim" aria-hidden="true"></div>
+        <div class="hero-inner hero-grid">
           <div class="hero-copy">
-            <div class="hero-eyebrow">
-              <span class="h-chip is-accent">Open source · Alpha</span>
-              <span class="hero-sub-tag">A founder-validation funnel that doesn't lie nicely.</span>
-            </div>
-
+            <span class="h-chip is-accent hero-chip">Open source · Alpha</span>
             <h1 class="hero-title h-display">
-              Roast<span class="hero-dot">.</span><br />
-              your startup<br />
-              with <em class="hero-em">500&nbsp;AI&nbsp;users.</em>
+              Roast your startup<br />
+              with <em>500 AI users.</em>
             </h1>
-
             <p class="hero-lede">
-              Paste the pitch. Watch a swarm of agents react like a Reddit thread,
-              an HN comment section, and a ProductHunt launch page all yelled at it.
-              Find the three real objections before you burn a single user interview.
+              Paste the pitch. A swarm reacts like Reddit, HN and Product Hunt all at once,
+              then hands you the three objections to kill before you burn a single user interview.
             </p>
-
             <div class="hero-actions">
-              <router-link to="/new" class="h-btn is-accent">Start a roast →</router-link>
-              <a href="#truth" class="h-btn is-ghost">How it works</a>
+              <router-link to="/new" class="h-btn is-accent hero-cta">Run a roast →</router-link>
+              <a href="#how" class="h-btn is-ghost">See how it works</a>
             </div>
-
             <div class="hero-meta">
               <span><strong>~60s</strong> per run</span>
-              <span class="hero-dot-sep">·</span>
+              <span class="sep">·</span>
               <span><strong>$0</strong> on local Ollama</span>
-              <span class="hero-dot-sep">·</span>
+              <span class="sep">·</span>
               <span><strong>AGPL-3.0</strong></span>
             </div>
           </div>
 
-          <aside class="hero-media">
-            <figure class="hero-video">
-              <video
-                class="hero-video-el"
-                autoplay
-                muted
-                loop
-                playsinline
-                preload="metadata"
-                poster="/swarmie-promo-poster.jpg"
-                aria-label="Swarmie product walkthrough — pitch, swarm reaction, insight"
-              >
-                <source src="/swarmie-promo.webm" type="video/webm" />
-                <source src="/swarmie-promo.mp4" type="video/mp4" />
-              </video>
-            </figure>
+          <figure class="hero-media">
+            <video
+              class="hero-video"
+              autoplay muted loop playsinline preload="metadata"
+              poster="/swarmie-promo-poster.jpg"
+              aria-label="Swarmie walkthrough: paste a pitch, the swarm reacts, a decision brief comes back"
+            >
+              <source src="/swarmie-promo.webm" type="video/webm" />
+              <source src="/swarmie-promo.mp4" type="video/mp4" />
+            </video>
             <figcaption class="hero-media-cap">
-              <span class="hmc-label">Product walkthrough</span>
-              <span class="hmc-meta">Pitch &rarr; swarm &rarr; insight</span>
+              <span>walkthrough</span><span class="sep">·</span><span>pitch → swarm → decision</span>
             </figcaption>
-          </aside>
+          </figure>
         </div>
       </section>
 
-      <!-- TRUTH band — honesty hook -->
-      <section id="truth" class="truth">
+      <!-- HONESTY band -->
+      <section class="truth">
         <p class="truth-line">
           <span class="h-eyebrow">A note before we start. <AiDisclosure aria-label="How this was generated" /></span>
           <span class="truth-text">
-            These are AI agents. <em class="truth-em">Not real users.</em> They are wrong sometimes,
-            agreeable too often, and they don't write your TAM check.
-            Use this to <span class="warm">kill bad positionings before</span> they cost a real conversation —
+            These are AI agents, <em>not real users</em>. They are wrong sometimes,
+            agreeable too often, and they don't write your TAM check. Use the signal to
+            <span class="warm">kill bad positionings before</span> they cost a real conversation,
             not to declare PMF.
           </span>
         </p>
       </section>
 
-      <!-- HOW · three columns, but each is a different size (irregular grid) -->
-      <section class="how">
+      <!-- LOOP — the walkthrough video is the proof, captions ride below -->
+      <section id="how" class="loop">
         <header class="section-head">
-          <span class="h-eyebrow">01 · the loop</span>
+          <span class="h-eyebrow">the loop</span>
           <h2 class="section-title h-display">Three turns. Sixty seconds.</h2>
         </header>
 
-        <div class="how-grid">
-          <article class="how-card span-2">
-            <div class="how-num">i.</div>
-            <h3 class="how-title">Paste a pitch.</h3>
-            <p class="how-copy">
-              Landing-page copy, deck text, one-pager, half a tweet. Whatever you'd
-              actually show a user. We parse it for ICP, problem, solution, pricing.
-            </p>
-          </article>
+        <ol class="loop-steps">
+          <li>
+            <span class="loop-num">i.</span>
+            <h3 class="loop-step-title">Paste a pitch.</h3>
+            <p class="loop-step-copy">Deck text, landing copy, half a tweet. We parse the ICP, problem, solution and price.</p>
+          </li>
+          <li>
+            <span class="loop-num">ii.</span>
+            <h3 class="loop-step-title">The swarm reacts.</h3>
+            <p class="loop-step-copy">100 to 500 personas post, comment, upvote or scroll past. Skeptics, lurkers, fans, trolls.</p>
+          </li>
+          <li>
+            <span class="loop-num">iii.</span>
+            <h3 class="loop-step-title">Get a decision.</h3>
+            <p class="loop-step-copy">A verdict, the objections to test, and why the silent ones scrolled past.</p>
+          </li>
+        </ol>
+      </section>
 
-          <article class="how-card">
-            <div class="how-num">ii.</div>
-            <h3 class="how-title">Swarm reacts.</h3>
-            <p class="how-copy">
-              100–500 agents with distinct personas, biases, tones. Skeptics, lurkers,
-              fans, trolls. Each one decides to post, comment, upvote, or scroll past.
-            </p>
-          </article>
-
-          <article class="how-card span-2 is-accent-card">
-            <div class="how-num">iii.</div>
-            <h3 class="how-title">Get the roast.</h3>
-            <p class="how-copy">
-              PMF score. Top three objections. Per-segment fit. Messaging gaps. A
-              quotable card you can throw on Twitter the moment you decide to ship.
-            </p>
-          </article>
+      <!-- AHA — the output, shown -->
+      <section class="aha">
+        <div class="aha-copy">
+          <span class="h-eyebrow">what you walk away with</span>
+          <h2 class="aha-title h-display">You don't get a grade.<br />You get a <em>decision.</em></h2>
+          <p class="aha-lede">
+            Not a vanity PMF number. A verdict, the exact question to ask five real users,
+            the signal that would kill the positioning, and the fix to try first.
+          </p>
+          <router-link to="/new" class="h-btn is-accent">Run yours →</router-link>
+        </div>
+        <div class="aha-visual">
+          <DecisionBriefPreview />
         </div>
       </section>
 
-      <!-- STACK · single column statement -->
-      <section class="stack">
-        <header class="section-head">
-          <span class="h-eyebrow">02 · what's under</span>
-          <h2 class="section-title h-display">Built on open work.</h2>
-        </header>
-        <p class="stack-copy">
-          Swarmie is a thin orchestration on top of <a href="https://github.com/666ghj/MiroFish" target="_blank">MiroFish</a>,
-          <a href="https://github.com/camel-ai/oasis" target="_blank">OASIS (CAMEL-AI)</a>, and
-          <a href="https://www.getzep.com/" target="_blank">Zep</a>. Any OpenAI-compatible model works —
-          OpenAI, Anthropic via OpenRouter, Groq, Together, DeepSeek, Qwen, or
-          a local Ollama on your laptop for the price of electricity.
-        </p>
-        <p class="stack-cta">
-          <a href="https://github.com/hp-8/swarmie" target="_blank" class="stack-link">
-            Read the code →
-          </a>
-        </p>
-      </section>
-
-      <!-- FOUNDER · who built this + work-with-me -->
+      <!-- FOUNDER -->
       <section class="founder">
         <div class="founder-grid">
           <div class="founder-left">
-            <span class="h-eyebrow">03 · who made this</span>
+            <span class="h-eyebrow">who made this</span>
             <h2 class="founder-name h-display">Harsh Patadia.</h2>
             <p class="founder-bio">
-              I build for founders. Swarmie is the free version of how I think about
-              early-stage validation — fast, brutal, focused on the objection you
-              actually need to hear. If you want a human in the loop — to ship the
-              MVP, sharpen the pitch, or prep the raise — that's the day job.
+              I build for founders. Swarmie is the free version of how I think about early-stage
+              validation: fast, brutal, focused on the objection you actually need to hear. If you
+              want a human in the loop, to ship the MVP, sharpen the pitch or prep the raise, that's the day job.
             </p>
             <div class="founder-actions">
-              <a href="https://harshpatadia.space" target="_blank" class="h-btn is-accent">
-                Work with me →
-              </a>
-              <a href="https://harshpatadia.space" target="_blank" class="h-btn is-ghost">
-                harshpatadia.space
-              </a>
+              <a href="https://harshpatadia.space" target="_blank" class="h-btn is-accent">Work with me →</a>
+              <a href="https://harshpatadia.space" target="_blank" class="h-btn is-ghost">harshpatadia.space</a>
             </div>
           </div>
           <aside class="founder-right">
@@ -175,12 +141,9 @@
         </div>
       </section>
 
-      <!-- CTA STATEMENT -->
+      <!-- CLOSING CTA -->
       <section class="cta">
-        <h2 class="cta-title h-display">
-          What would <em>500 strangers</em><br />
-          say about it today?
-        </h2>
+        <h2 class="cta-title h-display">What would <em>500 strangers</em> say about it today?</h2>
         <router-link to="/new" class="h-btn is-accent cta-btn">Run a roast →</router-link>
       </section>
 
@@ -200,408 +163,232 @@
 
 <script setup>
 import AiDisclosure from '../components/AiDisclosure.vue'
+import HeroSwarm from '../components/HeroSwarm.vue'
+import DecisionBriefPreview from '../components/marketing/DecisionBriefPreview.vue'
 </script>
 
 <style scoped>
-/* Hallmark · page: Home · macrostructure: Marquee Hero
- * archetypes: N5 floating pill · H1 marquee · S2 eyebrow+display · F2 irregular grid · Ft1 statement
- * theme: Midnight+coral (atmospheric)
+/* Hallmark · page: Home · macrostructure: Marquee Hero (atmospheric)
+ * Hallmark · pre-emit critique: P5 H4 E5 S4 R5 V4
+ * theme: Midnight+coral · genre: atmospheric · register: brand
  */
 
-.page {
-  min-height: 100vh;
-  color: var(--ink);
-}
+.page { min-height: 100vh; color: var(--ink); background: var(--paper); }
 
 /* NAV — floating pill */
 .nav {
-  position: sticky;
-  top: var(--space-4);
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  position: sticky; top: var(--space-4); z-index: 30;
+  display: flex; align-items: center; justify-content: space-between;
   max-width: var(--max-content);
   margin: var(--space-4) auto 0;
   padding: 10px 14px 10px 18px;
-  background: color-mix(in oklch, var(--paper-2) 88%, transparent);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-pill);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: color-mix(in oklch, var(--paper-2) 82%, transparent);
+  border: 1px solid var(--rule); border-radius: var(--radius-pill);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
 }
 .brand-mark {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  color: var(--ink);
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.22em; color: var(--ink);
 }
-.brand-mark .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 14px var(--accent);
-}
-.nav-right {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-}
-.ghost-link {
-  color: var(--ink-2);
-  font-size: var(--text-sm);
-  font-family: var(--font-mono);
-  letter-spacing: 0.04em;
-  transition: color var(--dur-fast) var(--ease-out);
-}
+.brand-mark .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); }
+.nav-right { display: flex; align-items: center; gap: var(--space-4); }
+.ghost-link { color: var(--ink-2); font-size: var(--text-sm); font-family: var(--font-mono); letter-spacing: 0.04em; transition: color var(--dur-fast) var(--ease-out); }
 .ghost-link:hover { color: var(--ink); }
-.nav-right .h-btn { padding: 9px 16px; font-size: var(--text-sm); }
+.nav-cta { padding: 9px 16px; font-size: var(--text-sm); }
 
-/* HERO */
+/* HERO — full-bleed swarm canvas + scrim + overlaid text */
 .hero {
-  max-width: var(--max-content);
-  margin: 0 auto;
-  padding: var(--space-6) var(--space-5) var(--space-7);
+  position: relative;
+  min-height: min(92vh, 900px);
+  margin-top: calc(var(--space-7) * -1);
+  display: flex; align-items: center;
+  overflow: hidden;
 }
-.hero-eyebrow {
-  display: flex;
+.hero-swarm { z-index: 0; }
+.hero-scrim {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    /* vignette — darken the edges so the headline holds the eye */
+    radial-gradient(125% 115% at 50% 38%, transparent 52%, color-mix(in oklch, var(--paper) 60%, transparent) 100%),
+    /* cool counter-glow lower-left for depth */
+    radial-gradient(70% 60% at 16% 80%, color-mix(in oklch, var(--info) 7%, transparent), transparent 60%),
+    /* bottom fade so the hero melts into the next section */
+    linear-gradient(to bottom, transparent 42%, color-mix(in oklch, var(--paper) 68%, transparent) 82%, var(--paper) 100%);
+}
+/* breathing coral dawn — the warmth behind the headline, alive but barely */
+.hero-scrim::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(80% 62% at 72% 4%, color-mix(in oklch, var(--accent) 24%, transparent), transparent 58%),
+    radial-gradient(46% 38% at 60% 0%, color-mix(in oklch, var(--accent-bright) 16%, transparent), transparent 62%);
+  will-change: opacity, transform;
+  transform-origin: 68% 0%;
+  animation: heroBreathe 12s var(--ease-in-out) infinite alternate;
+}
+@keyframes heroBreathe {
+  from { opacity: 0.78; transform: scale(1); }
+  to   { opacity: 1;    transform: scale(1.05); }
+}
+/* fine grain for tactile depth */
+.hero-scrim::after {
+  content: ""; position: absolute; inset: 0; opacity: 0.05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.hero-inner {
+  position: relative; z-index: 2;
+  max-width: var(--max-content); width: 100%;
+  margin: 0 auto; padding: var(--space-8) var(--space-5) var(--space-9);
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(var(--space-6), 5vw, var(--space-8));
   align-items: center;
-  gap: var(--space-4);
-  margin-bottom: 0;
-  flex-wrap: wrap;
 }
-.hero-sub-tag {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.06em;
-  color: var(--ink-3);
+.hero-copy { min-width: 0; }
+.hero-media {
+  margin: 0; position: relative;
+  border-radius: var(--radius-lg); overflow: hidden;
+  border: 1px solid var(--rule); background: var(--paper-3);
+  box-shadow: 0 40px 90px -36px rgba(0,0,0,0.7), 0 12px 32px -16px rgba(0,0,0,0.5);
+  aspect-ratio: 16 / 10;
 }
+.hero-video { width: 100%; height: 100%; display: block; object-fit: cover; }
+.hero-media-cap {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; gap: var(--space-2); align-items: center;
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-2);
+  background: linear-gradient(to top, color-mix(in oklch, var(--paper) 78%, transparent), transparent);
+}
+.hero-media-cap .sep { color: var(--rule-2); }
+.hero-chip { margin-bottom: var(--space-4); }
+
+/* staggered entrance — chip → headline → lede → actions → meta, then the media */
+.hero-copy > * { opacity: 0; animation: heroRise 620ms var(--ease-out) forwards; }
+.hero-copy > *:nth-child(1) { animation-delay: 60ms; }
+.hero-copy > *:nth-child(2) { animation-delay: 130ms; }
+.hero-copy > *:nth-child(3) { animation-delay: 210ms; }
+.hero-copy > *:nth-child(4) { animation-delay: 290ms; }
+.hero-copy > *:nth-child(5) { animation-delay: 360ms; }
+.hero-media { opacity: 0; animation: heroRise 720ms var(--ease-out) 360ms forwards; }
+@keyframes heroRise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+/* press feedback — the interface listens */
+.hero-actions .h-btn:active { transform: scale(0.97); }
 .hero-title {
-  font-size: clamp(40px, 5.2vw, 72px);
-  line-height: 0.98;
-  letter-spacing: -0.015em;
-  font-weight: 600;
+  font-size: clamp(44px, 8.5vw, 104px);
+  line-height: 0.96; letter-spacing: -0.02em; font-weight: 600;
   font-variation-settings: 'opsz' 144, 'wght' 600;
-  margin: var(--space-4) 0 var(--space-4);
-  color: var(--ink);
-  overflow-wrap: anywhere;
-  min-width: 0;
+  margin: 0 0 var(--space-4); color: var(--ink);
+  overflow-wrap: anywhere; min-width: 0;
 }
-@media (max-width: 1024px) {
-  .hero-title { font-size: clamp(48px, 8vw, 88px); }
-}
-.hero-em {
-  font-style: italic;
-  color: var(--accent-bright);
-  font-weight: 600;
-}
-.hero-dot { color: var(--accent); }
+.hero-title em { font-style: italic; color: var(--accent-bright); }
 .hero-lede {
-  max-width: 560px;
-  font-family: var(--font-body);
-  font-size: var(--text-base);
-  font-weight: 400;
-  line-height: 1.5;
-  color: var(--ink);
-  margin: 0 0 var(--space-5);
+  max-width: 600px; font-family: var(--font-body);
+  font-size: clamp(var(--text-base), 2.2vw, var(--text-lg));
+  line-height: 1.55; color: var(--ink-2); margin: 0 0 var(--space-5);
 }
-.hero-actions {
-  display: flex;
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
-  flex-wrap: wrap;
-}
+.hero-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-5); }
+.hero-cta { padding: 15px 26px; font-size: var(--text-md); }
 .hero-meta {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-  flex-wrap: wrap;
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  color: var(--ink-3);
+  display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap;
+  font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-3);
 }
 .hero-meta strong { color: var(--ink); font-weight: 500; }
-.hero-dot-sep { color: var(--rule-2); }
+.hero-meta .sep { color: var(--rule-2); }
 
-/* TRUTH band */
+/* HONESTY band */
 .truth {
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-  padding: var(--space-7) var(--space-5);
-  background: var(--paper-2);
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  padding: var(--space-8) var(--space-5); background: var(--paper-2);
 }
-.truth-line {
-  max-width: var(--max-narrow);
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-.truth-text {
-  font-family: var(--font-body);
-  font-size: var(--text-md);
-  line-height: 1.65;
-  color: var(--ink);
-}
+.truth-line { max-width: var(--max-narrow); margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-3); }
+.truth-text { font-family: var(--font-body); font-size: clamp(var(--text-md), 2.4vw, var(--text-lg)); line-height: 1.65; color: var(--ink); }
 .truth-em { color: var(--ink); font-style: italic; }
+.truth-text em { color: var(--ink); font-style: italic; }
 .warm { color: var(--accent-bright); font-weight: 500; }
 
-/* HOW */
-.how, .stack, .cta {
-  max-width: var(--max-content);
-  margin: 0 auto;
-  padding: var(--space-9) var(--space-5);
-}
-.section-head { margin-bottom: var(--space-7); }
-.section-title {
-  font-size: clamp(36px, 6vw, var(--text-3xl));
-  font-weight: 500;
-  font-variation-settings: 'opsz' 144, 'wght' 500;
-  margin: var(--space-3) 0 0;
-  color: var(--ink);
-}
-.how-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--space-4);
-}
-.how-card {
-  grid-column: span 1;
-  padding: var(--space-6) var(--space-5);
-  background: var(--paper-2);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-lg);
-  display: flex;
-  flex-direction: column;
-}
-.how-card.span-2 { grid-column: span 2; }
-.how-card.is-accent-card {
-  background: linear-gradient(140deg, var(--accent-soft), var(--paper-2) 70%);
-  border-color: color-mix(in oklch, var(--accent) 60%, var(--rule-2));
-}
-.how-num {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: var(--text-lg);
-  color: var(--accent-bright);
-  margin-bottom: var(--space-4);
-}
-.how-title {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-style: italic;
-  font-variation-settings: 'opsz' 96, 'wght' 500;
-  font-size: var(--text-2xl);
-  margin: 0 0 var(--space-3);
-  color: var(--ink);
-}
-.how-copy {
-  font-family: var(--font-body);
-  color: var(--ink-2);
-  line-height: 1.6;
-  margin: 0;
-  font-size: var(--text-base);
-}
+/* shared section heads */
+.section-head { max-width: var(--max-content); margin: 0 auto var(--space-7); }
+.section-title { font-size: clamp(32px, 6vw, 56px); font-weight: 500; font-variation-settings: 'opsz' 144, 'wght' 500; margin: var(--space-2) 0 0; color: var(--ink); }
 
-@media (max-width: 760px) {
-  .how-grid { grid-template-columns: 1fr; }
-  .how-card.span-2 { grid-column: span 1; }
+/* LOOP */
+.loop { max-width: var(--max-content); margin: 0 auto; padding: var(--space-9) var(--space-5); }
+.loop-steps {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-6);
 }
+.loop-steps li { display: flex; flex-direction: column; gap: var(--space-2); }
+.loop-num { font-family: var(--font-display); font-style: italic; font-size: var(--text-xl); color: var(--accent-bright); }
+.loop-step-title { font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: var(--text-xl); margin: 0; color: var(--ink); }
+.loop-step-copy { font-family: var(--font-body); font-size: var(--text-base); line-height: 1.6; color: var(--ink-2); margin: 0; }
 
-/* STACK */
-.stack-copy {
-  font-family: var(--font-body);
-  font-size: var(--text-md);
-  line-height: 1.65;
-  color: var(--ink);
-  max-width: var(--max-prose);
-  margin: 0 0 var(--space-5);
+/* AHA */
+.aha {
+  max-width: var(--max-content); margin: 0 auto; padding: var(--space-9) var(--space-5);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(var(--space-6), 5vw, var(--space-9)); align-items: center;
 }
-.stack-copy a {
-  color: var(--accent-bright);
-  border-bottom: 1px dashed color-mix(in oklch, var(--accent) 50%, transparent);
-  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
-}
-.stack-copy a:hover { color: var(--ink); border-color: var(--ink); }
-.stack-link {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  letter-spacing: 0.05em;
-  color: var(--accent-bright);
-}
+.aha-title { font-size: clamp(32px, 5.5vw, 56px); font-weight: 500; font-variation-settings: 'opsz' 144, 'wght' 500; margin: var(--space-3) 0 var(--space-4); color: var(--ink); }
+.aha-title em { color: var(--accent-bright); font-style: italic; }
+.aha-lede { font-family: var(--font-body); font-size: var(--text-md); line-height: 1.65; color: var(--ink-2); max-width: 460px; margin: 0 0 var(--space-6); }
+.aha-visual { min-width: 0; }
 
 /* FOUNDER */
-.founder {
-  max-width: var(--max-content);
-  margin: 0 auto;
-  padding: var(--space-9) var(--space-5);
-  border-top: 1px solid var(--rule);
-}
-.founder-grid {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: var(--space-8);
-  align-items: start;
-}
-@media (max-width: 760px) {
-  .founder-grid { grid-template-columns: 1fr; gap: var(--space-6); }
-}
-.founder-name {
-  font-size: clamp(44px, 7vw, 80px);
-  font-weight: 500;
-  font-variation-settings: 'opsz' 144, 'wght' 500;
-  margin: var(--space-2) 0 var(--space-5);
-  color: var(--ink);
-}
-.founder-bio {
-  font-family: var(--font-body);
-  font-size: var(--text-md);
-  line-height: 1.65;
-  color: var(--ink);
-  max-width: 540px;
-  margin: 0 0 var(--space-6);
-}
+.founder { max-width: var(--max-content); margin: 0 auto; padding: var(--space-9) var(--space-5); border-top: 1px solid var(--rule); }
+.founder-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: var(--space-8); align-items: start; }
+.founder-name { font-size: clamp(40px, 7vw, 76px); font-weight: 500; font-variation-settings: 'opsz' 144, 'wght' 500; margin: var(--space-2) 0 var(--space-5); color: var(--ink); }
+.founder-bio { font-family: var(--font-body); font-size: var(--text-md); line-height: 1.65; color: var(--ink); max-width: 540px; margin: 0 0 var(--space-6); }
 .founder-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
-.founder-actions .h-btn { padding: 12px 22px; font-size: var(--text-base); }
 .founder-right { padding-top: var(--space-4); }
-.founder-links {
-  list-style: none;
-  padding: 0;
-  margin: var(--space-3) 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
+.founder-links { list-style: none; padding: 0; margin: var(--space-3) 0 0; display: flex; flex-direction: column; gap: var(--space-3); }
 .founder-links a {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  color: var(--ink-2);
-  letter-spacing: 0.02em;
-  border-bottom: 1px dashed var(--rule-2);
-  padding-bottom: 2px;
+  font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-2); letter-spacing: 0.02em;
+  border-bottom: 1px dashed var(--rule-2); padding-bottom: 2px;
   transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
 .founder-links a:hover { color: var(--accent-bright); border-color: var(--accent); }
 
-/* CTA — statement */
-.cta {
-  text-align: center;
-  border-top: 1px solid var(--rule);
-  padding-top: var(--space-10);
-  padding-bottom: var(--space-10);
-}
-.cta-title {
-  font-size: clamp(40px, 8vw, 88px);
-  font-weight: 500;
-  font-variation-settings: 'opsz' 144, 'wght' 500;
-  margin: 0 auto var(--space-6);
-  max-width: 720px;
-  color: var(--ink);
-}
-.cta-title em { color: var(--accent-bright); }
-.cta-btn { padding: 16px 28px; font-size: var(--text-md); }
+/* CLOSING CTA */
+.cta { max-width: var(--max-narrow); margin: 0 auto; text-align: center; border-top: 1px solid var(--rule); padding: var(--space-10) var(--space-5); }
+.cta-title { font-size: clamp(36px, 7vw, 76px); font-weight: 500; font-variation-settings: 'opsz' 144, 'wght' 500; margin: 0 auto var(--space-6); color: var(--ink); }
+.cta-title em { color: var(--accent-bright); font-style: italic; }
+.cta-btn { padding: 16px 30px; font-size: var(--text-md); }
 
 /* FOOT */
-.foot {
-  max-width: var(--max-content);
-  margin: 0 auto;
-  padding: var(--space-5);
-  border-top: 1px solid var(--rule);
-  color: var(--ink-3);
-  font-size: var(--text-sm);
-}
-.foot-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-3) 0;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
+.foot { max-width: var(--max-content); margin: 0 auto; padding: var(--space-5); border-top: 1px solid var(--rule); color: var(--ink-3); font-size: var(--text-sm); }
+.foot-row { display: flex; justify-content: space-between; align-items: center; padding: var(--space-3) 0; flex-wrap: wrap; gap: var(--space-3); }
 .foot-sub { font-family: var(--font-mono); font-size: var(--text-xs); }
 .foot a { color: var(--ink-2); border-bottom: 1px dashed var(--rule-2); }
 .foot a:hover { color: var(--ink); }
 .foot-meta { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.06em; }
 
-/* hero split — copy left, media right */
-.hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-  gap: clamp(var(--space-6), 5vw, var(--space-9));
-  align-items: center;
-}
-.hero-copy { min-width: 0; }
-.hero-media {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  align-self: center;
-}
-.hero-video {
-  margin: 0;
-  position: relative;
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid var(--rule);
-  background: #f5efe2;
-  box-shadow:
-    0 1px 0 0 color-mix(in oklch, var(--ink) 4%, transparent) inset,
-    0 40px 90px -30px rgba(0, 0, 0, 0.55),
-    0 12px 32px -12px rgba(0, 0, 0, 0.35);
-  aspect-ratio: 16 / 10;
-}
-.hero-video::after {
-  /* refined inner hairline */
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-}
-.hero-video-el {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-.hero-media-cap {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: 0 4px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-.hmc-label { color: var(--ink-2, var(--ink)); }
-.hmc-meta { color: var(--ink-3); }
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-video-el { display: none; }
-  .hero-video {
-    background-image: url('/swarmie-promo-poster.jpg');
-    background-size: cover;
-    background-position: center;
-  }
-}
-
+/* ---- TABLET / iPad ---- */
 @media (max-width: 1024px) {
+  .hero { min-height: auto; align-items: stretch; }
+  .hero-inner { padding-top: var(--space-9); }
   .hero-grid { grid-template-columns: 1fr; gap: var(--space-7); }
-  .hero-media { order: 2; }
+  .hero-media { order: 2; max-width: 620px; }
   .hero-copy { order: 1; }
+  .aha { grid-template-columns: 1fr; gap: var(--space-7); }
+  .aha-visual { max-width: 560px; }
+  .founder-grid { grid-template-columns: 1fr; gap: var(--space-6); }
 }
-@media (max-width: 720px) {
-  .hero-video { border-radius: 12px; aspect-ratio: 16 / 9; }
-  .hero-media-cap { font-size: 10px; letter-spacing: 0.14em; }
+
+/* ---- MOBILE ---- */
+@media (max-width: 760px) {
+  .nav { top: 0; margin-top: 0; border-radius: 0; border-left: 0; border-right: 0; border-top: 0; }
+  .hero { min-height: 78vh; margin-top: 0; }
+  .hero-inner { padding: var(--space-7) var(--space-4) var(--space-8); }
+  .hero-title { font-size: clamp(38px, 12vw, 60px); }
+  .hero-actions { gap: var(--space-2); }
+  .hero-cta, .hero-actions .h-btn { width: 100%; }
+  .loop-steps { grid-template-columns: 1fr; gap: var(--space-5); }
+  .loop-media { border-radius: var(--radius-lg); }
+  .founder-actions .h-btn { width: 100%; }
 }
 </style>
