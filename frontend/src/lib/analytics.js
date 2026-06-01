@@ -36,7 +36,7 @@ export async function registerDevice() {
   return fingerprint
 }
 
-export async function trackRoastStart(jobId, { pitchText, pitchLength, nAgents, swarmType } = {}) {
+export async function trackRoastStart(jobId, { pitchText, pitchLength, nAgents, swarmType, source } = {}) {
   if (!supabase) return
   const fingerprint = await getFingerprint()
 
@@ -50,6 +50,7 @@ export async function trackRoastStart(jobId, { pitchText, pitchLength, nAgents, 
       pitch_text: pitchText || null,
       n_agents_requested: nAgents || null,
       swarm_type: swarmType || 'validate',
+      source: source || null,
     })
 
   if (error) console.warn('[analytics] trackRoastStart failed:', error.message)

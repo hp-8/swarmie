@@ -29,9 +29,13 @@ from ..services.swarm import (
     AgentReaction,
     CHAT_SOFT_CAP,
     DEFAULT_SWARM,
+    DeckEvaluator,
+    DeckExtractor,
+    DeckLoadError,
     SWARMS,
     chat_with_agent,
     get_swarm,
+    load_pdf,
 )
 from ..utils.llm import UsageTracker
 
@@ -49,8 +53,12 @@ class RoastJob:
     progress: float = 0.0  # 0..1
     pitch_text: str = ""
     swarm_type: str = DEFAULT_SWARM
+    source: str = "text"  # "text" | "deck"
     n_agents: int = 0
     error: str | None = None
+    # transient: raw uploaded PDF bytes, discarded after parse (never serialized)
+    deck_bytes: bytes | None = None
+    deck_slides: list[dict] = field(default_factory=list)
     started_at: float = field(default_factory=time.time)
     finished_at: float | None = None
 
@@ -74,6 +82,7 @@ class RoastJob:
             "status": self.status,
             "progress": round(self.progress, 3),
             "swarm_type": self.swarm_type,
+            "source": self.source,
             "n_agents": self.n_agents,
             "started_at": self.started_at,
             "finished_at": self.finished_at,
@@ -85,6 +94,7 @@ class RoastJob:
             out["reactions"] = self.reactions
             out["report"] = self.report
             out["usage"] = self.usage
+            out["deck_slides"] = self.deck_slides
         return out
 
 
@@ -93,9 +103,13 @@ class _JobStore:
         self._jobs: dict[str, RoastJob] = {}
         self._lock = threading.Lock()
 
-    def create(self, pitch_text: str, n_agents: int, swarm_type: str = DEFAULT_SWARM) -> RoastJob:
+    def create(self, pitch_text: str, n_agents: int, swarm_type: str = DEFAULT_SWARM,
+               source: str = "text", deck_bytes: bytes | None = None) -> RoastJob:
         job_id = f"roast_{uuid.uuid4().hex[:16]}"
-        job = RoastJob(job_id=job_id, pitch_text=pitch_text, n_agents=n_agents, swarm_type=swarm_type)
+        job = RoastJob(
+            job_id=job_id, pitch_text=pitch_text, n_agents=n_agents,
+            swarm_type=swarm_type, source=source, deck_bytes=deck_bytes,
+        )
         with self._lock:
             self._jobs[job_id] = job
         return job
@@ -152,10 +166,24 @@ def _run_pipeline(job: RoastJob) -> None:
         return time.time()
 
     try:
-        # Stage 1 — parse pitch
+        # Stage 1 — parse pitch (text) OR read deck (PDF upload)
         t = _stage("parsing", 0.05)
-        parser = spec.parser_cls(tracker=tracker)
-        pitch = parser.parse(job.pitch_text)
+        deck_slides: list = []
+        if job.source == "deck":
+            try:
+                pages = load_pdf(job.deck_bytes or b"")
+            except DeckLoadError as exc:
+                raise RuntimeError(f"Couldn't read the deck: {exc}. Paste the text instead.")
+            finally:
+                job.deck_bytes = None  # discard raw bytes immediately (privacy)
+            deck_read = DeckExtractor(tracker=tracker).extract(pages)
+            pitch = deck_read.pitch
+            deck_slides = deck_read.slides
+            job.deck_slides = [s.to_dict() for s in deck_slides]
+            _push_event(job, "deck_slides", job.deck_slides)
+        else:
+            parser = spec.parser_cls(tracker=tracker)
+            pitch = parser.parse(job.pitch_text)
         job.parsed_pitch = pitch.to_dict()
         _push_event(job, "parsed_pitch", pitch.to_dict())
         logger.info(f"[{job.job_id}] parsing done in {time.time()-t:.1f}s")
@@ -225,10 +253,23 @@ def _run_pipeline(job: RoastJob) -> None:
         if job.cancelled.is_set():
             raise RuntimeError("cancelled")
 
+        # Stage 3.5 — deck diagnosis (deck uploads only): pitch-intelligence EVALUATE
+        deck_diagnosis = None
+        if job.source == "deck" and deck_slides:
+            t = _stage("evaluating", 0.85)
+            diagnosis = DeckEvaluator(tracker=tracker).evaluate(deck_slides, getattr(pitch, "stage", ""))
+            deck_diagnosis = diagnosis.to_dict()
+            _push_event(job, "deck_diagnosis", deck_diagnosis)
+            logger.info(f"[{job.job_id}] deck diagnosis done in {time.time()-t:.1f}s")
+            if job.cancelled.is_set():
+                raise RuntimeError("cancelled")
+
         # Stage 4 — synthesize report
         t = _stage("reporting", 0.9)
         reporter = spec.reporter_cls(tracker=tracker)
         report = reporter.report(pitch, reactions)
+        if deck_diagnosis is not None:
+            report.deck_diagnosis = deck_diagnosis
         job.report = report.to_dict()
         _push_event(job, "report", report.to_dict())
         logger.info(f"[{job.job_id}] report done in {time.time()-t:.1f}s")
@@ -265,29 +306,65 @@ def list_swarms():
     }), 200
 
 
+MAX_DECK_BYTES = 25 * 1024 * 1024  # 25 MB
+
+
 @roast_bp.route("", methods=["POST"])
 def create_roast():
     """Start a new roast job.
 
-    Body: {"pitch": "<text>", "n_agents": <int, optional>}
+    Two request shapes:
+      - JSON:      {"pitch": "<text>", "n_agents": <int?>, "swarm_type": <str?>}
+      - multipart: file=<deck.pdf>, swarm_type=investor, n_agents=<int?>  (deck path)
     Returns: {"job_id": ...}
     """
-    body = request.get_json(silent=True) or {}
-    pitch_text = (body.get("pitch") or "").strip()
-    if not pitch_text:
-        return jsonify({"error": "pitch is required"}), 400
-    if len(pitch_text) > 20000:
-        return jsonify({"error": "pitch too long (max 20000 chars)"}), 400
+    upload = request.files.get("file") if request.files else None
 
-    swarm_type = (body.get("swarm_type") or DEFAULT_SWARM).strip().lower()
-    if swarm_type not in SWARMS:
-        return jsonify({"error": f"unknown swarm_type '{swarm_type}'"}), 400
+    if upload is not None:
+        # --- deck upload path (investor swarm) ---
+        swarm_type = (request.form.get("swarm_type") or "investor").strip().lower()
+        if swarm_type not in SWARMS:
+            return jsonify({"error": f"unknown swarm_type '{swarm_type}'"}), 400
 
-    n_agents = int(body.get("n_agents") or Config.ROAST_AGENT_COUNT)
-    n_agents = max(10, min(n_agents, 500))  # clamp 10..500
+        filename = (upload.filename or "").lower()
+        if not (filename.endswith(".pdf") or (upload.mimetype or "") == "application/pdf"):
+            return jsonify({"error": "only PDF deck uploads are supported"}), 400
 
-    job = _store.create(pitch_text=pitch_text, n_agents=n_agents, swarm_type=swarm_type)
-    print(f"[{job.job_id}] creating background thread (n_agents={n_agents})", flush=True)
+        data = upload.read()
+        if not data:
+            return jsonify({"error": "uploaded file is empty"}), 400
+        if len(data) > MAX_DECK_BYTES:
+            return jsonify({"error": "deck too large (max 25 MB)"}), 400
+
+        try:
+            n_agents = int(request.form.get("n_agents") or Config.ROAST_AGENT_COUNT)
+        except (TypeError, ValueError):
+            n_agents = Config.ROAST_AGENT_COUNT
+        n_agents = max(10, min(n_agents, 500))
+
+        job = _store.create(
+            pitch_text="", n_agents=n_agents, swarm_type=swarm_type,
+            source="deck", deck_bytes=data,
+        )
+    else:
+        # --- pasted-text path ---
+        body = request.get_json(silent=True) or {}
+        pitch_text = (body.get("pitch") or "").strip()
+        if not pitch_text:
+            return jsonify({"error": "pitch is required"}), 400
+        if len(pitch_text) > 20000:
+            return jsonify({"error": "pitch too long (max 20000 chars)"}), 400
+
+        swarm_type = (body.get("swarm_type") or DEFAULT_SWARM).strip().lower()
+        if swarm_type not in SWARMS:
+            return jsonify({"error": f"unknown swarm_type '{swarm_type}'"}), 400
+
+        n_agents = int(body.get("n_agents") or Config.ROAST_AGENT_COUNT)
+        n_agents = max(10, min(n_agents, 500))  # clamp 10..500
+
+        job = _store.create(pitch_text=pitch_text, n_agents=n_agents, swarm_type=swarm_type)
+
+    print(f"[{job.job_id}] creating background thread (n_agents={n_agents}, source={job.source})", flush=True)
     thread = threading.Thread(target=_run_pipeline, args=(job,), daemon=True)
     thread.start()
     print(f"[{job.job_id}] thread.start() returned; thread.is_alive={thread.is_alive()}", flush=True)

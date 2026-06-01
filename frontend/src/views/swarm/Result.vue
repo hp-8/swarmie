@@ -93,6 +93,168 @@
       </transition>
     </main>
 
+    <!-- Deck Diagnosis layout — investor + deck_diagnosis present -->
+    <main v-else-if="report && deckDiagnosis" class="diag-dash scroll-zone">
+      <!-- Hero: readiness + stage + overall score -->
+      <section class="strip strip-diag-hero">
+        <div class="cell cell-readiness">
+          <span class="h-eyebrow">funding readiness</span>
+          <div class="readiness-pct" :style="{ color: readinessColor(deckDiagnosis.readiness_pct) }">
+            {{ deckDiagnosis.readiness_pct }}<span class="readiness-unit">%</span>
+          </div>
+          <div class="readiness-bar" role="progressbar" :aria-valuenow="deckDiagnosis.readiness_pct" aria-valuemin="0" aria-valuemax="100">
+            <div class="readiness-fill" :style="{ width: deckDiagnosis.readiness_pct + '%', background: readinessColor(deckDiagnosis.readiness_pct) }"></div>
+          </div>
+        </div>
+        <div class="cell cell-diag-meta">
+          <span class="h-eyebrow">stage</span>
+          <div class="diag-stage">{{ deckDiagnosis.stage }}</div>
+          <p class="diag-stage-hint">overall score</p>
+          <div class="diag-overall" :style="{ color: scoreColor(deckDiagnosis.overall_score / 13) }">
+            {{ deckDiagnosis.overall_score }}<span class="diag-overall-denom">/130</span>
+          </div>
+        </div>
+        <div class="cell cell-next-move">
+          <span class="h-eyebrow">next move</span>
+          <p class="next-move-text">{{ deckDiagnosis.next_move }}</p>
+        </div>
+      </section>
+
+      <!-- Slide scorecard -->
+      <section class="strip strip-diag-main">
+        <article class="cell cell-scorecard">
+          <header class="cell-head">
+            <span class="h-eyebrow">slide scorecard</span>
+            <span class="cell-meta">{{ deckDiagnosis.slides?.length || 0 }} slides</span>
+          </header>
+          <div class="scroll-zone scorecard-scroll">
+            <div v-for="slide in deckDiagnosis.slides" :key="slide.page + slide.slide_type" class="slide-row">
+              <div class="slide-left">
+                <span class="slide-type">{{ slide.slide_type }}</span>
+                <span class="slide-page h-eyebrow">p.{{ slide.page }}</span>
+              </div>
+              <div class="slide-center">
+                <p class="slide-verdict">{{ slide.verdict }}</p>
+                <p v-if="slide.top_issue" class="slide-issue">{{ slide.top_issue }}</p>
+              </div>
+              <div class="slide-score" :style="{ color: slideScoreColor(slide.score) }">
+                {{ slide.score }}<span class="slide-score-denom">/10</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Red flags -->
+        <article class="cell cell-redflags">
+          <header class="cell-head">
+            <span class="h-eyebrow">red flags</span>
+            <span class="cell-meta">{{ deckDiagnosis.red_flags?.length || 0 }}</span>
+          </header>
+          <div class="scroll-zone redflags-scroll">
+            <div v-for="(flag, i) in deckDiagnosis.red_flags" :key="i" class="redflag-row">
+              <span class="h-chip" :class="severityChipClass(flag.severity)">{{ flag.severity }}</span>
+              <div class="redflag-body">
+                <div class="redflag-cite">
+                  <span class="redflag-slide">{{ flag.slide_type }}</span>
+                  <span class="redflag-page h-eyebrow">p.{{ flag.page }}</span>
+                </div>
+                <p class="redflag-text">{{ flag.text }}</p>
+              </div>
+            </div>
+            <p v-if="!deckDiagnosis.red_flags?.length" class="muted">No critical flags.</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- Zones + investor simulation -->
+      <section class="strip strip-diag-zones">
+        <article class="cell cell-zones">
+          <header class="cell-head"><span class="h-eyebrow">strong zones</span></header>
+          <div class="zone-tags">
+            <span v-for="z in deckDiagnosis.strong_zones" :key="z" class="zone-tag zone-tag-live">{{ z }}</span>
+            <span v-if="!deckDiagnosis.strong_zones?.length" class="muted">None identified.</span>
+          </div>
+          <hr class="h-rule" style="margin: var(--space-3) 0" />
+          <header class="cell-head"><span class="h-eyebrow">weak zones</span></header>
+          <div class="zone-tags">
+            <span v-for="z in deckDiagnosis.weak_zones" :key="z" class="zone-tag zone-tag-warn">{{ z }}</span>
+            <span v-if="!deckDiagnosis.weak_zones?.length" class="muted">None identified.</span>
+          </div>
+        </article>
+
+        <article class="cell cell-investor-sim">
+          <header class="cell-head"><span class="h-eyebrow">investor simulation</span></header>
+          <div class="scroll-zone inv-sim-scroll">
+            <p class="inv-sim-text">{{ deckDiagnosis.investor_simulation }}</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- Swarm reactions below as supporting -->
+      <section class="strip strip-three">
+        <article class="cell cell-narrative">
+          <header class="cell-head"><span class="h-eyebrow">synthesis</span></header>
+          <div class="scroll-zone narrative-scroll">
+            <p class="narrative-body">{{ report.narrative }}</p>
+            <div v-if="report.messaging_gaps?.length" class="fixes">
+              <span class="h-eyebrow">fixes to try</span>
+              <ul class="fix-list">
+                <li v-for="g in report.messaging_gaps" :key="g">{{ g }}</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <article class="cell cell-objections">
+          <header class="cell-head">
+            <span class="h-eyebrow">{{ copy.objections }}</span>
+            <span class="cell-meta">{{ report.top_objections?.length || 0 }}</span>
+          </header>
+          <ol v-if="report.top_objections?.length" class="obj-list scroll-zone">
+            <li v-for="(obj, i) in report.top_objections" :key="obj.category" class="obj-row">
+              <span class="obj-rank">{{ String(i + 1).padStart(2, '0') }}</span>
+              <div class="obj-body">
+                <div class="obj-head-row">
+                  <span class="obj-cat">{{ obj.category }}</span>
+                  <span class="obj-count">{{ obj.count }}x</span>
+                </div>
+                <p v-if="obj.example_quote" class="obj-quote">"{{ obj.example_quote }}"</p>
+                <div v-if="obj.real_test" class="obj-test">
+                  <button class="obj-test-q" @click="copyTest(obj)" title="Copy this question">
+                    <span class="obj-tag">{{ copy.askTag }}</span>
+                    <span class="obj-test-text">{{ obj.real_test }}</span>
+                    <span class="obj-copy">{{ copiedTest === obj.category ? 'v' : 'o' }}</span>
+                  </button>
+                </div>
+                <p v-if="obj.kill_criteria" class="obj-kill"><span class="obj-tag warn">{{ copy.killTag }}</span>{{ obj.kill_criteria }}</p>
+                <p v-if="obj.suggested_fix" class="obj-fix"><span class="obj-tag accent">fix</span>{{ obj.suggested_fix }}</p>
+                <ObjectionVote :job-id="jobId" :objection-category="obj.category" />
+              </div>
+            </li>
+          </ol>
+          <p v-else class="muted">No clear clusters.</p>
+        </article>
+
+        <article class="cell cell-quotes">
+          <header class="cell-head">
+            <span class="h-eyebrow">{{ copy.voices }}</span>
+            <span class="cell-meta">{{ report.quoted_reactions?.length || 0 }}</span>
+          </header>
+          <div class="quotes-list scroll-zone">
+            <article v-for="q in report.quoted_reactions" :key="q.agent_id" class="quote" :class="'tone-' + q.tone">
+              <div class="q-handle">@{{ q.name }}</div>
+              <p class="q-text">{{ q.text }}</p>
+              <div class="q-meta">
+                <span class="q-tone">{{ q.tone }}</span>
+                <span class="q-seg">{{ q.segment }}</span>
+              </div>
+            </article>
+            <p v-if="!report.quoted_reactions?.length" class="muted">No standout reactions.</p>
+          </div>
+        </article>
+      </section>
+    </main>
+
     <main v-else-if="report" class="dash">
       <!-- ROW 1 — Hero strip: score + headline + sentiment bar -->
       <section class="strip strip-hero">
@@ -419,6 +581,34 @@ async function copyTest(obj) {
   try { await navigator.clipboard.writeText(obj.real_test || '') } catch { /* clipboard blocked */ }
   copiedTest.value = obj.category
   setTimeout(() => { if (copiedTest.value === obj.category) copiedTest.value = null }, 1500)
+}
+
+// Deck diagnosis computed
+const deckDiagnosis = computed(() => report.value?.deck_diagnosis ?? null)
+
+function readinessColor(pct) {
+  if (pct >= 70) return 'var(--live)'
+  if (pct >= 45) return 'var(--accent-bright)'
+  return 'var(--warn)'
+}
+
+function slideScoreColor(score) {
+  if (score >= 7) return 'var(--live)'
+  if (score >= 5) return 'var(--accent-bright)'
+  return 'var(--warn)'
+}
+
+function severityChipClass(severity) {
+  switch ((severity || '').toUpperCase()) {
+    case 'CRITICAL':
+    case 'HIGH':
+      return 'is-warn'
+    case 'MEDIUM':
+      return 'is-accent'
+    case 'LOW':
+    default:
+      return ''
+  }
 }
 
 function scoreColor(s) {
@@ -921,4 +1111,211 @@ onMounted(() => {
 .drawer-enter-active .nd-card, .drawer-leave-active .nd-card { transition: transform var(--dur-base) var(--ease-out); }
 .drawer-enter-from, .drawer-leave-to { opacity: 0; }
 .drawer-enter-from .nd-card, .drawer-leave-to .nd-card { transform: translateX(100%); }
+
+/* === DECK DIAGNOSIS LAYOUT === */
+
+.diag-dash {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  max-width: 1480px;
+  width: 100%;
+  margin: 0 auto;
+  min-height: 0;
+}
+
+/* Hero row */
+.strip-diag-hero {
+  grid-template-columns: 180px 200px 1fr;
+  flex-shrink: 0;
+}
+
+/* Main row: scorecard + red flags */
+.strip-diag-main {
+  grid-template-columns: 1.3fr 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Zones row */
+.strip-diag-zones {
+  grid-template-columns: 1fr 1.5fr;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+  .strip-diag-hero { grid-template-columns: 160px 1fr; }
+  .strip-diag-hero .cell-next-move { grid-column: 1 / -1; }
+  .strip-diag-main { grid-template-columns: 1fr; }
+  .strip-diag-zones { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  .diag-dash { padding: var(--space-3); overflow-y: auto; }
+  .strip-diag-hero, .strip-diag-main, .strip-diag-zones { grid-template-columns: 1fr; }
+}
+
+/* Readiness cell */
+.cell-readiness { text-align: center; justify-content: center; align-items: center; gap: var(--space-3); }
+.readiness-pct {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-variation-settings: 'opsz' 144, 'wght' 600;
+  font-size: clamp(52px, 9vh, 88px);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  text-shadow: 0 0 50px currentColor;
+}
+.readiness-unit { font-size: 0.45em; letter-spacing: 0; opacity: 0.7; }
+.readiness-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--paper-3);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.readiness-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width var(--dur-slow) var(--ease-out);
+}
+
+/* Stage + overall */
+.cell-diag-meta { justify-content: center; gap: var(--space-2); }
+.diag-stage {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(20px, 3vh, 28px);
+  font-weight: 500;
+  font-variation-settings: 'opsz' 144, 'wght' 500;
+  margin: 0;
+  line-height: 1.15;
+  text-transform: capitalize;
+}
+.diag-stage-hint { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-4); margin: var(--space-2) 0 0; }
+.diag-overall {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: clamp(28px, 4vh, 40px);
+  line-height: 0.9;
+  text-shadow: 0 0 40px currentColor;
+}
+.diag-overall-denom { font-size: 0.5em; opacity: 0.55; }
+
+/* Next move */
+.cell-next-move { justify-content: center; }
+.next-move-text {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(18px, 2.4vh, 26px);
+  font-weight: 500;
+  font-variation-settings: 'opsz' 144, 'wght' 500;
+  margin: 0;
+  line-height: 1.2;
+  color: var(--accent-bright);
+  overflow-wrap: anywhere;
+}
+
+/* Scorecard */
+.scorecard-scroll { padding-right: var(--space-2); }
+.slide-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 48px;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.slide-row:last-child { border-bottom: 0; }
+.slide-left { display: flex; flex-direction: column; gap: 2px; }
+.slide-type {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.slide-page {
+  color: var(--ink-4);
+  font-size: 10px;
+}
+.slide-center { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.slide-verdict { font-size: var(--text-sm); color: var(--ink); margin: 0; line-height: 1.45; }
+.slide-issue { font-size: var(--text-sm); color: var(--ink-3); margin: 0; line-height: 1.4; }
+.slide-score {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: var(--text-xl);
+  line-height: 0.9;
+  text-align: right;
+  flex-shrink: 0;
+}
+.slide-score-denom { font-size: 0.5em; opacity: 0.5; }
+
+/* Red flags */
+.redflags-scroll { padding-right: var(--space-2); }
+.redflag-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.redflag-row:last-child { border-bottom: 0; }
+.redflag-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.redflag-cite { display: flex; gap: var(--space-2); align-items: baseline; margin-bottom: 2px; }
+.redflag-slide {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.redflag-page { color: var(--ink-4); font-size: 10px; }
+.redflag-text { font-size: var(--text-sm); color: var(--ink); margin: 0; line-height: 1.45; }
+
+/* Zones */
+.zone-tags { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.zone-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+.zone-tag-live {
+  color: var(--live);
+  background: var(--live-soft);
+  border: 1px solid color-mix(in oklch, var(--live) 35%, transparent);
+}
+.zone-tag-warn {
+  color: var(--warn);
+  background: var(--warn-soft);
+  border: 1px solid color-mix(in oklch, var(--warn) 35%, transparent);
+}
+
+/* Investor simulation */
+.inv-sim-scroll { padding-right: var(--space-2); }
+.inv-sim-text {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(var(--text-sm), 1.6vw, var(--text-md));
+  font-weight: 500;
+  font-variation-settings: 'opsz' 96, 'wght' 500;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
 </style>

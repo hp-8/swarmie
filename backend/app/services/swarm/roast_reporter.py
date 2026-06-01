@@ -43,6 +43,8 @@ class RoastReport:
     ignore_reasons: list[dict[str, Any]] = field(default_factory=list)
     # [{category, label, sampled_count, share_pct, example, implication}]
     silent_share_pct: float = 0.0  # ignore actions as % of all agents
+    # --- deck intelligence (investor deck uploads): pitch-intelligence diagnosis ---
+    deck_diagnosis: dict[str, Any] | None = None  # DeckDiagnosis.to_dict() or None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

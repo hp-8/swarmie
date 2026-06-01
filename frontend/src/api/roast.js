@@ -37,6 +37,21 @@ export const roastApi = {
   },
 
   /**
+   * Start a deck roast job via multipart upload.
+   * @param {File} file - The PDF file to upload.
+   * @param {number} [nAgents=100] - Number of agents to simulate (10..500).
+   * @param {string} [swarmType='investor'] - Which swarm to run.
+   * @returns {Promise<{job_id: string, status: string}>}
+   */
+  createDeck(file, nAgents = 100, swarmType = 'investor') {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('n_agents', String(nAgents))
+    form.append('swarm_type', swarmType)
+    return service.post('/api/roast', form)
+  },
+
+  /**
    * Build a streaming EventSource URL for a job. The caller is responsible
    * for opening the EventSource and attaching listeners (axios doesn't do SSE).
    * @param {string} jobId
