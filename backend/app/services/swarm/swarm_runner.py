@@ -487,3 +487,105 @@ class InvestorSwarmRunner(SwarmRunner):
             f"- tone: {arch.tone}\n\n"
             f"You passed without engaging. Why? JSON only."
         )
+
+
+# --- Launch swarm overrides ---
+
+_LAUNCH_REACTION_SYSTEM = """You roleplay a single member of an online community reacting to a **launch post** in their community.
+
+This is a launch stress-test. React the way this community member actually would —
+pattern-matching on whether the product solves a real pain, whether the copy is
+clear, whether it's genuinely new, whether it belongs in their community.
+Be authentic to your platform and persona.
+
+Speak in this persona's authentic community voice. A PH maker sounds different from
+an HN skeptic, a Reddit commenter, or an X reply-guy. Match that energy exactly.
+Do NOT be polite or hedging — real launch thread responses are blunt and specific.
+
+Output strict JSON:
+{
+  "text": "<the comment / post / reaction, 1-3 sentences, in your community's voice, lowercase ok>",
+  "objections": ["<short concern tag>", ...],  // 0-3, e.g. ["unclear_value","me_too"]
+  "sentiment": <float -1..1>                    // -1 = dismissive, +1 = genuinely excited
+}
+
+Rules:
+- Stay in character. Your community's tone overrides niceness.
+- Reference specifics from the launch copy — never generic feedback.
+- If tone is `skeptical` or `aggressive`, push back hard on the weakest point.
+- If `indifferent`, be brief and mildly dismissive ("seen this before", "who asked for this").
+- If `curious`, ask the one question you'd actually post in the thread.
+- Concern tags from: unclear_value, me_too, pricing, show_hn_rigor, hype_fatigue, trust, timing, differentiation.
+- Never break character or mention the simulation.
+
+Respond with JSON only."""
+
+_LAUNCH_IGNORE_SYSTEM = """You are one member of an online community who just SCROLLED PAST a launch post without engaging. You did not comment, did not upvote — you ignored it.
+
+In your authentic community-member voice, say in ONE blunt first-person sentence why you scrolled past. Be specific to THIS launch — never generic. Then classify the reason.
+
+Output strict JSON:
+{
+  "reason": "<one blunt first-person sentence, lowercase ok, specific to the launch>",
+  "category": "<one of: unclear_value | seen_before | not_my_community | dont_care | launch_fatigue | wrong_timing>"
+}
+
+Category guide:
+- unclear_value: couldn't parse what it does or why it matters from the post
+- seen_before: another me-too tool, nothing differentiates it
+- not_my_community: wrong audience — this isn't for someone like me in this community
+- dont_care: mild problem, not worth my attention right now
+- launch_fatigue: too many launches like this recently, I'm numb to it
+- wrong_timing: might matter later but not relevant to me right now
+
+Respond with JSON only."""
+
+_LAUNCH_IGNORE_CATEGORIES = (
+    "unclear_value",
+    "seen_before",
+    "not_my_community",
+    "dont_care",
+    "launch_fatigue",
+    "wrong_timing",
+)
+
+
+class LaunchSwarmRunner(SwarmRunner):
+    """Launch swarm: community members react to a launch post/thread."""
+
+    REACTION_SYSTEM = _LAUNCH_REACTION_SYSTEM
+    IGNORE_SYSTEM = _LAUNCH_IGNORE_SYSTEM
+    IGNORE_CATEGORIES = _LAUNCH_IGNORE_CATEGORIES
+    DEFAULT_IGNORE_CATEGORY = "dont_care"
+
+    def _build_reaction_prompt(self, pitch: ParsedPitch, arch: Archetype, action: str) -> str:
+        return (
+            f"LAUNCH POST:\n"
+            f"- one_liner: {pitch.one_liner}\n"
+            f"- problem: {pitch.problem}\n"
+            f"- solution: {pitch.solution}\n"
+            f"- pricing: {pitch.pricing or 'unspecified'}\n"
+            f"- channels: {', '.join(pitch.channels) or 'unspecified'}\n"
+            f"- competitors: {', '.join(pitch.competitors) or 'none mentioned'}\n\n"
+            f"YOU ARE:\n"
+            f"- name: {arch.name} (from community: {arch.segment})\n"
+            f"- persona: {arch.persona}\n"
+            f"- tone: {arch.tone}\n"
+            f"- concerns you typically raise on launch posts: {', '.join(arch.objection_bias)}\n"
+            f"- action: {action}\n\n"
+            f"React as this community member to this launch. JSON only."
+        )
+
+    def _build_ignore_prompt(self, pitch: ParsedPitch, arch: Archetype) -> str:
+        return (
+            f"LAUNCH POST:\n"
+            f"- one_liner: {pitch.one_liner}\n"
+            f"- problem: {pitch.problem}\n"
+            f"- solution: {pitch.solution}\n"
+            f"- pricing: {pitch.pricing or 'unspecified'}\n\n"
+            f"YOU ARE:\n"
+            f"- name: {arch.name} (from community: {arch.segment})\n"
+            f"- persona: {arch.persona}\n"
+            f"- tone: {arch.tone}\n\n"
+            f"You scrolled past this launch without engaging. Why? JSON only."
+        )

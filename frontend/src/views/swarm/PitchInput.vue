@@ -237,7 +237,6 @@ function clearDeck() {
 }
 
 // Each swarm answers one founder decision and carries its own input voice.
-// `enabled: false` shows the option as "soon" — Launch ships with the signal layer.
 const SWARMS = [
   {
     key: 'validate',
@@ -296,9 +295,28 @@ RAISE: Stage + amount + what it buys.`,
   {
     key: 'launch',
     label: 'Launch',
-    blurb: 'soon',
-    enabled: false,
-    agentNoun: 'agents',
+    blurb: 'Will the launch land?',
+    enabled: true,
+    agentNoun: 'commenters',
+    title: 'How will the launch land?',
+    sub: 'A swarm of Product Hunt, HN, Reddit, Indie Hackers and X archetypes reacts to your launch. You get the questions, objections, confusion, and risks likely to surface before you go live.',
+    placeholder: `PRODUCT: What are you launching? One clear sentence.
+
+AUDIENCE: Who is this for? Be specific.
+
+CHANNEL: Where are you launching? (Product Hunt, HN, Reddit, X, newsletter...)
+
+DIFFERENTIATION: Why is this different from what already exists?
+
+TIMING: Why now? Is there a trend or moment this taps into?`,
+    template: `PRODUCT:\n\nAUDIENCE:\n\nCHANNEL:\n\nDIFFERENTIATION:\n\nTIMING: `,
+    checks: [
+      { key: 'problem', label: 'product', pattern: /product[:\s].*\S/ },
+      { key: 'audience', label: 'audience', pattern: /audience[:\s].*\S|target[:\s].*\S|who[:\s].*\S|icp[:\s].*\S/ },
+      { key: 'channel', label: 'channel', pattern: /channel[:\s].*\S|product hunt|hacker news|reddit|twitter|x\.com|newsletter|indie hacker/ },
+      { key: 'differentiation', label: 'differentiation', pattern: /differenti[:\s].*\S|unique[:\s].*\S|different[:\s].*\S|vs\.?\s|alternative/ },
+      { key: 'timing', label: 'timing', pattern: /timing[:\s].*\S|why now[:\s].*\S|trend[:\s].*\S|moment[:\s].*\S/ },
+    ],
   },
 ]
 
@@ -391,9 +409,6 @@ async function onSubmit() {
 .rail-far { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-2); }
 .rail-far:hover { color: var(--ink); }
 
-/* This page scrolls naturally at every width. The fixed-viewport (100vh +
- * overflow:hidden) model can't hold the investor form on short/tablet heights,
- * so we override it here instead of chasing breakpoints. */
 /* page-fixed stays no-scroll (global 100vh); phone re-enables scroll below. */
 
 .workbench {
@@ -406,39 +421,6 @@ async function onSubmit() {
   padding: var(--space-5) var(--space-6);
   min-height: 0;
   overflow: hidden;
-}
-/* Tablet/phone: collapse the 80/20 split into a single stacked column —
- * input first, controls below. */
-@media (max-width: 768px) {
-  /* phone can't fit no-scroll — let it scroll + stack naturally */
-  .page.page-fixed { height: auto; min-height: 100vh; overflow-y: auto; }
-  .workbench { flex: initial; overflow: visible; padding: var(--space-5) var(--space-5) var(--space-8); }
-  .form { flex: initial; gap: var(--space-6); }
-  /* heading + picker stack; picker sits above the heading */
-  .head-row { flex-direction: column; gap: var(--space-3); }
-  .head-row .swarm-picker { order: -1; }
-  .split { flex: initial; grid-template-columns: 1fr; gap: var(--space-6); align-items: start; }
-  .col-input { min-height: 0; }
-  .field-pitch { flex: initial; }
-  .textarea { flex: initial; min-height: 200px; }
-}
-
-/* Phone: strip secondary chrome, give the form room to breathe. */
-@media (max-width: 640px) {
-  .workbench { padding: var(--space-4) var(--space-4) var(--space-7); }
-  /* picker spans full width, even thirds — no label overflow */
-  .swarm-picker { display: flex; width: 100%; }
-  .swarm-tab { flex: 1; justify-content: center; padding: 8px 6px; }
-  .canvas-sub { display: none; }          /* verbose example — the title carries it */
-  .pitch-checklist { display: none; }     /* secondary cue; the placeholder guides */
-  .size-slider { display: none; }         /* presets are touch-friendlier than a thin slider */
-  .size-presets { width: 100%; justify-content: space-between; }
-  .size-presets button { flex: 1; padding: 11px 0; text-align: center; }
-  .form { gap: var(--space-6); }
-  .canvas-head { margin-bottom: var(--space-5); }
-  .actions { flex-direction: column; align-items: stretch; gap: var(--space-3); }
-  .run-btn { width: 100%; }
-  .actions-hint { text-align: center; }
 }
 
 .canvas {
@@ -848,5 +830,43 @@ async function onSubmit() {
 @keyframes launch-out {
   from { opacity: 1; }
   to { opacity: 0; }
+}
+
+/* ============================================================
+ * RESPONSIVE — placed AFTER all base rules so they actually win.
+ * Equal specificity => later-in-source rule wins.
+ * ============================================================ */
+
+/* Tablet/phone (<=768px): collapse the 80/20 split into a single stacked column */
+@media (max-width: 768px) {
+  /* phone can't fit no-scroll — let it scroll + stack naturally */
+  .page.page-fixed { height: auto; min-height: 100vh; overflow-y: auto; }
+  .workbench { flex: initial; overflow: visible; padding: var(--space-5) var(--space-5) var(--space-8); }
+  .form { flex: initial; gap: var(--space-6); }
+  /* heading + picker stack; picker sits above the heading */
+  .head-row { flex-direction: column; gap: var(--space-3); }
+  .head-row .swarm-picker { order: -1; }
+  .split { flex: initial; grid-template-columns: 1fr; gap: var(--space-6); align-items: start; }
+  .col-input { min-height: 0; }
+  .field-pitch { flex: initial; }
+  .textarea { flex: initial; min-height: 200px; }
+}
+
+/* Phone (<=640px): strip secondary chrome, give the form room to breathe. */
+@media (max-width: 640px) {
+  .workbench { padding: var(--space-4) var(--space-4) var(--space-7); }
+  /* picker spans full width, even thirds — no label overflow */
+  .swarm-picker { display: flex; width: 100%; }
+  .swarm-tab { flex: 1; justify-content: center; padding: 8px 6px; }
+  .canvas-sub { display: none; }          /* verbose example — the title carries it */
+  .pitch-checklist { display: none; }     /* secondary cue; the placeholder guides */
+  .size-slider { display: none; }         /* presets are touch-friendlier than a thin slider */
+  .size-presets { width: 100%; justify-content: space-between; }
+  .size-presets button { flex: 1; padding: 11px 0; text-align: center; }
+  .form { gap: var(--space-6); }
+  .canvas-head { margin-bottom: var(--space-5); }
+  .actions { flex-direction: column; align-items: stretch; gap: var(--space-3); }
+  .run-btn { width: 100%; }
+  .actions-hint { text-align: center; }
 }
 </style>

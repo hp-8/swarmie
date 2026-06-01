@@ -15,10 +15,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Type
 
-from .archetype_generator import ArchetypeGenerator, InvestorArchetypeGenerator
-from .pitch_parser import InvestorPitchParser, PitchParser
-from .roast_reporter import InvestorReporter, RoastReporter
-from .swarm_runner import InvestorSwarmRunner, SwarmRunner
+from .archetype_generator import ArchetypeGenerator, InvestorArchetypeGenerator, LaunchArchetypeGenerator
+from .pitch_parser import InvestorPitchParser, LaunchPitchParser, PitchParser
+from .roast_reporter import InvestorReporter, LaunchReporter, RoastReporter
+from .swarm_runner import InvestorSwarmRunner, LaunchSwarmRunner, SwarmRunner
 
 
 @dataclass(frozen=True)
@@ -63,6 +63,16 @@ SWARMS: dict[str, SwarmSpec] = {
         archgen_cls=InvestorArchetypeGenerator,
         runner_cls=InvestorSwarmRunner,
         reporter_cls=InvestorReporter,
+    ),
+    "launch": SwarmSpec(
+        key="launch",
+        label="Launch",
+        blurb="Stress-test how startup communities will react to your launch.",
+        agent_noun="commenter",
+        parser_cls=LaunchPitchParser,
+        archgen_cls=LaunchArchetypeGenerator,
+        runner_cls=LaunchSwarmRunner,
+        reporter_cls=LaunchReporter,
     ),
 }
 

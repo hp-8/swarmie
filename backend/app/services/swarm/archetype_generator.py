@@ -306,3 +306,75 @@ class InvestorArchetypeGenerator(ArchetypeGenerator):
             },
             "investor_archetypes": pitch.icp_segments,
         }
+
+
+# --- Launch swarm archetype generator ---
+
+_LAUNCH_ARCHETYPE_SYSTEM_PROMPT = """You design COMMUNITY MEMBER archetype profiles for a launch stress-test.
+
+Given a launch pitch and a list of community personas, output N archetypes whose
+COLLECTIVE reactions will resemble how those communities actually respond to a
+launch post on Product Hunt, Hacker News Show-HN, Reddit (/r/SaaS, /r/startups,
+/r/IndieHackers, etc), Indie Hackers, or X/Twitter.
+
+This is decision stress-testing, NOT roleplay. Ground each archetype in real
+community behavior patterns — how real members upvote, comment, ignore, or roast
+new product launches in their feed.
+
+Be realistic. A real launch thread includes:
+  - skeptics and "me-too" callouts (20-30%)
+  - the curious but non-committal lurkers (25-35%)
+  - genuine enthusiasts or early adopters (10-15%)
+  - the indifferent who scroll past (15-25%)
+
+Distribute archetypes accordingly. Make them specific to their platform/community
+(a PH maker behaves differently from an HN reader). Do NOT make everyone polite.
+
+Output strict JSON:
+{
+  "archetypes": [
+    {
+      "id": "<short snake_case id>",
+      "segment": "<one of the input community archetypes>",
+      "name": "<short handle, e.g. 'SkepticalHNReader'; never real names>",
+      "persona": "<2-3 sentences: community they live in, what they look for, what makes them upvote vs scroll>",
+      "tone": "skeptical|enthusiastic|neutral|aggressive|curious|indifferent",
+      "objection_bias": ["unclear_value","me_too","pricing","show_hn_rigor","hype_fatigue","trust","timing","differentiation"],
+      "action_likelihood": {"post": 0.0, "comment": 0.0, "upvote": 0.0, "ignore": 0.0},
+      "weight": 1.0
+    }
+  ]
+}
+
+action mapping for launch community members:
+  post   = writes a detailed Show-HN top comment, PH review, or thread post
+  comment= drops a reply, question, or reaction comment
+  upvote = silent upvote / bookmark without commenting
+  ignore = scrolls past without any engagement
+
+action_likelihood must sum to ~1.0. Baseline: comment≈0.38, upvote≈0.27,
+ignore≈0.20, post≈0.15. Keep ignore between 0.15–0.30 for ALL archetypes.
+Skeptics comment more; enthusiasts post/upvote more; lurkers lean toward upvote.
+
+Respond with JSON only."""
+
+
+class LaunchArchetypeGenerator(ArchetypeGenerator):
+    """Community archetypes (PH/HN/Reddit/IH/X patterns) reacting to a launch."""
+
+    SYSTEM_PROMPT = _LAUNCH_ARCHETYPE_SYSTEM_PROMPT
+
+    def _build_payload(self, pitch: ParsedPitch, n_archetypes: int) -> dict[str, Any]:
+        return {
+            "n_archetypes": n_archetypes,
+            "launch": {
+                "one_liner": pitch.one_liner,
+                "problem": pitch.problem,
+                "solution": pitch.solution,
+                "pricing": pitch.pricing,
+                "channels": pitch.channels,
+                "competitors": pitch.competitors,
+                "founder_ask": pitch.founder_ask,
+            },
+            "community_archetypes": pitch.icp_segments,
+        }

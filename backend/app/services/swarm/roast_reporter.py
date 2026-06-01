@@ -45,6 +45,8 @@ class RoastReport:
     silent_share_pct: float = 0.0  # ignore actions as % of all agents
     # --- deck intelligence (investor deck uploads): pitch-intelligence diagnosis ---
     deck_diagnosis: dict[str, Any] | None = None  # DeckDiagnosis.to_dict() or None
+    # --- launch brief (launch swarm): community stress-test summary ---
+    launch_brief: dict[str, Any] | None = None  # None on non-launch runs
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -544,3 +546,225 @@ class InvestorReporter(RoastReporter):
             top_cat = top_objections[0]["category"]
             return f"Build the proof point that answers '{top_cat}' before your next investor call."[:160]
         return "Tighten the deck around traction and market before the next investor call."[:160]
+
+
+# --- Launch swarm reporter ---
+
+_LAUNCH_NARRATIVE_SYSTEM = """You are a launch strategist and startup advisor. Synthesize the swarm of community member reactions into a sharp 2-3 paragraph narrative for the founder, and produce a launch decision brief.
+
+Be direct. This is launch decision stress-testing — surface what communities will say,
+ask, misunderstand, and debate when this product goes live. NOT a prediction. Lead
+with the strongest signal. Cite the specific objections, confusions, and community
+dynamics. Do not soften.
+
+`silent_share_pct` is the share who scrolled past without engaging, and
+`why_they_scrolled_past` clusters why. High scroll-past or one dominant ignore
+reason (e.g. "couldn't tell what it does") should weigh heavily on the verdict
+and next_action — not just the loud reactions.
+
+Narrative format:
+- Paragraph 1: the strongest launch signal — what communities will latch onto, positively or negatively.
+- Paragraph 2: the top objections, confusions, or questions likely to dominate the thread.
+- Paragraph 3: the single positioning or copy fix that would most improve the launch outcome.
+
+Plain prose. No headers, no bullet points. Under 250 words.
+
+Decision brief rules:
+- verdict: one of "go" | "sharpen" | "hold"
+  * go: strong community signal, clear positioning, launch-ready — ship it
+  * sharpen: real interest but positioning/copy has gaps to close before launch
+  * hold: fundamental clarity or differentiation problem — rework before launching
+- verdict_reason: one blunt line under 120 chars — the single decisive factor
+- next_action: the single most important move before going live, under 160 chars
+- confidence: "low" | "med" | "high" — how much weight to put on this signal
+- confidence_reason: one line (e.g. "only 11 community members spoke; mixed read")
+- objections_enriched: for each top objection, provide:
+  * category: exact category string from top_objections
+  * real_test: exact question to post in a community thread to test this, under 160 chars
+  * kill_criteria: "if N/5 community responses say X, fix this before launch", under 160 chars
+  * suggested_fix: concrete copy or positioning fix, under 160 chars"""
+
+# Launch ignore-reason categories -> founder-facing label + implication.
+_LAUNCH_IGNORE_LABELS = {
+    "unclear_value": "couldn't tell what it does",
+    "seen_before": "looks like every other tool",
+    "not_my_community": "not for me / wrong audience",
+    "dont_care": "not a real problem for me",
+    "launch_fatigue": "launch fatigue — I'm numb to it",
+    "wrong_timing": "maybe later, not now",
+}
+_LAUNCH_IGNORE_IMPLICATIONS = {
+    "unclear_value": "Clarity gap — community members can't parse the value from your copy. Rewrite the one-liner to lead with the concrete outcome, not the feature.",
+    "seen_before": "Differentiation gap — you read as a me-too. Make the specific wedge that sets you apart the headline of the launch post.",
+    "not_my_community": "Audience mismatch — you're launching in the wrong community or the copy speaks to the wrong person. Tighten who the product is for.",
+    "dont_care": "Weak pain signal — this reads as a nice-to-have, not a must-have. Re-anchor on the specific, costly problem you solve.",
+    "launch_fatigue": "Hype fatigue — too many similar launches. Lead with a concrete proof point or outcome, not marketing copy.",
+    "wrong_timing": "Timing mismatch — community doesn't feel urgency. Surface the trigger event or inflection point that makes this urgent now.",
+}
+
+_LAUNCH_BRIEF_SYSTEM = """You are a launch strategist. Based on the launch swarm reactions, produce a structured launch brief for the founder.
+
+Output strict JSON with these keys:
+{
+  "questions":    ["<question communities will ask in the launch thread>", ...],  // 3-5 items
+  "confusion":    ["<what will be misread, misunderstood, or misinterpreted>", ...],  // 2-4 items
+  "risks":        ["<launch risk: timing, framing, defensibility, community fit>", ...],  // 2-4 items
+  "themes":       ["<discussion theme likely to dominate the thread>", ...],  // 2-4 items
+  "playbook":     [{"trigger": "<the objection or question>", "response": "<how to respond>"}, ...],  // 3-5 items
+  "next_actions": ["<concrete move before going live>", ...]  // 3-5 items
+}
+
+Be specific to this product and these community reactions — no generic advice.
+Respond with JSON only. No prose, no markdown fences."""
+
+_EMPTY_LAUNCH_BRIEF: dict[str, Any] = {
+    "questions": [],
+    "confusion": [],
+    "risks": [],
+    "themes": [],
+    "playbook": [],
+    "next_actions": [],
+}
+
+
+def _coerce_launch_brief(data: dict[str, Any]) -> dict[str, Any]:
+    """Validate and defensively coerce a launch_brief dict. Never raises."""
+    def _str_list(val: Any) -> list[str]:
+        if not isinstance(val, list):
+            return []
+        return [str(v).strip() for v in val if str(v).strip()]
+
+    def _playbook_list(val: Any) -> list[dict[str, str]]:
+        if not isinstance(val, list):
+            return []
+        out = []
+        for item in val:
+            if isinstance(item, dict):
+                trigger = str(item.get("trigger", "")).strip()
+                response = str(item.get("response", "")).strip()
+                if trigger or response:
+                    out.append({"trigger": trigger, "response": response})
+        return out
+
+    return {
+        "questions": _str_list(data.get("questions")),
+        "confusion": _str_list(data.get("confusion")),
+        "risks": _str_list(data.get("risks")),
+        "themes": _str_list(data.get("themes")),
+        "playbook": _playbook_list(data.get("playbook")),
+        "next_actions": _str_list(data.get("next_actions")),
+    }
+
+
+class LaunchReporter(RoastReporter):
+    """Launch stress-test brief: community questions, confusion, risks, themes, playbook."""
+
+    NARRATIVE_SYSTEM = _LAUNCH_NARRATIVE_SYSTEM
+    VALID_VERDICTS = {"go", "sharpen", "hold"}
+    DEFAULT_VERDICT = "sharpen"
+    VERDICT_ENUM_HINT = "go | sharpen | hold"
+    IGNORE_LABELS = _LAUNCH_IGNORE_LABELS
+    IGNORE_IMPLICATIONS = _LAUNCH_IGNORE_IMPLICATIONS
+
+    def report(self, pitch: ParsedPitch, reactions: list[AgentReaction]) -> RoastReport:
+        """Run the base report, then synthesize the launch_brief and attach it."""
+        sentiment_split = _compute_sentiment_split(reactions)
+        action_split = _compute_action_split(reactions)
+        top_objections = _compute_top_objections(reactions)
+        icp_fit = _compute_icp_fit(reactions)
+        pmf_score = _compute_pmf_score(sentiment_split, action_split, icp_fit)
+        quoted = _pick_quoted_reactions(reactions)
+        ignore_reasons, silent_share_pct = _compute_ignore_reasons(
+            reactions, self.IGNORE_LABELS, self.IGNORE_IMPLICATIONS
+        )
+
+        narrative, headline, gaps, verdict, verdict_reason, next_action, confidence, confidence_reason, top_objections = self._synthesize(
+            pitch, sentiment_split, action_split, top_objections, icp_fit, pmf_score, quoted, reactions,
+            ignore_reasons, silent_share_pct,
+        )
+
+        launch_brief = self._synthesize_launch_brief(
+            pitch, reactions, quoted, top_objections, ignore_reasons, silent_share_pct
+        )
+
+        return RoastReport(
+            pmf_score=pmf_score,
+            headline=headline,
+            sentiment_split=sentiment_split,
+            action_split=action_split,
+            top_objections=top_objections,
+            icp_fit=icp_fit,
+            messaging_gaps=gaps,
+            narrative=narrative,
+            quoted_reactions=quoted,
+            verdict=verdict,
+            verdict_reason=verdict_reason,
+            next_action=next_action,
+            confidence=confidence,
+            confidence_reason=confidence_reason,
+            ignore_reasons=ignore_reasons,
+            silent_share_pct=silent_share_pct,
+            launch_brief=launch_brief,
+        )
+
+    def _synthesize_launch_brief(
+        self,
+        pitch: ParsedPitch,
+        reactions: list[AgentReaction],
+        quoted: list[dict[str, Any]],
+        top_objections: list[dict[str, Any]],
+        ignore_reasons: list[dict[str, Any]],
+        silent_share_pct: float,
+    ) -> dict[str, Any]:
+        """One synth-tier LLM call to produce the launch_brief. Defensive: never raises."""
+        payload = {
+            "launch": {
+                "one_liner": pitch.one_liner,
+                "problem": pitch.problem,
+                "solution": pitch.solution,
+                "pricing": pitch.pricing,
+                "channels": pitch.channels,
+            },
+            "top_objections": [
+                {"category": o["category"], "count": o["count"], "example": o["example_quote"]}
+                for o in top_objections[:5]
+            ],
+            "representative_reactions": [
+                {"name": q["name"], "tone": q["tone"], "segment": q["segment"], "text": q["text"][:280]}
+                for q in quoted[:8]
+            ],
+            "silent_share_pct": silent_share_pct,
+            "why_they_scrolled_past": [
+                {"reason": ir["label"], "share_pct": ir["share_pct"], "example": ir["example"]}
+                for ir in ignore_reasons
+            ],
+        }
+        messages = [
+            {"role": "system", "content": _LAUNCH_BRIEF_SYSTEM},
+            {
+                "role": "user",
+                "content": f"LAUNCH SWARM DATA:\n{payload}\n\nReturn JSON only.",
+            },
+        ]
+        try:
+            data = self.llm.chat_json(messages, temperature=0.4, max_tokens=1200)
+            return _coerce_launch_brief(data)
+        except Exception as exc:
+            logger.warning(f"launch_brief synthesis failed: {exc}; returning empty brief")
+            return dict(_EMPTY_LAUNCH_BRIEF)
+
+    @staticmethod
+    def _fallback_verdict_reason(
+        pmf_score: float,
+        sentiment_split: dict[str, float],
+    ) -> str:
+        pos = sentiment_split.get("positive", 0.0)
+        neg = sentiment_split.get("negative", 0.0)
+        return f"Launch score {pmf_score}/10; {pos:.0f}% positive, {neg:.0f}% dismissive — sharpen before shipping."[:120]
+
+    @staticmethod
+    def _fallback_next_action(top_objections: list[dict[str, Any]]) -> str:
+        if top_objections:
+            top_cat = top_objections[0]["category"]
+            return f"Fix '{top_cat}' in your launch copy — it's the top reason communities will scroll past."[:160]
+        return "Rewrite your one-liner to clearly state the outcome, not the feature, before going live."[:160]

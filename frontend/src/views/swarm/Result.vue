@@ -255,6 +255,228 @@
       </section>
     </main>
 
+    <!-- Launch Brief layout — launch swarm + launch_brief present -->
+    <main v-else-if="report && launchBrief" class="launch-dash scroll-zone">
+      <!-- Hero: verdict + next action -->
+      <section class="strip strip-launch-hero">
+        <div class="cell cell-launch-verdict">
+          <span class="h-eyebrow">launch verdict <AiDisclosure aria-label="About this verdict" /></span>
+          <div class="verdict-chip" :class="verdictMeta(report.verdict).cls">{{ verdictMeta(report.verdict).label }}</div>
+          <div class="verdict-meta" :title="report.confidence_reason || ''">confidence {{ report.confidence || '—' }}</div>
+        </div>
+        <div class="cell cell-launch-action">
+          <span class="h-eyebrow">do this next</span>
+          <h1 class="next-action h-display">{{ report.next_action || report.headline }}</h1>
+          <p v-if="report.verdict_reason" class="verdict-reason">{{ report.verdict_reason }}</p>
+        </div>
+        <div class="cell cell-launch-sentiment">
+          <span class="h-eyebrow">sentiment of those who spoke</span>
+          <div class="sent-bar">
+            <div class="sent-seg pos" :style="{ flex: report.sentiment_split?.positive || 0 }">
+              <span v-if="(report.sentiment_split?.positive || 0) >= 8">{{ report.sentiment_split.positive }}%</span>
+            </div>
+            <div class="sent-seg neu" :style="{ flex: report.sentiment_split?.neutral || 0 }">
+              <span v-if="(report.sentiment_split?.neutral || 0) >= 8">{{ report.sentiment_split.neutral }}%</span>
+            </div>
+            <div class="sent-seg neg" :style="{ flex: report.sentiment_split?.negative || 0 }">
+              <span v-if="(report.sentiment_split?.negative || 0) >= 8">{{ report.sentiment_split.negative }}%</span>
+            </div>
+          </div>
+          <div class="sent-key">
+            <span><i class="dot pos"></i>positive</span>
+            <span><i class="dot neu"></i>neutral</span>
+            <span><i class="dot neg"></i>negative</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Row 2: questions + confusion + risks -->
+      <section class="strip strip-launch-qcr">
+        <article class="cell cell-launch-questions">
+          <header class="cell-head">
+            <span class="h-eyebrow">likely questions</span>
+            <span class="cell-meta">{{ launchBrief.questions?.length || 0 }}</span>
+          </header>
+          <div class="scroll-zone launch-list-scroll">
+            <ul class="launch-list">
+              <li v-for="(q, i) in launchBrief.questions" :key="i" class="launch-list-item">{{ q }}</li>
+            </ul>
+            <p v-if="!launchBrief.questions?.length" class="muted">No questions surfaced.</p>
+          </div>
+        </article>
+
+        <article class="cell cell-launch-confusion">
+          <header class="cell-head">
+            <span class="h-eyebrow">confusion points</span>
+            <span class="cell-meta">{{ launchBrief.confusion?.length || 0 }}</span>
+          </header>
+          <div class="scroll-zone launch-list-scroll">
+            <ul class="launch-list launch-list-warn">
+              <li v-for="(c, i) in launchBrief.confusion" :key="i" class="launch-list-item">{{ c }}</li>
+            </ul>
+            <p v-if="!launchBrief.confusion?.length" class="muted">No confusion points found.</p>
+          </div>
+        </article>
+
+        <article class="cell cell-launch-risks">
+          <header class="cell-head">
+            <span class="h-eyebrow">risks</span>
+            <span class="cell-meta">{{ launchBrief.risks?.length || 0 }}</span>
+          </header>
+          <div class="scroll-zone launch-list-scroll">
+            <ul class="launch-list launch-list-warn">
+              <li v-for="(r, i) in launchBrief.risks" :key="i" class="launch-list-item">{{ r }}</li>
+            </ul>
+            <p v-if="!launchBrief.risks?.length" class="muted">No significant risks flagged.</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- Row 3: themes + playbook -->
+      <section class="strip strip-launch-tp">
+        <article class="cell cell-launch-themes">
+          <header class="cell-head"><span class="h-eyebrow">discussion themes</span></header>
+          <div class="theme-tags">
+            <span v-for="t in launchBrief.themes" :key="t" class="theme-tag">{{ t }}</span>
+            <span v-if="!launchBrief.themes?.length" class="muted">No themes identified.</span>
+          </div>
+          <hr class="h-rule" style="margin: var(--space-3) 0" />
+          <header class="cell-head"><span class="h-eyebrow">next actions</span></header>
+          <ul class="launch-list launch-list-live">
+            <li v-for="(a, i) in launchBrief.next_actions" :key="i" class="launch-list-item">{{ a }}</li>
+          </ul>
+          <p v-if="!launchBrief.next_actions?.length" class="muted">No actions listed.</p>
+        </article>
+
+        <article class="cell cell-launch-playbook">
+          <header class="cell-head">
+            <span class="h-eyebrow">response playbook</span>
+            <span class="cell-meta">{{ launchBrief.playbook?.length || 0 }}</span>
+          </header>
+          <div class="scroll-zone playbook-scroll">
+            <div v-for="(play, i) in launchBrief.playbook" :key="i" class="play-row">
+              <div class="play-trigger">
+                <span class="play-tag">trigger</span>
+                <span class="play-trigger-text">{{ play.trigger }}</span>
+              </div>
+              <div class="play-response">
+                <span class="play-tag accent">respond</span>
+                <span class="play-response-text">{{ play.response }}</span>
+              </div>
+            </div>
+            <p v-if="!launchBrief.playbook?.length" class="muted">No playbook generated.</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- Row 4: swarm reactions as supporting evidence -->
+      <section class="strip strip-three">
+        <article class="cell cell-narrative">
+          <header class="cell-head"><span class="h-eyebrow">synthesis</span></header>
+          <div class="scroll-zone narrative-scroll">
+            <p class="narrative-body">{{ report.narrative }}</p>
+            <div v-if="report.messaging_gaps?.length" class="fixes">
+              <span class="h-eyebrow">fixes to try</span>
+              <ul class="fix-list">
+                <li v-for="g in report.messaging_gaps" :key="g">{{ g }}</li>
+              </ul>
+            </div>
+            <div v-if="report.ignore_reasons?.length" class="silence">
+              <span class="h-eyebrow">{{ copy.silence(report.silent_share_pct) }}</span>
+              <ul class="silence-list">
+                <li v-for="ir in report.ignore_reasons" :key="ir.category" class="silence-row">
+                  <div class="silence-head">
+                    <span class="silence-label">{{ ir.label }}</span>
+                    <span class="silence-share">{{ ir.share_pct }}%</span>
+                  </div>
+                  <p v-if="ir.example" class="silence-ex">"{{ ir.example }}"</p>
+                  <p v-if="ir.implication" class="silence-imp">{{ ir.implication }}</p>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <article class="cell cell-objections">
+          <header class="cell-head">
+            <span class="h-eyebrow">{{ copy.objections }}</span>
+            <span class="cell-meta">{{ report.top_objections?.length || 0 }}</span>
+          </header>
+          <ol v-if="report.top_objections?.length" class="obj-list scroll-zone">
+            <li v-for="(obj, i) in report.top_objections" :key="obj.category" class="obj-row">
+              <span class="obj-rank">{{ String(i + 1).padStart(2, '0') }}</span>
+              <div class="obj-body">
+                <div class="obj-head-row">
+                  <span class="obj-cat">{{ obj.category }}</span>
+                  <span class="obj-count">{{ obj.count }}x</span>
+                </div>
+                <p v-if="obj.example_quote" class="obj-quote">"{{ obj.example_quote }}"</p>
+                <div v-if="obj.real_test" class="obj-test">
+                  <button class="obj-test-q" @click="copyTest(obj)" title="Copy this question">
+                    <span class="obj-tag">{{ copy.askTag }}</span>
+                    <span class="obj-test-text">{{ obj.real_test }}</span>
+                    <span class="obj-copy">{{ copiedTest === obj.category ? '✓' : '⧉' }}</span>
+                  </button>
+                </div>
+                <p v-if="obj.kill_criteria" class="obj-kill"><span class="obj-tag warn">{{ copy.killTag }}</span>{{ obj.kill_criteria }}</p>
+                <p v-if="obj.suggested_fix" class="obj-fix"><span class="obj-tag accent">fix</span>{{ obj.suggested_fix }}</p>
+                <ObjectionVote :job-id="jobId" :objection-category="obj.category" />
+              </div>
+            </li>
+          </ol>
+          <p v-else class="muted">No clear clusters.</p>
+        </article>
+
+        <article class="cell cell-quotes">
+          <header class="cell-head">
+            <span class="h-eyebrow">{{ copy.voices }}</span>
+            <span class="cell-meta">{{ report.quoted_reactions?.length || 0 }}</span>
+          </header>
+          <div class="quotes-list scroll-zone">
+            <article v-for="q in report.quoted_reactions" :key="q.agent_id" class="quote" :class="'tone-' + q.tone">
+              <div class="q-handle">@{{ q.name }}</div>
+              <p class="q-text">{{ q.text }}</p>
+              <div class="q-meta">
+                <span class="q-tone">{{ q.tone }}</span>
+                <span class="q-seg">{{ q.segment }}</span>
+              </div>
+            </article>
+            <p v-if="!report.quoted_reactions?.length" class="muted">No standout reactions.</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- ICP fit row -->
+      <section class="strip strip-foot">
+        <article class="cell cell-icp" v-if="segmentNames.length">
+          <header class="cell-head">
+            <span class="h-eyebrow">{{ copy.segments }}</span>
+            <span class="cell-meta">{{ segmentNames.length }}</span>
+          </header>
+          <div class="segment-tags">
+            <span v-for="name in segmentNames" :key="name" class="segment-tag">{{ name }}</span>
+          </div>
+        </article>
+        <article v-if="usage" class="cell cell-usage">
+          <header class="cell-head"><span class="h-eyebrow">run cost</span></header>
+          <div class="usage-row">
+            <div class="usage-stat">
+              <div class="usage-num">${{ costDisplay.value }}</div>
+              <div class="usage-label">total</div>
+            </div>
+            <div class="usage-stat">
+              <div class="usage-num">{{ formatTokens(usage.total_tokens) }}</div>
+              <div class="usage-label">tokens</div>
+            </div>
+            <div class="usage-stat">
+              <div class="usage-num">{{ usage.total_calls }}</div>
+              <div class="usage-label">calls</div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+
     <main v-else-if="report" class="dash">
       <!-- ROW 1 — Hero strip: score + headline + sentiment bar -->
       <section class="strip strip-hero">
@@ -546,6 +768,10 @@ const VERDICT_META = {
   sharpen_story: { label: 'sharpen story', cls: 'is-sharpen' },
   wrong_stage: { label: 'wrong stage', cls: 'is-wrong' },
   not_fundable: { label: 'not fundable', cls: 'is-kill' },
+  // launch swarm
+  go: { label: 'go', cls: 'is-ship' },
+  sharpen: { label: 'sharpen', cls: 'is-sharpen' },
+  hold: { label: 'hold', cls: 'is-wrong' },
 }
 function verdictMeta(v) {
   return VERDICT_META[v] || { label: v || '—', cls: 'is-sharpen' }
@@ -572,6 +798,15 @@ const COPY = {
     askTag: 'get proof',
     killTag: 'stall signal',
   },
+  launch: {
+    objections: 'objections & questions',
+    voices: 'in the thread',
+    segments: 'communities',
+    agents: 'commenters',
+    silence: (pct) => `why ${pct}% scrolled past`,
+    askTag: 'test this',
+    killTag: 'risk signal',
+  },
 }
 const swarmType = ref('validate')
 const copy = computed(() => COPY[swarmType.value] || COPY.validate)
@@ -585,6 +820,9 @@ async function copyTest(obj) {
 
 // Deck diagnosis computed
 const deckDiagnosis = computed(() => report.value?.deck_diagnosis ?? null)
+
+// Launch brief computed
+const launchBrief = computed(() => report.value?.launch_brief ?? null)
 
 function readinessColor(pct) {
   if (pct >= 70) return 'var(--live)'
@@ -757,31 +995,6 @@ onMounted(() => {
 .strip-hero { grid-template-columns: 200px 1.5fr minmax(184px, 216px); }
 .strip-three { grid-template-columns: 0.92fr 1.32fr 0.82fr; }
 .strip-foot { grid-template-columns: 1.6fr 1fr; }
-
-@media (max-width: 1100px) {
-  .strip-hero { grid-template-columns: 180px 1fr 196px; }
-  .strip-three { grid-template-columns: 0.85fr 1.15fr; }
-  .strip-three .cell-quotes { display: none; }
-}
-@media (max-width: 760px) {
-  .dash { grid-template-rows: auto auto auto; overflow-y: auto; }
-  .page.page-fixed { height: auto; overflow: auto; }
-  .strip-hero, .strip-three, .strip-foot { grid-template-columns: 1fr; }
-}
-
-/* iPad / tablet (portrait + landscape) — relax the fixed-viewport dashboard
- * into a comfortable scrolling 2-column flow. */
-@media (min-width: 761px) and (max-width: 1024px) {
-  .page.page-fixed { height: auto; overflow: auto; }
-  .dash { grid-template-rows: auto; overflow: visible; max-width: 920px; }
-  .cell { overflow: visible; }
-  .scroll-zone { overflow: visible; }
-  .strip-hero { grid-template-columns: 200px 1fr; }
-  .strip-hero .cell-sentiment { grid-column: 1 / -1; }
-  .strip-three { grid-template-columns: 1fr 1fr; }
-  .strip-three .cell-quotes { display: flex; grid-column: 1 / -1; }
-  .strip-foot { grid-template-columns: 1fr 1fr; }
-}
 
 .cell {
   padding: var(--space-4);
@@ -1145,18 +1358,6 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-@media (max-width: 1024px) {
-  .strip-diag-hero { grid-template-columns: 160px 1fr; }
-  .strip-diag-hero .cell-next-move { grid-column: 1 / -1; }
-  .strip-diag-main { grid-template-columns: 1fr; }
-  .strip-diag-zones { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 760px) {
-  .diag-dash { padding: var(--space-3); overflow-y: auto; }
-  .strip-diag-hero, .strip-diag-main, .strip-diag-zones { grid-template-columns: 1fr; }
-}
-
 /* Readiness cell */
 .cell-readiness { text-align: center; justify-content: center; align-items: center; gap: var(--space-3); }
 .readiness-pct {
@@ -1317,5 +1518,182 @@ onMounted(() => {
   margin: 0;
   white-space: pre-line;
   overflow-wrap: anywhere;
+}
+
+/* === LAUNCH BRIEF LAYOUT === */
+
+.launch-dash {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  max-width: 1480px;
+  width: 100%;
+  margin: 0 auto;
+  min-height: 0;
+}
+
+/* Launch hero row: verdict + next action + sentiment */
+.strip-launch-hero {
+  grid-template-columns: 180px 1.5fr minmax(180px, 220px);
+  flex-shrink: 0;
+}
+.cell-launch-verdict { text-align: center; justify-content: center; align-items: center; padding: var(--space-3); gap: var(--space-2); }
+.cell-launch-action { gap: var(--space-2); justify-content: center; }
+.cell-launch-sentiment { gap: var(--space-3); justify-content: center; }
+
+/* Launch Q/C/R row: questions + confusion + risks */
+.strip-launch-qcr {
+  grid-template-columns: 1fr 1fr 1fr;
+  min-height: 0;
+}
+
+/* Launch themes + playbook row */
+.strip-launch-tp {
+  grid-template-columns: 0.8fr 1.4fr;
+  flex-shrink: 0;
+}
+
+/* Shared launch list styles */
+.launch-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.launch-list-scroll { padding-right: var(--space-2); }
+.launch-list-item {
+  font-size: var(--text-sm);
+  color: var(--ink);
+  line-height: 1.5;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.launch-list-item:last-child { border-bottom: 0; padding-bottom: 0; }
+.launch-list-item::before {
+  content: '›';
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+  margin-right: var(--space-2);
+}
+.launch-list-warn .launch-list-item::before { color: var(--warn); }
+.launch-list-live .launch-list-item::before { color: var(--live); }
+
+/* Theme tags */
+.theme-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.theme-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--info);
+  background: var(--info-soft);
+  border: 1px solid color-mix(in oklch, var(--info) 35%, transparent);
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+/* Playbook */
+.playbook-scroll { padding-right: var(--space-2); }
+.play-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.play-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.play-trigger, .play-response {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.play-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 1px 5px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.play-tag.accent { color: var(--accent-bright); border-color: color-mix(in oklch, var(--accent) 35%, transparent); }
+.play-trigger-text {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+.play-response-text {
+  font-size: var(--text-sm);
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+/* responsive for deck diagnosis */
+@media (max-width: 1024px) {
+  .strip-diag-hero { grid-template-columns: 160px 1fr; }
+  .strip-diag-hero .cell-next-move { grid-column: 1 / -1; }
+  .strip-diag-main { grid-template-columns: 1fr; }
+  .strip-diag-zones { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  .diag-dash { padding: var(--space-3); overflow-y: auto; }
+  .strip-diag-hero, .strip-diag-main, .strip-diag-zones { grid-template-columns: 1fr; }
+}
+
+/* responsive for main dashboard */
+@media (max-width: 1100px) {
+  .strip-hero { grid-template-columns: 180px 1fr 196px; }
+  .strip-three { grid-template-columns: 0.85fr 1.15fr; }
+  .strip-three .cell-quotes { display: none; }
+}
+
+@media (max-width: 760px) {
+  .dash { grid-template-rows: auto auto auto; overflow-y: auto; }
+  .page.page-fixed { height: auto; overflow: auto; }
+  .strip-hero, .strip-three, .strip-foot { grid-template-columns: 1fr; }
+}
+
+/* responsive for launch brief */
+@media (max-width: 1024px) {
+  .strip-launch-hero { grid-template-columns: 160px 1fr; }
+  .strip-launch-hero .cell-launch-sentiment { grid-column: 1 / -1; }
+  .strip-launch-qcr { grid-template-columns: 1fr 1fr; }
+  .strip-launch-tp { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  .launch-dash { padding: var(--space-3); overflow-y: auto; }
+  .strip-launch-hero,
+  .strip-launch-qcr,
+  .strip-launch-tp { grid-template-columns: 1fr; }
+}
+
+/* iPad / tablet (portrait + landscape) — relax the fixed-viewport dashboard
+ * into a comfortable scrolling 2-column flow. */
+@media (min-width: 761px) and (max-width: 1024px) {
+  .page.page-fixed { height: auto; overflow: auto; }
+  .dash { grid-template-rows: auto; overflow: visible; max-width: 920px; }
+  .cell { overflow: visible; }
+  .scroll-zone { overflow: visible; }
+  .strip-hero { grid-template-columns: 200px 1fr; }
+  .strip-hero .cell-sentiment { grid-column: 1 / -1; }
+  .strip-three { grid-template-columns: 1fr 1fr; }
+  .strip-three .cell-quotes { display: flex; grid-column: 1 / -1; }
+  .strip-foot { grid-template-columns: 1fr 1fr; }
 }
 </style>

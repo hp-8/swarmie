@@ -152,3 +152,46 @@ class InvestorPitchParser(PitchParser):
         pitch.raise_ask = data.get("raise_ask", "").strip()
         pitch.stage = data.get("stage", "").strip()
         return pitch
+
+
+# --- Launch swarm parser ---
+
+_LAUNCH_SYSTEM_PROMPT = """You are a launch strategist. You read a founder's pitch or launch copy and extract the structured signal a community-launch simulation needs.
+
+Output strict JSON with these keys (no extras):
+  one_liner       : string  — single sentence, founder's own framing if present
+  problem         : string  — pain being solved, plain language
+  solution        : string  — how the product solves it
+  target_icp      : string  — primary user in one short phrase
+  icp_segments    : array of 5-6 strings — COMMUNITY ARCHETYPES who will react to this launch
+                    (e.g. "Product Hunt maker hunting new tools",
+                    "HN Show-HN skeptic demanding rigor",
+                    "subreddit lurker in r/SaaS or r/startups",
+                    "Indie Hackers founder comparing to their own tool",
+                    "X reply-guy with hot takes",
+                    "Reddit power user who's seen every launch")
+                    These are community personas, NOT customer segments.
+  pricing         : string  — pricing model if mentioned, else ""
+  channels        : array   — launch channels if mentioned (e.g. ["Product Hunt","HN Show-HN","Reddit"]), else []
+  competitors     : array   — alternatives if mentioned, else []
+  founder_ask     : string  — what the founder wants to learn from this launch simulation
+                    (default: "What will communities say when this launches?")
+
+If the pitch is vague, infer reasonably but mark inferred fields with "[inferred]" prefix.
+Never invent competitors that weren't mentioned.
+
+Respond with JSON only. No prose, no markdown fences."""
+
+
+class LaunchPitchParser(PitchParser):
+    """Parse a pitch for the launch swarm: community archetypes + launch signal."""
+
+    SYSTEM_PROMPT = _LAUNCH_SYSTEM_PROMPT
+
+    def _build(self, data: dict[str, Any]) -> ParsedPitch:
+        pitch = super()._build(data)
+        pitch.founder_ask = (
+            data.get("founder_ask", "").strip()
+            or "What will communities say when this launches?"
+        )
+        return pitch
