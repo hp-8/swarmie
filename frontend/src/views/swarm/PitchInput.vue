@@ -10,49 +10,35 @@
     </header>
 
     <main class="workbench">
-      <aside class="left-col">
-        <div class="step">
-          <div class="step-num">i.</div>
-          <div class="step-label">The pitch</div>
-          <div class="step-hint">Landing copy, deck, one-pager. Be specific.</div>
-        </div>
-        <div class="step is-quiet">
-          <div class="step-num">ii.</div>
-          <div class="step-label">Swarm size</div>
-          <div class="step-hint">Bigger = more signal, more cost.</div>
-        </div>
-        <div class="step is-quiet">
-          <div class="step-num">iii.</div>
-          <div class="step-label">Run</div>
-          <div class="step-hint">~60s. Streams live.</div>
-        </div>
-      </aside>
-
-      <section class="canvas">
-        <div class="swarm-picker" role="tablist" aria-label="Choose a swarm">
-          <button
-            v-for="s in SWARMS"
-            :key="s.key"
-            type="button"
-            role="tab"
-            class="swarm-tab"
-            :class="{ active: s.key === swarmType, locked: !s.enabled }"
-            :aria-selected="s.key === swarmType"
-            :disabled="!s.enabled || submitting"
-            @click="selectSwarm(s)"
-          >
-            <span class="swarm-tab-label">{{ s.label }}</span>
-            <span v-if="!s.enabled" class="swarm-tab-soon">soon</span>
-          </button>
+      <form class="form" @submit.prevent="onSubmit">
+        <!-- TOP ROW — heading + tab switch beside it -->
+        <div class="head-row">
+          <header class="canvas-head">
+            <h1 class="canvas-title h-display">{{ activeSwarm.title }}</h1>
+            <p class="canvas-sub" v-html="activeSwarm.sub"></p>
+          </header>
+          <div class="swarm-picker" role="tablist" aria-label="Choose a swarm">
+            <button
+              v-for="s in SWARMS"
+              :key="s.key"
+              type="button"
+              role="tab"
+              class="swarm-tab"
+              :class="{ active: s.key === swarmType, locked: !s.enabled }"
+              :aria-selected="s.key === swarmType"
+              :disabled="!s.enabled || submitting"
+              @click="selectSwarm(s)"
+            >
+              <span class="swarm-tab-label">{{ s.label }}</span>
+              <span v-if="!s.enabled" class="swarm-tab-soon">soon</span>
+            </button>
+          </div>
         </div>
 
-        <header class="canvas-head">
-          <h1 class="canvas-title h-display">{{ activeSwarm.title }}</h1>
-          <p class="canvas-sub" v-html="activeSwarm.sub"></p>
-        </header>
-
-        <form class="form" @submit.prevent="onSubmit">
-          <label class="field-wrap field-pitch">
+        <!-- I (deck) + II (controls) — one aligned group -->
+        <div class="split">
+          <div class="col-input">
+            <label class="field-wrap field-pitch">
             <div class="field-head">
               <span class="h-eyebrow">i · {{ swarmType === 'investor' ? 'the deck' : 'the pitch' }}</span>
               <div class="field-head-right">
@@ -127,7 +113,10 @@
               >{{ c.label }}</span>
             </div>
           </label>
+        </div>
 
+        <!-- RIGHT 20% — controls -->
+        <aside class="col-controls">
           <div class="field-wrap field-size">
             <div class="field-head">
               <span class="h-eyebrow">ii · swarm size</span>
@@ -166,8 +155,9 @@
             Reactions are produced by AI agents — <em>not real users</em>.
             <AiDisclosure variant="text" label="how this was generated" />
           </p>
-        </form>
-      </section>
+        </aside>
+        </div>
+      </form>
     </main>
 
     <!-- Launch overlay -->
@@ -401,51 +391,61 @@ async function onSubmit() {
 .rail-far { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-2); }
 .rail-far:hover { color: var(--ink); }
 
+/* This page scrolls naturally at every width. The fixed-viewport (100vh +
+ * overflow:hidden) model can't hold the investor form on short/tablet heights,
+ * so we override it here instead of chasing breakpoints. */
+/* page-fixed stays no-scroll (global 100vh); phone re-enables scroll below. */
+
 .workbench {
   flex: 1;
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: var(--space-7);
-  max-width: var(--max-content);
+  display: flex;
+  flex-direction: column;
+  max-width: 1140px;
   width: 100%;
   margin: 0 auto;
-  padding: var(--space-6) var(--space-6);
+  padding: var(--space-5) var(--space-6);
   min-height: 0;
   overflow: hidden;
 }
-@media (max-width: 880px) {
-  .workbench { grid-template-columns: 1fr; gap: var(--space-3); padding: var(--space-4); }
+/* Tablet/phone: collapse the 80/20 split into a single stacked column —
+ * input first, controls below. */
+@media (max-width: 768px) {
+  /* phone can't fit no-scroll — let it scroll + stack naturally */
+  .page.page-fixed { height: auto; min-height: 100vh; overflow-y: auto; }
+  .workbench { flex: initial; overflow: visible; padding: var(--space-5) var(--space-5) var(--space-8); }
+  .form { flex: initial; gap: var(--space-6); }
+  /* heading + picker stack; picker sits above the heading */
+  .head-row { flex-direction: column; gap: var(--space-3); }
+  .head-row .swarm-picker { order: -1; }
+  .split { flex: initial; grid-template-columns: 1fr; gap: var(--space-6); align-items: start; }
+  .col-input { min-height: 0; }
+  .field-pitch { flex: initial; }
+  .textarea { flex: initial; min-height: 200px; }
 }
 
-.left-col {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  align-self: start;
-}
-.step { padding-right: var(--space-3); }
-.step.is-quiet { opacity: 0.55; }
-.step-num {
-  font-family: var(--font-display); font-style: italic; font-weight: 500;
-  font-variation-settings: 'opsz' 96, 'wght' 500;
-  font-size: var(--text-lg); color: var(--accent-bright); margin-bottom: var(--space-1);
-}
-.step-label {
-  font-family: var(--font-mono); font-size: var(--text-xs);
-  letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink); margin-bottom: var(--space-1);
-}
-.step-hint { font-family: var(--font-body); font-size: var(--text-sm); color: var(--ink-2); line-height: 1.55; }
-
-@media (max-width: 880px) {
-  .left-col { flex-direction: row; flex-wrap: wrap; }
-  .step { flex: 1; min-width: 140px; }
+/* Phone: strip secondary chrome, give the form room to breathe. */
+@media (max-width: 640px) {
+  .workbench { padding: var(--space-4) var(--space-4) var(--space-7); }
+  /* picker spans full width, even thirds — no label overflow */
+  .swarm-picker { display: flex; width: 100%; }
+  .swarm-tab { flex: 1; justify-content: center; padding: 8px 6px; }
+  .canvas-sub { display: none; }          /* verbose example — the title carries it */
+  .pitch-checklist { display: none; }     /* secondary cue; the placeholder guides */
+  .size-slider { display: none; }         /* presets are touch-friendlier than a thin slider */
+  .size-presets { width: 100%; justify-content: space-between; }
+  .size-presets button { flex: 1; padding: 11px 0; text-align: center; }
+  .form { gap: var(--space-6); }
+  .canvas-head { margin-bottom: var(--space-5); }
+  .actions { flex-direction: column; align-items: stretch; gap: var(--space-3); }
+  .run-btn { width: 100%; }
+  .actions-hint { text-align: center; }
 }
 
 .canvas {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 /* Swarm picker — compact segmented control. One swarm = one founder decision.
  * Label-only: the active swarm's purpose is carried by the canvas title + sub. */
@@ -509,13 +509,53 @@ async function onSubmit() {
 }
 .canvas-sub em { color: var(--accent-bright); font-style: italic; }
 
+/* 80/20 split: input left, controls (size + run) right. */
 .form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-height: 0;
+}
+/* Top row: heading left, tab switch beside it (top-right). */
+.head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-shrink: 0;
+}
+.head-row .canvas-head { margin: 0; flex: 1; min-width: 0; }
+.head-row .swarm-picker { margin: 0; flex-shrink: 0; }
+/* The I (deck) + II (controls) pair — the 80/20 split, fills remaining height. */
+.split {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: var(--space-7);
+  align-items: stretch;
+  min-height: 0;
+}
+.col-input {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  min-height: 0;
-  flex: 1;
+  min-width: 0;
+  min-height: 0;          /* let the textarea flex-fill without overflow */
 }
+.col-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-self: start;
+}
+.col-controls .actions { flex-direction: column; align-items: stretch; gap: var(--space-2); }
+.col-controls .run-btn { width: 100%; }
+.col-controls .field-size .field-head { flex-direction: column; align-items: flex-start; gap: 2px; }
+.col-controls .size-row { flex-direction: column; align-items: stretch; }
+.col-controls .size-presets { width: 100%; justify-content: space-between; }
+.col-controls .size-presets button { flex: 1; text-align: center; }
+.col-controls .ai-note { margin-top: 0; }
 
 .field-wrap { display: flex; flex-direction: column; gap: var(--space-2); }
 .field-pitch { flex: 1; min-height: 0; }
@@ -551,7 +591,7 @@ async function onSubmit() {
 
 .textarea {
   width: 100%;
-  flex: 1;
+  flex: 1;                 /* fill the left column height — no page scroll */
   background: var(--paper-2);
   border: 1px solid var(--rule);
   border-radius: var(--radius-lg);
@@ -559,7 +599,7 @@ async function onSubmit() {
   color: var(--ink);
   font: 14px/1.6 var(--font-mono);
   resize: none;
-  min-height: 0;
+  min-height: 120px;
   transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
 }
 .textarea::placeholder { color: var(--ink-4); }
