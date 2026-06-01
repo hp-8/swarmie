@@ -1655,7 +1655,9 @@ onMounted(() => {
 }
 
 @media (max-width: 760px) {
-  .diag-dash { padding: var(--space-3); overflow-y: auto; }
+  .page.page-fixed { height: auto; overflow: auto; }
+  .diag-dash { padding: var(--space-3); overflow: visible; }
+  .diag-dash .scroll-zone { overflow: visible; }
   .strip-diag-hero, .strip-diag-main, .strip-diag-zones { grid-template-columns: 1fr; }
 }
 
@@ -1667,9 +1669,11 @@ onMounted(() => {
 }
 
 @media (max-width: 760px) {
-  .dash { grid-template-rows: auto auto auto; overflow-y: auto; }
+  .dash { grid-template-rows: auto auto auto; overflow: visible; }
+  .dash .scroll-zone { overflow: visible; }
   .page.page-fixed { height: auto; overflow: auto; }
   .strip-hero, .strip-three, .strip-foot { grid-template-columns: 1fr; }
+  .strip-three .cell-quotes { display: flex; }
 }
 
 /* responsive for launch brief */
@@ -1681,7 +1685,9 @@ onMounted(() => {
 }
 
 @media (max-width: 760px) {
-  .launch-dash { padding: var(--space-3); overflow-y: auto; }
+  .page.page-fixed { height: auto; overflow: auto; }
+  .launch-dash { padding: var(--space-3); overflow: visible; }
+  .launch-dash .scroll-zone { overflow: visible; }
   .strip-launch-hero,
   .strip-launch-qcr,
   .strip-launch-tp { grid-template-columns: 1fr; }

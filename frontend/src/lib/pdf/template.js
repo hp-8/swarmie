@@ -504,6 +504,120 @@ function drawCost(doc, y, usage) {
   return cy + 44
 }
 
+/** Bulleted string list under an eyebrow. */
+function drawBullets(doc, y, contentW, label, items, accent) {
+  if (!items?.length) return y
+  let cy = ensureSpace(doc, y, 44)
+  cy = drawEyebrow(doc, label, M.left, cy + 6, contentW)
+  setFont(doc, 'helvetica', 'normal', 10)
+  for (const it of items) {
+    cy = ensureSpace(doc, cy, 16)
+    fill(doc, accent || C.accentBright)
+    doc.circle(M.left + 3, cy - 3, 1.6, 'F')
+    text(doc, C.ink)
+    const w = doc.splitTextToSize(sanitize(String(it)), contentW - 14)
+    doc.text(w[0], M.left + 12, cy)
+    cy += 14
+    for (let i = 1; i < w.length; i++) {
+      cy = ensureSpace(doc, cy, 14)
+      doc.text(w[i], M.left + 12, cy)
+      cy += 14
+    }
+  }
+  return cy + 6
+}
+
+/** Deck diagnosis (investor deck uploads) — page-cited scorecard + red flags. */
+function drawDeckDiagnosis(doc, y, report) {
+  const d = report.deck_diagnosis
+  if (!d) return y
+  const contentW = PAGE_W - M.left - M.right
+  let cy = ensureSpace(doc, y, 90)
+  cy = drawEyebrow(doc, 'Deck diagnosis', M.left, cy + 6, contentW)
+
+  setFont(doc, 'times', 'italic', 16); text(doc, C.ink)
+  doc.text(`Fundability readiness ${Math.round(d.readiness_pct || 0)}%`, M.left, cy + 6)
+  setFont(doc, 'courier', 'normal', 8); text(doc, C.ink3)
+  doc.text(`stage ${(d.stage || '-')}  ·  score ${d.overall_score || 0}/130`, M.left, cy + 22, { charSpace: 1.2 })
+  cy += 38
+
+  if (d.next_move) {
+    cy = drawEyebrow(doc, 'Next move', M.left, cy + 6, contentW)
+    setFont(doc, 'helvetica', 'normal', 10); text(doc, C.ink)
+    cy = writeText(doc, d.next_move, M.left, cy, contentW, 14) + 6
+  }
+
+  if (d.slides?.length) {
+    cy = ensureSpace(doc, cy, 40)
+    cy = drawEyebrow(doc, 'Slide scorecard', M.left, cy + 6, contentW)
+    for (const s of d.slides) {
+      cy = ensureSpace(doc, cy, 22)
+      setFont(doc, 'courier', 'bold', 8); text(doc, C.ink)
+      doc.text(`${String(s.slide_type || '').toUpperCase()}  p.${s.page}`, M.left, cy, { charSpace: 1 })
+      setFont(doc, 'courier', 'normal', 8); text(doc, C.ink3)
+      doc.text(`${s.score}/10`, PAGE_W - M.right, cy, { align: 'right' })
+      cy += 12
+      if (s.top_issue) {
+        setFont(doc, 'helvetica', 'normal', 9); text(doc, C.ink2)
+        cy = writeText(doc, s.top_issue, M.left + 12, cy, contentW - 12, 12)
+      }
+      cy += 6
+    }
+  }
+
+  if (d.red_flags?.length) {
+    cy = ensureSpace(doc, cy, 40)
+    cy = drawEyebrow(doc, 'Red flags', M.left, cy + 6, contentW)
+    for (const f of d.red_flags) {
+      cy = ensureSpace(doc, cy, 22)
+      const col = (f.severity === 'CRITICAL' || f.severity === 'HIGH') ? C.warn
+        : (f.severity === 'MEDIUM' ? C.accentBright : C.ink3)
+      setFont(doc, 'courier', 'bold', 7); text(doc, col)
+      doc.text(`${f.severity} · ${String(f.slide_type || '').toUpperCase()} p.${f.page}`, M.left, cy, { charSpace: 1 })
+      cy += 12
+      setFont(doc, 'helvetica', 'normal', 9); text(doc, C.ink2)
+      cy = writeText(doc, f.text, M.left + 12, cy, contentW - 12, 12) + 6
+    }
+  }
+
+  cy = drawBullets(doc, cy, contentW, 'Strong zones', d.strong_zones, C.live)
+  cy = drawBullets(doc, cy, contentW, 'Weak zones', d.weak_zones, C.warn)
+
+  if (d.investor_simulation) {
+    cy = ensureSpace(doc, cy, 40)
+    cy = drawEyebrow(doc, 'Investor in the room', M.left, cy + 6, contentW)
+    setFont(doc, 'times', 'italic', 10); text(doc, C.ink2)
+    cy = writeText(doc, d.investor_simulation, M.left, cy, contentW, 13) + 6
+  }
+  return cy + 6
+}
+
+/** Launch brief (launch swarm) — questions, confusion, risks, themes, playbook. */
+function drawLaunchBrief(doc, y, report) {
+  const b = report.launch_brief
+  if (!b) return y
+  const contentW = PAGE_W - M.left - M.right
+  let cy = drawBullets(doc, y, contentW, 'Likely questions', b.questions, C.info)
+  cy = drawBullets(doc, cy, contentW, 'Confusion points', b.confusion, C.warn)
+  cy = drawBullets(doc, cy, contentW, 'Risks', b.risks, C.warn)
+  cy = drawBullets(doc, cy, contentW, 'Discussion themes', b.themes, C.info)
+
+  if (b.playbook?.length) {
+    cy = ensureSpace(doc, cy, 44)
+    cy = drawEyebrow(doc, 'Response playbook', M.left, cy + 6, contentW)
+    for (const p of b.playbook) {
+      cy = ensureSpace(doc, cy, 28)
+      setFont(doc, 'courier', 'bold', 8); text(doc, C.accentBright)
+      cy = writeText(doc, String(p.trigger || ''), M.left, cy, contentW, 12)
+      setFont(doc, 'helvetica', 'normal', 9); text(doc, C.ink2)
+      cy = writeText(doc, '-> ' + String(p.response || ''), M.left + 12, cy, contentW - 12, 12) + 6
+    }
+  }
+
+  cy = drawBullets(doc, cy, contentW, 'Next actions', b.next_actions, C.live)
+  return cy + 6
+}
+
 /** Footer watermark, drawn on every page during finalize. */
 function drawWatermark(doc) {
   const y = PAGE_H - M.bottom + 8
@@ -590,6 +704,8 @@ export function generateRoastPDF({ report, parsedPitch, usage, jobId }) {
   y = drawHero(doc, y, report, parsedPitch)
   y = drawSentimentBar(doc, y, report)
   y = drawSynthesis(doc, y, report)
+  y = drawDeckDiagnosis(doc, y, report)   // investor deck uploads (no-op otherwise)
+  y = drawLaunchBrief(doc, y, report)     // launch swarm (no-op otherwise)
   y = drawObjections(doc, y, report)
   y = drawQuotes(doc, y, report)
   y = drawSegments(doc, y, report)
