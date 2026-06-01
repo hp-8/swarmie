@@ -143,6 +143,16 @@
 
           <div v-if="error" class="error">{{ error }}</div>
 
+          <label v-if="showRunConsent" class="run-consent">
+            <input type="checkbox" v-model="runConsent" :disabled="submitting" />
+            <span>
+              I agree to share my pitch under Swarmie's
+              <router-link to="/terms" class="rc-link">Terms</router-link>
+              &amp;
+              <router-link to="/privacy" class="rc-link">Privacy Policy</router-link>.
+            </span>
+          </label>
+
           <div class="actions">
             <button class="h-btn is-accent run-btn" type="submit" :disabled="!canSubmit || submitting">
               <span v-if="submitting">Starting…</span>
@@ -181,6 +191,7 @@ import { useRouter } from 'vue-router'
 import { roastApi } from '../../api/roast'
 import AiDisclosure from '../../components/AiDisclosure.vue'
 import { trackRoastStart } from '../../lib/analytics'
+import { hasAcceptedRunTerms, acceptRunTerms } from '../../lib/consent'
 
 const router = useRouter()
 const swarmType = ref('validate')
@@ -327,7 +338,15 @@ function selectSwarm(s) {
   swarmType.value = s.key
 }
 
+// First-run consent (clickwrap to the docs). Surfaces only once the user has
+// actually provided content, and never again after they accept once.
+const _tosAccepted = hasAcceptedRunTerms()
+const runConsent = ref(_tosAccepted)
+const hasContent = computed(() => pitchText.value.trim().length > 0 || !!deckFile.value)
+const showRunConsent = computed(() => !_tosAccepted && hasContent.value)
+
 const canSubmit = computed(() => {
+  if (!runConsent.value) return false
   if (swarmType.value === 'investor' && deckFile.value) return true
   return pitchText.value.trim().length >= 40
 })
@@ -349,6 +368,7 @@ const costEst = computed(() => {
 
 const runHint = computed(() => {
   if (submitting.value) return 'sending…'
+  if (!runConsent.value) return 'agree to the terms first'
   if (!canSubmit.value) return deckFile.value ? 'PDF ready' : 'fill the pitch first'
   if (deckFile.value) return `${agentCount.value} ${activeSwarm.value.agentNoun} · deck mode · ~90s`
   return `${agentCount.value} ${activeSwarm.value.agentNoun} · ~60s`
@@ -356,6 +376,7 @@ const runHint = computed(() => {
 
 async function onSubmit() {
   if (!canSubmit.value || submitting.value) return
+  acceptRunTerms()
   error.value = ''
   submitting.value = true
   launching.value = true
@@ -640,6 +661,14 @@ async function onSubmit() {
   font-family: var(--font-mono); font-size: var(--text-xs);
   letter-spacing: 0.06em; color: var(--ink-3);
 }
+.run-consent {
+  display: flex; gap: var(--space-2); align-items: flex-start;
+  font-family: var(--font-body); font-size: var(--text-xs);
+  line-height: 1.45; color: var(--ink-3); cursor: pointer;
+}
+.run-consent input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
+.run-consent .rc-link { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
+.run-consent .rc-link:hover { color: var(--accent); }
 .ai-note {
   margin: var(--space-3) 0 0;
   font-family: var(--font-mono);

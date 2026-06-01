@@ -637,6 +637,10 @@
       <span class="foot-sep">·</span>
       <AiDisclosure variant="text" label="how this was generated" />
       <span class="foot-sep">·</span>
+      <router-link to="/terms" class="foot-cta">Terms</router-link>
+      <span class="foot-sep">·</span>
+      <router-link to="/privacy" class="foot-cta">Privacy</router-link>
+      <span class="foot-sep">·</span>
       <router-link to="/new" class="foot-cta">run another →</router-link>
     </footer>
 

@@ -1,9 +1,10 @@
 <template>
   <router-view />
+  <ConsentBanner />
 </template>
 
 <script setup>
-// router root
+import ConsentBanner from './components/ConsentBanner.vue'
 </script>
 
 <style>

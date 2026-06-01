@@ -1,5 +1,6 @@
 import FingerprintJS from '@fingerprintjs/fingerprintjs'
 import { supabase } from './supabase'
+import { hasAnalyticsConsent } from './consent'
 
 let _fpPromise = null
 let _fingerprint = null
@@ -10,6 +11,8 @@ function getFpPromise() {
 }
 
 export async function getFingerprint() {
+  // Device fingerprinting is non-essential — never run it without consent.
+  if (!hasAnalyticsConsent()) return null
   if (_fingerprint) return _fingerprint
   const fp = await getFpPromise()
   const result = await fp.get()
@@ -18,7 +21,7 @@ export async function getFingerprint() {
 }
 
 export async function registerDevice() {
-  if (!supabase) return null
+  if (!supabase || !hasAnalyticsConsent()) return null
   const fingerprint = await getFingerprint()
 
   const { error } = await supabase
@@ -37,7 +40,7 @@ export async function registerDevice() {
 }
 
 export async function trackRoastStart(jobId, { pitchText, pitchLength, nAgents, swarmType, source } = {}) {
-  if (!supabase) return
+  if (!supabase || !hasAnalyticsConsent()) return
   const fingerprint = await getFingerprint()
 
   const { error } = await supabase
@@ -57,7 +60,7 @@ export async function trackRoastStart(jobId, { pitchText, pitchLength, nAgents, 
 }
 
 export async function trackRoastComplete(jobId, { agentCount, promptTokens, completionTokens, totalTokens, costUsd, model, error: runError } = {}) {
-  if (!supabase) return
+  if (!supabase || !hasAnalyticsConsent()) return
 
   const update = {
     status: runError ? 'failed' : 'completed',
@@ -80,7 +83,7 @@ export async function trackRoastComplete(jobId, { agentCount, promptTokens, comp
 }
 
 export async function trackParsedPitch(jobId, pitch) {
-  if (!supabase || !pitch) return
+  if (!supabase || !hasAnalyticsConsent() || !pitch) return
 
   const { error } = await supabase
     .from('roast_pitches')
@@ -101,7 +104,7 @@ export async function trackParsedPitch(jobId, pitch) {
 }
 
 export async function trackReport(jobId, report) {
-  if (!supabase || !report) return
+  if (!supabase || !hasAnalyticsConsent() || !report) return
 
   const { error } = await supabase
     .from('roast_reports')
@@ -127,7 +130,7 @@ export async function trackReport(jobId, report) {
 }
 
 export async function trackReactions(jobId, reactions) {
-  if (!supabase || !reactions?.length) return
+  if (!supabase || !hasAnalyticsConsent() || !reactions?.length) return
 
   const rows = reactions.map(r => ({
     job_id: jobId,
@@ -157,7 +160,7 @@ export async function trackReactions(jobId, reactions) {
 }
 
 export async function trackPdfDownload(jobId) {
-  if (!supabase) return
+  if (!supabase || !hasAnalyticsConsent()) return
   const fingerprint = await getFingerprint()
 
   const { error } = await supabase
@@ -172,7 +175,7 @@ export async function trackPdfDownload(jobId) {
 
 // vote: +1 | -1. Upsert so re-vote overwrites.
 export async function trackObjectionFeedback(jobId, objectionCategory, vote) {
-  if (!supabase) return
+  if (!supabase || !hasAnalyticsConsent()) return
   const fingerprint = await getFingerprint()
 
   const { error } = await supabase
@@ -189,7 +192,7 @@ export async function trackObjectionFeedback(jobId, objectionCategory, vote) {
 
 // { helpful: bool, comment?: string, email?: string, trigger: 'button'|'popup' }
 export async function trackProductFeedback(jobId, { helpful, comment, email, trigger }) {
-  if (!supabase) return
+  if (!supabase || !hasAnalyticsConsent()) return
   const fingerprint = await getFingerprint()
 
   const { error } = await supabase

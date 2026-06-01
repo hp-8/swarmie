@@ -5,6 +5,8 @@ import Home from '../views/Home.vue'
 import PitchInput from '../views/swarm/PitchInput.vue'
 import Watching from '../views/swarm/Watching.vue'
 import Result from '../views/swarm/Result.vue'
+import Terms from '../views/legal/Terms.vue'
+import Privacy from '../views/legal/Privacy.vue'
 
 // Legacy MiroFish deep-simulation flow (kept functional, not surfaced).
 import LegacyMain from '../views/MainView.vue'
@@ -19,6 +21,10 @@ const routes = [
   { path: '/new', name: 'PitchInput', component: PitchInput },
   { path: '/run/:jobId', name: 'Watching', component: Watching, props: true },
   { path: '/result/:jobId', name: 'Result', component: Result, props: true },
+
+  // --- Legal ---
+  { path: '/terms', name: 'Terms', component: Terms },
+  { path: '/privacy', name: 'Privacy', component: Privacy },
 
   // --- Legacy deep-sim flow (preserved; reachable but not promoted) ---
   { path: '/legacy/process/:projectId', name: 'LegacyProcess', component: LegacyMain, props: true },
