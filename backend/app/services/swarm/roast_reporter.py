@@ -225,9 +225,13 @@ def _compute_pmf_score(
     sentiment_score = (
         sentiment_split["positive"] - sentiment_split["negative"]
     ) / 100.0  # -1..1
+    # Size-weighted: a positively-disposed segment contributes its share of
+    # agents, not an equal vote. Prevents a 1-agent micro-segment from counting
+    # the same as a 20-agent one.
+    total_seg_agents = sum(v["count"] for v in icp_fit.values()) or 1
     segment_fit = (
-        sum(1 for v in icp_fit.values() if v["avg_sentiment"] > 0.1)
-        / max(len(icp_fit), 1)
+        sum(v["count"] for v in icp_fit.values() if v["avg_sentiment"] > 0.1)
+        / total_seg_agents
     )
     raw = (engagement_rate * 4) + ((sentiment_score + 1) * 2) + (segment_fit * 4)
     return round(min(max(raw, 0.0), 10.0), 1)

@@ -35,13 +35,16 @@ legacy MiroFish OASIS/Zep deep-sim engine has been fully removed.
    (gzip 8.2 kB); PDF (589 kB) now loads only on download.
 5. **No CI quality gates** — lint (ruff/eslint), complexity (radon), coverage,
    dep-audit, Lighthouse all run ad hoc / never. → next.
-13. **`roast_reporter` product-logic bugs** (found by eval harness, NOT yet fixed):
-    - `_compute_sentiment_split` ignores `upvote` reactions → a mostly-upvoted pitch
-      shows 0% positive sentiment while its PMF still benefits. Misleading to founders.
-    - `_compute_pmf_score` segment_fit is size-blind — a 1-agent segment weighs the
-      same as a 20-agent one; inflates scores on unrepresentative micro-segments.
-    - Confidence ceiling at `speaking_count < 15` is absolute — 14 strongly-aligned
-      agents still force `confidence=low` regardless of signal quality.
+13. **`roast_reporter` — eval-surfaced findings, triaged:**
+    - ✅ FIXED (`_compute_pmf_score`): segment_fit was size-blind (1-agent segment =
+      20-agent). Now size-weighted by agent count.
+    - NOT A BUG (`_compute_sentiment_split` excludes upvotes): the metric is labeled
+      "sentiment of those who spoke" in the UI — upvoters didn't speak. PMF credits
+      upvotes separately via engagement. Honest scope; changing it = redefining the
+      metric + UI. Revisit only as a product-design choice.
+    - NOT A BUG (confidence ceiling <15 → low): deliberate, tested guardrail
+      (`test_roast_reporter.py:257`). Conservative-on-thin-data is correct for a
+      validation tool; loosening overstates certainty. Leave.
 6. **Backend complexity hotspots** (radon, 2026-06-02; MI all A so localized, not rot):
    - `roast_reporter._synthesize` — **CC D(24)**, returns a positional 9-tuple
      (unpack footgun). TESTED → extract `SynthesisResult` dataclass. _Safe, do next._
