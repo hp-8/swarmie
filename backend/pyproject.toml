@@ -1,7 +1,7 @@
 [project]
 name = "swarmie-backend"
 version = "0.1.0"
-description = "Swarmie backend — founder validation via grounded AI swarm simulation"
+description = "Swarmie backend — founder validation via async LLM swarm"
 requires-python = ">=3.11"
 license = { text = "AGPL-3.0" }
 authors = [
@@ -9,27 +9,22 @@ authors = [
 ]
 
 dependencies = [
-    # 核心框架
+    # Core framework
     "flask>=3.0.0",
     "flask-cors>=6.0.0",
-    
-    # LLM 相关
+    "gunicorn>=21.2.0",
+
+    # LLM (OpenAI-format client)
     "openai>=1.0.0",
-    
-    # Zep Cloud
-    "zep-cloud==3.13.0",
-    
-    # OASIS 社交媒体模拟
-    "camel-oasis==0.2.5",
-    "camel-ai==0.2.78",
-    
-    # 文件处理
+
+    # Deck PDF parsing
     "PyMuPDF>=1.24.0",
-    # 编码检测（支持非UTF-8编码的文本文件）
+
+    # Encoding detection for non-UTF-8 text input
     "charset-normalizer>=3.0.0",
     "chardet>=5.0.0",
-    
-    # 工具库
+
+    # Env + validation
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
 ]

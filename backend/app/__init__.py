@@ -41,17 +41,7 @@ def create_app(config_class=Config):
     
     # Enable CORS
     CORS(app, resources={r"/api/*": {"origins": "*"}})
-    
-    # Legacy simulation process cleanup — only when heavy deps are installed.
-    try:
-        from .services.simulation_runner import SimulationRunner
-        SimulationRunner.register_cleanup()
-        if should_log_startup:
-            logger.info("Simulation process cleanup registered")
-    except ImportError as exc:
-        if should_log_startup:
-            logger.warning(f"Legacy simulation runner unavailable (slim install): {exc}")
-    
+
     # Request logging middleware
     @app.before_request
     def log_request():
@@ -67,10 +57,7 @@ def create_app(config_class=Config):
         return response
     
     # Register blueprints
-    from .api import graph_bp, simulation_bp, report_bp, roast_bp
-    app.register_blueprint(graph_bp, url_prefix='/api/graph')
-    app.register_blueprint(simulation_bp, url_prefix='/api/simulation')
-    app.register_blueprint(report_bp, url_prefix='/api/report')
+    from .api import roast_bp
     app.register_blueprint(roast_bp, url_prefix='/api/roast')
     
     # Health check endpoint
