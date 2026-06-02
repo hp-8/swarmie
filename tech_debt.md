@@ -63,6 +63,17 @@ legacy MiroFish OASIS/Zep deep-sim engine has been fully removed.
 10. **`utils/retry.py` appears unused** (0 importers found) — verify + remove if dead.
 11. **No error tracking / tracing** — only logging. No Sentry-equivalent, no request IDs.
 12. **Frontend is plain JS, no type checking, ESLint config unverified.**
+14. **Dependency vulnerabilities** (`npm audit`, 2026-06-02): 15 total incl 5 high —
+    Vite 7.0–7.3.1 (path traversal / dev-server arbitrary file read), uuid <11.1.1.
+    `npm audit fix` (non-breaking) clears Vite. Dev-server CVEs are low prod risk
+    (prod serves static `dist/`), but bump anyway.
+
+---
+
+## Local pre-push check
+Run `./ci-local.sh` from repo root before every push — mirrors `ci.yml`
+(hard gates: backend pytest, frontend vitest + build; informational:
+ruff/radon/npm-audit). Only push when it prints the pass line.
 
 ---
 
