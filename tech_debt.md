@@ -77,6 +77,6 @@ legacy MiroFish OASIS/Zep deep-sim engine has been fully removed.
 - [x] P0-1 LLM eval harness — `backend/eval/`, 6 golden cases, synth/full/judge modes
 - [x] P0-2 frontend Vitest — 86 tests
 - [x] P1-4 Lighthouse + bundle code-split
-- [ ] P1-5 CI quality gates — next
+- [x] P1-5 CI quality gates — `.github/workflows/ci.yml` (backend pytest + frontend vitest/build hard-gated; ruff/radon/audit/lighthouse informational)
 - [ ] P1-6 `_synthesize` dataclass extraction
 - [ ] P1-13 fix the 3 roast_reporter logic bugs (eval surfaced them; verify w/ harness)
