@@ -14,5 +14,52 @@ export default defineConfig({
         secure: false
       }
     }
-  }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // PDF generation — only needed on the Result page
+          if (id.includes('jspdf') || id.includes('html2canvas')) {
+            return 'pdf'
+          }
+          // D3 — only used by BrainGraph (lazy-loaded via Result)
+          if (id.includes('node_modules/d3') || id.includes('node_modules/d3-')) {
+            return 'd3'
+          }
+          // Supabase SDK
+          if (id.includes('@supabase')) {
+            return 'supabase'
+          }
+          // Vue core + Vue Router
+          if (id.includes('node_modules/vue') || id.includes('node_modules/@vue') || id.includes('node_modules/vue-router')) {
+            return 'vue'
+          }
+          // DOMPurify
+          if (id.includes('dompurify')) {
+            return 'dompurify'
+          }
+          // FingerprintJS + Vercel analytics + Axios — small vendor chunk
+          if (
+            id.includes('@fingerprintjs') ||
+            id.includes('@vercel/analytics') ||
+            id.includes('node_modules/axios')
+          ) {
+            return 'tracking'
+          }
+        },
+      },
+    },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.js'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: ['src/components/swarm/**', 'src/lib/swarms.js', 'src/views/swarm/**'],
+      exclude: ['src/views/swarm/BrainGraph.vue', 'src/views/swarm/AgentChatPanel.vue', 'src/views/swarm/Watching.vue'],
+    },
+  },
 })

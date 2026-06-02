@@ -14,7 +14,9 @@
  *   generateRoastPDF({ report, parsedPitch, usage, jobId }): triggers download.
  */
 
-import jsPDF from 'jspdf'
+// jsPDF is imported dynamically in generateRoastPDF so it is only fetched
+// when the user actually clicks "download PDF" — not on initial page load.
+// The top-level static import is intentionally removed; do not restore it.
 
 // ---------------------------------------------------------------------------
 // constants
@@ -693,8 +695,11 @@ function formatTokens(n) {
  * @param {object} opts.usage         - usage summary ({total_cost_usd, total_tokens, total_calls})
  * @param {string} opts.jobId         - job identifier (used in filename + meta)
  */
-export function generateRoastPDF({ report, parsedPitch, usage, jobId }) {
+export async function generateRoastPDF({ report, parsedPitch, usage, jobId }) {
   if (!report) throw new Error('report is required')
+
+  // Dynamic import so jspdf is only fetched when the user clicks "download PDF".
+  const { default: jsPDF } = await import('jspdf')
 
   const doc = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'portrait' })
 

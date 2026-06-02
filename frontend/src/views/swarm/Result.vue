@@ -789,7 +789,7 @@ async function downloadPdf() {
   if (downloading.value || !report.value) return
   downloading.value = true
   try {
-    generateRoastPDF({
+    await generateRoastPDF({
       report: report.value,
       parsedPitch: parsedPitch.value,
       usage: usage.value,

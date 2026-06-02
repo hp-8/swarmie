@@ -1,23 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 // Swarmie: fast founder-validation flow
+// Home is eager so the landing page loads instantly.
+// All other views are lazy-loaded to keep the initial bundle small.
 import Home from '../views/Home.vue'
-import PitchInput from '../views/swarm/PitchInput.vue'
-import Watching from '../views/swarm/Watching.vue'
-import Result from '../views/swarm/Result.vue'
-import Terms from '../views/legal/Terms.vue'
-import Privacy from '../views/legal/Privacy.vue'
 
 const routes = [
   // --- Swarmie primary flow ---
   { path: '/', name: 'Home', component: Home },
-  { path: '/new', name: 'PitchInput', component: PitchInput },
-  { path: '/run/:jobId', name: 'Watching', component: Watching, props: true },
-  { path: '/result/:jobId', name: 'Result', component: Result, props: true },
+  { path: '/new', name: 'PitchInput', component: () => import('../views/swarm/PitchInput.vue') },
+  { path: '/run/:jobId', name: 'Watching', component: () => import('../views/swarm/Watching.vue'), props: true },
+  { path: '/result/:jobId', name: 'Result', component: () => import('../views/swarm/Result.vue'), props: true },
 
   // --- Legal ---
-  { path: '/terms', name: 'Terms', component: Terms },
-  { path: '/privacy', name: 'Privacy', component: Privacy },
+  { path: '/terms', name: 'Terms', component: () => import('../views/legal/Terms.vue') },
+  { path: '/privacy', name: 'Privacy', component: () => import('../views/legal/Privacy.vue') },
 ]
 
 const router = createRouter({
