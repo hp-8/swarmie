@@ -12,7 +12,7 @@ register the bundle here. No changes to the pipeline runner required.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Type
 
 from .archetype_generator import ArchetypeGenerator, InvestorArchetypeGenerator, LaunchArchetypeGenerator

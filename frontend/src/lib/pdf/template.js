@@ -105,7 +105,7 @@ function sanitize(str) {
     .replace(/[←-⇿]/g, '->')   // arrows
     .replace(/[≈≅≃]/g, '~') // approx symbols
     .replace(/[•●]/g, '*')      // bullets
-    .replace(/ /g, ' ')              // nbsp -> space
+    .replace(/\u00A0/g, ' ')              // nbsp -> space
 }
 
 /** Wrap text and write it; returns the y-cursor after the block. */
@@ -448,7 +448,6 @@ function drawSegments(doc, y, report) {
   cy = drawEyebrow(doc, 'Segments', M.left, cy + 6, contentW)
 
   let cx = M.left
-  const startY = cy
   for (const name of Object.keys(report.icp_fit)) {
     const { w, h } = drawChip(doc, name, cx, cy, {
       bg: [38, 28, 24],          // accent-soft equivalent
@@ -714,7 +713,7 @@ export async function generateRoastPDF({ report, parsedPitch, usage, jobId }) {
   y = drawObjections(doc, y, report)
   y = drawQuotes(doc, y, report)
   y = drawSegments(doc, y, report)
-  y = drawCost(doc, y, usage)
+  drawCost(doc, y, usage)
 
   // Stamp watermark on every page (do this AFTER all content is written so
   // page count is final).

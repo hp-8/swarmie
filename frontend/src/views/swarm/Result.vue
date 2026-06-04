@@ -763,11 +763,6 @@ function scoreBand(s) {
   if (s >= 3.5) return 'rough seas'
   return 'flat line'
 }
-function sentClass(v) {
-  if (v > 0.15) return 'pos'
-  if (v < -0.15) return 'neg'
-  return ''
-}
 
 function formatTokens(n) {
   const v = Number(n || 0)

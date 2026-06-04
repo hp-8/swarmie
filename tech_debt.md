@@ -33,8 +33,10 @@ legacy MiroFish OASIS/Zep deep-sim engine has been fully removed.
 4. ~~**Frontend bundle is one 696 kB chunk.**~~ ✅ DONE 2026-06-02 — lazy routes +
    `manualChunks` + dynamic `import('jspdf')` on PDF click. Entry chunk 696 → **21.9 kB**
    (gzip 8.2 kB); PDF (589 kB) now loads only on download.
-5. **No CI quality gates** — lint (ruff/eslint), complexity (radon), coverage,
-   dep-audit, Lighthouse all run ad hoc / never. → next.
+5. ~~**No CI quality gates.**~~ ✅ DONE 2026-06-04 — `ci.yml` now **blocks** on ruff
+   (backend), eslint (frontend), and prod-dep `npm audit` (high+), in addition to
+   pytest/vitest/build. radon stays informational. Added concurrency-cancel + uv
+   cache. Still open: branch protection (require checks before merge) + coverage gate.
 13. **`roast_reporter` — eval-surfaced findings, triaged:**
     - ✅ FIXED (`_compute_pmf_score`): segment_fit was size-blind (1-agent segment =
       20-agent). Now size-weighted by agent count.
@@ -62,11 +64,13 @@ legacy MiroFish OASIS/Zep deep-sim engine has been fully removed.
    Collapse to one source (check `render.yaml` build cmd first).
 10. **`utils/retry.py` appears unused** (0 importers found) — verify + remove if dead.
 11. **No error tracking / tracing** — only logging. No Sentry-equivalent, no request IDs.
-12. **Frontend is plain JS, no type checking, ESLint config unverified.**
-14. **Dependency vulnerabilities** (`npm audit`, 2026-06-02): 15 total incl 5 high —
-    Vite 7.0–7.3.1 (path traversal / dev-server arbitrary file read), uuid <11.1.1.
-    `npm audit fix` (non-breaking) clears Vite. Dev-server CVEs are low prod risk
-    (prod serves static `dist/`), but bump anyway.
+12. **Frontend ESLint** added (flat config, vue/essential + error-prevention).
+    Blocking in CI. One gap: `HeroSwarm.vue` (`<script lang="ts">`) is excluded —
+    proper TS linting needs typescript-eslint + tsconfig; revisit if the app
+    adopts TS more broadly. Frontend is still plain JS, no type checking.
+14. ~~**Dependency vulnerabilities.**~~ ✅ `npm audit fix` cleared the Vite highs;
+    prod-dep audit is now 0 high and gated in CI. Remaining lows/moderates are
+    dev-tool only (lhci/uuid) — fixing them downgrades lhci (breaking), skipped.
 
 ---
 

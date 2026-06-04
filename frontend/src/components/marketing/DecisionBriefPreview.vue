@@ -62,7 +62,7 @@
 <script setup>
 // No props required. Self-contained static presentational component.
 // Optional: accept a title override for A/B testing page sections.
-const props = defineProps({
+defineProps({
   nextAction: {
     type: String,
     default: null,

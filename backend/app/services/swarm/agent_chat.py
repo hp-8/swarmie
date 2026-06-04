@@ -7,7 +7,6 @@ turns enforced at the route layer.
 
 from __future__ import annotations
 
-from typing import Any
 
 from ...utils.llm import LLM, UsageTracker
 from .archetype_generator import Archetype

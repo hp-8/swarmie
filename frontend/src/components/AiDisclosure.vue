@@ -75,7 +75,7 @@
 <script setup>
 import { ref, onUnmounted, watch } from 'vue'
 
-const props = defineProps({
+defineProps({
   variant: { type: String, default: 'inline' }, // 'inline' | 'text'
   label: { type: String, default: '' },
   ariaLabel: { type: String, default: 'How this was generated' },

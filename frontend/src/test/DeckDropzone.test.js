@@ -9,7 +9,7 @@ function makePdfFile(name = 'deck.pdf', sizeBytes = 1024 * 1024) {
   })
 }
 
-function makeFile(type = 'image/png', name = 'image.png', sizeBytes = 50000) {
+function makeFile(type = 'image/png', name = 'image.png', _sizeBytes = 50000) {
   return new File(['x'.repeat(10)], name, { type, lastModified: Date.now() })
 }
 

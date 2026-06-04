@@ -12,7 +12,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
-const props = withDefaults(defineProps<{ density?: number | null }>(), {
+withDefaults(defineProps<{ density?: number | null }>(), {
   density: null,
 })
 

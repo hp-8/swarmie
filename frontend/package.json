@@ -10,7 +10,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
-    "lighthouse": "npm run build && npx vite preview --port 4173 & sleep 3 && npx lhci autorun --config=lighthouserc.js; kill %1"
+    "lighthouse": "npm run build && npx vite preview --port 4173 & sleep 3 && npx lhci autorun --config=lighthouserc.js; kill %1",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^5.2.0",
@@ -24,10 +25,14 @@
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@lhci/cli": "^0.14.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vitest/coverage-v8": "^4.1.8",
     "@vue/test-utils": "^2.4.10",
+    "eslint": "^10.4.1",
+    "eslint-plugin-vue": "^10.9.2",
+    "globals": "^17.6.0",
     "jsdom": "^29.1.1",
     "vite": "^7.2.4",
     "vitest": "^4.1.8"
