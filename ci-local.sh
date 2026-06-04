@@ -6,8 +6,10 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-echo "==> [1/3] backend pytest"
-( cd backend && .venv/bin/python -m pytest -q )
+echo "==> [1/3] backend pytest (stripped env — mirror CI's bare environment)"
+# Strip ambient secrets so a test that only passes because the dev shell has
+# SECRET_KEY/LLM_API_KEY set fails HERE, not in CI. Tests must be hermetic.
+( cd backend && env -u SECRET_KEY -u LLM_API_KEY .venv/bin/python -m pytest -q )
 
 echo "==> [2/3] frontend vitest"
 ( cd frontend && npm run test:run )
