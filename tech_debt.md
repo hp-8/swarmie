@@ -36,7 +36,8 @@ legacy MiroFish OASIS/Zep deep-sim engine has been fully removed.
 5. ~~**No CI quality gates.**~~ ✅ DONE 2026-06-04 — `ci.yml` now **blocks** on ruff
    (backend), eslint (frontend), and prod-dep `npm audit` (high+), in addition to
    pytest/vitest/build. radon stays informational. Added concurrency-cancel + uv
-   cache. Still open: branch protection (require checks before merge) + coverage gate.
+   cache. Branch protection ON (both jobs required, strict; admin-bypass so
+   direct-to-main still works). Still open: coverage gate.
 13. **`roast_reporter` — eval-surfaced findings, triaged:**
     - ✅ FIXED (`_compute_pmf_score`): segment_fit was size-blind (1-agent segment =
       20-agent). Now size-weighted by agent count.
