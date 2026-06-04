@@ -92,5 +92,6 @@ ruff/radon/npm-audit). Only push when it prints the pass line.
 - [x] P0-2 frontend Vitest — 86 tests
 - [x] P1-4 Lighthouse + bundle code-split
 - [x] P1-5 CI quality gates — `.github/workflows/ci.yml` (backend pytest + frontend vitest/build hard-gated; ruff/radon/audit/lighthouse informational)
-- [ ] P1-6 `_synthesize` dataclass extraction
+- [x] P1-6 `_synthesize` → `SynthesisResult` dataclass + `_parse_synthesis` extract.
+      D(24)→C(11); killed the positional 9-tuple return (2 call sites).
 - [ ] P1-13 fix the 3 roast_reporter logic bugs (eval surfaced them; verify w/ harness)

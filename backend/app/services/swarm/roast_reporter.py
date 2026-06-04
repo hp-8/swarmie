@@ -52,6 +52,24 @@ class RoastReport:
         return asdict(self)
 
 
+@dataclass
+class SynthesisResult:
+    """The LLM-synthesized half of a roast report (narrative + decision brief).
+
+    Returned by `RoastReporter._synthesize` as a typed object so callers read
+    named fields instead of unpacking a 9-element positional tuple.
+    """
+    headline: str
+    narrative: str
+    messaging_gaps: list[str]
+    verdict: str
+    verdict_reason: str
+    next_action: str
+    confidence: str
+    confidence_reason: str
+    objections: list[dict[str, Any]]  # top_objections merged with enrichment
+
+
 _NARRATIVE_SYSTEM = """You are a startup advisor. Synthesize the swarm of agent reactions into a sharp 2-3 paragraph narrative for the founder, and produce a decision brief.
 
 Be direct. Lead with the strongest signal — positive or negative. Cite specific
@@ -273,26 +291,26 @@ class RoastReporter:
             reactions, self.IGNORE_LABELS, self.IGNORE_IMPLICATIONS
         )
 
-        narrative, headline, gaps, verdict, verdict_reason, next_action, confidence, confidence_reason, top_objections = self._synthesize(
+        synth = self._synthesize(
             pitch, sentiment_split, action_split, top_objections, icp_fit, pmf_score, quoted, reactions,
             ignore_reasons, silent_share_pct,
         )
 
         return RoastReport(
             pmf_score=pmf_score,
-            headline=headline,
+            headline=synth.headline,
             sentiment_split=sentiment_split,
             action_split=action_split,
-            top_objections=top_objections,
+            top_objections=synth.objections,
             icp_fit=icp_fit,
-            messaging_gaps=gaps,
-            narrative=narrative,
+            messaging_gaps=synth.messaging_gaps,
+            narrative=synth.narrative,
             quoted_reactions=quoted,
-            verdict=verdict,
-            verdict_reason=verdict_reason,
-            next_action=next_action,
-            confidence=confidence,
-            confidence_reason=confidence_reason,
+            verdict=synth.verdict,
+            verdict_reason=synth.verdict_reason,
+            next_action=synth.next_action,
+            confidence=synth.confidence,
+            confidence_reason=synth.confidence_reason,
             ignore_reasons=ignore_reasons,
             silent_share_pct=silent_share_pct,
         )
@@ -309,7 +327,7 @@ class RoastReporter:
         reactions: list[Any],
         ignore_reasons: list[dict[str, Any]] | None = None,
         silent_share_pct: float = 0.0,
-    ) -> tuple[str, str, list[str], str, str, str, str, str, list[dict[str, Any]]]:
+    ) -> SynthesisResult:
         ignore_reasons = ignore_reasons or []
         # Deterministic confidence ceiling
         speaking_count = sum(1 for r in reactions if getattr(r, "action", None) in ("comment", "post"))
@@ -381,6 +399,33 @@ class RoastReporter:
             logger.warning(f"narrative synthesis failed: {exc}; using deterministic fallback")
             data = {}
 
+        return self._parse_synthesis(
+            data,
+            pmf_score=pmf_score,
+            sentiment_split=sentiment_split,
+            top_objections=top_objections,
+            confidence_ceiling=confidence_ceiling,
+            speaking_count=speaking_count,
+            pos_pct=pos_pct,
+            neg_pct=neg_pct,
+        )
+
+    def _parse_synthesis(
+        self,
+        data: dict[str, Any],
+        *,
+        pmf_score: float,
+        sentiment_split: dict[str, float],
+        top_objections: list[dict[str, Any]],
+        confidence_ceiling: str,
+        speaking_count: int,
+        pos_pct: float,
+        neg_pct: float,
+    ) -> SynthesisResult:
+        """Extract, validate, and default the raw LLM synthesis dict into a typed result.
+
+        `data` is `{}` when the LLM call failed — every field falls back deterministically.
+        """
         narrative = str(data.get("narrative", "")).strip() or self._fallback_narrative(
             pmf_score, sentiment_split, top_objections
         )
@@ -435,7 +480,17 @@ class RoastReporter:
                 "suggested_fix": enrichment.get("suggested_fix", ""),
             })
 
-        return narrative, headline, gaps, verdict, verdict_reason, next_action, confidence, confidence_reason, merged_objections
+        return SynthesisResult(
+            headline=headline,
+            narrative=narrative,
+            messaging_gaps=gaps,
+            verdict=verdict,
+            verdict_reason=verdict_reason,
+            next_action=next_action,
+            confidence=confidence,
+            confidence_reason=confidence_reason,
+            objections=merged_objections,
+        )
 
     @staticmethod
     def _fallback_narrative(
@@ -682,7 +737,7 @@ class LaunchReporter(RoastReporter):
             reactions, self.IGNORE_LABELS, self.IGNORE_IMPLICATIONS
         )
 
-        narrative, headline, gaps, verdict, verdict_reason, next_action, confidence, confidence_reason, top_objections = self._synthesize(
+        synth = self._synthesize(
             pitch, sentiment_split, action_split, top_objections, icp_fit, pmf_score, quoted, reactions,
             ignore_reasons, silent_share_pct,
         )
@@ -693,19 +748,19 @@ class LaunchReporter(RoastReporter):
 
         return RoastReport(
             pmf_score=pmf_score,
-            headline=headline,
+            headline=synth.headline,
             sentiment_split=sentiment_split,
             action_split=action_split,
-            top_objections=top_objections,
+            top_objections=synth.objections,
             icp_fit=icp_fit,
-            messaging_gaps=gaps,
-            narrative=narrative,
+            messaging_gaps=synth.messaging_gaps,
+            narrative=synth.narrative,
             quoted_reactions=quoted,
-            verdict=verdict,
-            verdict_reason=verdict_reason,
-            next_action=next_action,
-            confidence=confidence,
-            confidence_reason=confidence_reason,
+            verdict=synth.verdict,
+            verdict_reason=synth.verdict_reason,
+            next_action=synth.next_action,
+            confidence=synth.confidence,
+            confidence_reason=synth.confidence_reason,
             ignore_reasons=ignore_reasons,
             silent_share_pct=silent_share_pct,
             launch_brief=launch_brief,
