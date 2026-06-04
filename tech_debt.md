@@ -56,14 +56,19 @@ legacy MiroFish OASIS/Zep deep-sim engine has been fully removed.
      characterization tests BEFORE any refactor.
    - `llm._call_with_retry` C(12) / `_acall_with_retry` C(11) — sync/async retry
      duplication; dedupe behind shared core (untested → test first).
-7. **No backend coverage measurement.** 32 tests pass; % unknown. Add `pytest-cov`.
+7. ~~**No coverage gate.**~~ ✅ DONE 2026-06-04. Backend: `pytest-cov` + ratchet
+   `--cov-fail-under=40` (currently 43%, drag = untested API/llm/swarm_runner).
+   Frontend: vitest v8 thresholds (stmts 65 / lines 68 / branches 55 / funcs 50)
+   over the unit-tested surface (Result.vue excluded — unmountable, helpers
+   mirror-tested; currently ~73-77%). Both wired into CI + ci-local.
 
 ### P2 — hygiene
 8. **Mixed-language comments** (Chinese) linger in some live files (e.g. config).
    Inconsistent for an English-first codebase.
 9. **`requirements.txt` vs `requirements-prod.txt`** now near-identical post-legacy.
    Collapse to one source (check `render.yaml` build cmd first).
-10. **`utils/retry.py` appears unused** (0 importers found) — verify + remove if dead.
+10. ~~`utils/retry.py` appears unused.~~ FALSE ALARM — it's imported by `utils/llm.py`
+    (earlier grep was mangled). Not dead; keep.
 11. **No error tracking / tracing** — only logging. No Sentry-equivalent, no request IDs.
 12. **Frontend ESLint** added (flat config, vue/essential + error-prevention).
     Blocking in CI. One gap: `HeroSwarm.vue` (`<script lang="ts">`) is excluded —

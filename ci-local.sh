@@ -18,8 +18,8 @@ echo "==> [2/6] backend ruff"
 echo "==> [3/6] frontend eslint"
 ( cd frontend && npm run lint )
 
-echo "==> [4/6] frontend vitest"
-( cd frontend && npm run test:run )
+echo "==> [4/6] frontend vitest + coverage"
+( cd frontend && npm run coverage )
 
 echo "==> [5/6] frontend build"
 ( cd frontend && npm run build >/dev/null && echo "build OK" )

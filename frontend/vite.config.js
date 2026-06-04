@@ -59,7 +59,21 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov'],
       include: ['src/components/swarm/**', 'src/lib/swarms.js', 'src/views/swarm/**'],
-      exclude: ['src/views/swarm/BrainGraph.vue', 'src/views/swarm/AgentChatPanel.vue', 'src/views/swarm/Watching.vue'],
+      exclude: [
+        'src/views/swarm/BrainGraph.vue',
+        'src/views/swarm/AgentChatPanel.vue',
+        'src/views/swarm/Watching.vue',
+        // Result.vue can't be unit-mounted (calls the API + needs route params on
+        // mount); its pure helpers are covered via ResultHelpers.test.js.
+        'src/views/swarm/Result.vue',
+      ],
+      // Ratchet floors over the unit-tested surface — prevents regression, raise over time.
+      thresholds: {
+        statements: 65,
+        branches: 55,
+        functions: 50,
+        lines: 68,
+      },
     },
   },
 })
