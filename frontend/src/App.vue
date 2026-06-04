@@ -4,7 +4,12 @@
 </template>
 
 <script setup>
+import { onMounted, onBeforeUnmount } from 'vue'
 import ConsentBanner from './components/ConsentBanner.vue'
+import { startSmoothScroll, stopSmoothScroll } from './lib/smoothScroll'
+
+onMounted(() => startSmoothScroll())
+onBeforeUnmount(() => stopSmoothScroll())
 </script>
 
 <style>
