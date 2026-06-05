@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import { inject as injectAnalytics } from '@vercel/analytics'
 import App from './App.vue'
 import router from './router'
+import reveal from './lib/reveal'
 import './styles/tokens.css'
 import { registerDevice } from './lib/analytics'
 import { hasAnalyticsConsent, onConsentChange } from './lib/consent'
@@ -9,6 +10,7 @@ import { hasAnalyticsConsent, onConsentChange } from './lib/consent'
 const app = createApp(App)
 
 app.use(router)
+app.use(reveal)
 
 app.mount('#app')
 
