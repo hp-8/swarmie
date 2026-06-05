@@ -367,6 +367,26 @@ def _attach_pmf_index(report: RoastReport) -> RoastReport:
     return report
 
 
+def deterministic_report(reactions: list[AgentReaction]) -> dict[str, Any]:
+    """Deterministic half of a roast report — every field the PMF Index
+    dimensions need, computed from reactions WITHOUT the synthesis LLM call.
+
+    The backtest feature extractor uses this to skip the expensive deep
+    synthesis call: the 5 dims only need the sentiment/action/icp splits, the
+    base (category+count) objections, and the silent share — all deterministic.
+    Mirrors the deterministic computes in RoastReporter.report().
+    """
+    ignore_reasons, silent_share_pct = _compute_ignore_reasons(reactions)
+    return {
+        "sentiment_split": _compute_sentiment_split(reactions),
+        "action_split": _compute_action_split(reactions),
+        "top_objections": _compute_top_objections(reactions),
+        "icp_fit": _compute_icp_fit(reactions),
+        "ignore_reasons": ignore_reasons,
+        "silent_share_pct": silent_share_pct,
+    }
+
+
 def _pick_quoted_reactions(reactions: list[AgentReaction], k: int = 10) -> list[dict[str, Any]]:
     """Pick the most informative reactions: top by extremity of sentiment + has text."""
     with_text = [r for r in reactions if r.text]

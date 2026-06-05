@@ -264,13 +264,17 @@ def run(
 # 5. Real pipeline report_fn (default for CLI)
 # ---------------------------------------------------------------------------
 
-def _make_real_report_fn(n_agents: int = 30) -> Callable[[str], dict]:
-    """Return a synchronous report_fn that drives the full swarm pipeline.
+def _make_real_report_fn(n_agents: int = 30, skip_synthesis: bool = True) -> Callable[[str], dict]:
+    """Return a synchronous report_fn that drives the swarm pipeline.
 
     Pipeline stages (mirrors _run_pipeline in backend/app/api/roast.py):
-      PitchParser.parse → ArchetypeGenerator.generate → SwarmRunner.run → RoastReporter.report
+      PitchParser.parse → ArchetypeGenerator.generate → SwarmRunner.run → report
 
     The "validate" swarm spec is used (RoastReporter, PitchParser, etc.).
+
+    skip_synthesis (default True): build the report via the deterministic half
+    only (deterministic_report) — skips the expensive deep synthesis LLM call,
+    which the PMF Index dims do not need. Set False to run full synthesis.
 
     LLM config is read from .env (loaded by app.config.Config via os.environ).
     """
@@ -307,10 +311,15 @@ def _make_real_report_fn(n_agents: int = 30) -> Callable[[str], dict]:
         finally:
             loop.close()
 
-        # Stage 4 — synthesize report
+        # Stage 4 — build report
+        if skip_synthesis:
+            # Deterministic half only — no deep synthesis LLM call. The 5 dims
+            # need just the splits + base objections + silent share.
+            from app.services.swarm.roast_reporter import deterministic_report
+            return deterministic_report(reactions)
+
         reporter = spec.reporter_cls(tracker=tracker)
         report = reporter.report(pitch, reactions)
-
         return report.to_dict()
 
     return _report_fn
@@ -354,6 +363,11 @@ def _parse_args(argv: list[str] | None = None):
         "--n-agents", type=int, default=30,
         help="Number of swarm agents per pipeline run. Default: 30.",
     )
+    p.add_argument(
+        "--with-synthesis", action="store_true", default=False,
+        help="Run the full deep synthesis LLM call (default: skipped — the "
+             "PMF Index dims don't need it, and it's the most expensive call).",
+    )
     return p.parse_args(argv)
 
 
@@ -387,11 +401,14 @@ def _main(argv: list[str] | None = None) -> None:
         sum(1 for c in sample if c["label"] == 0),
     )
 
-    report_fn = _make_real_report_fn(n_agents=args.n_agents)
+    report_fn = _make_real_report_fn(
+        n_agents=args.n_agents, skip_synthesis=not args.with_synthesis
+    )
 
     logger.info(
-        "Running: %d cases × %d repeat(s) = %d pipeline calls",
+        "Running: %d cases × %d repeat(s) = %d pipeline calls (synthesis=%s)",
         len(sample), args.repeats, len(sample) * args.repeats,
+        "on" if args.with_synthesis else "skipped",
     )
     rows = run(sample, repeats=args.repeats, report_fn=report_fn)
 
