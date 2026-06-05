@@ -218,7 +218,7 @@ class LLM:
         model: str | None = None,
         tracker: UsageTracker | None = None,
         max_retries: int = 3,
-        timeout: float = 30.0,
+        timeout: float | None = None,
     ):
         self.tier = tier
         if api_key and base_url and model:
@@ -227,9 +227,11 @@ class LLM:
             self.api_key, self.base_url, self.model = _resolve_model(tier)
         self.tracker = tracker
         self.max_retries = max_retries
-        self.timeout = timeout
+        # Env-overridable so slow local backends (Ollama 7B) don't abort the
+        # longer deep-tier generations. Default 30s for hosted providers.
+        self.timeout = timeout if timeout is not None else float(os.environ.get("LLM_TIMEOUT", "30"))
 
-        self._sync = OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=timeout)
+        self._sync = OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=self.timeout)
         self._async: AsyncOpenAI | None = None  # lazy
 
         # Fallback provider (e.g. Gemini). Used after primary exhausts retries.
