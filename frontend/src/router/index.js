@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { resetScroll, scrollToTarget } from '../lib/smoothScroll'
 
 // Swarmie: fast founder-validation flow
 // Home is eager so the landing page loads instantly.
@@ -20,6 +21,17 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+// Lenis owns the scroll position, so drive it from the navigation guard
+// instead of vue-router's native scrollBehavior. Wait a tick so the new
+// view is mounted before scrolling to a hash target.
+router.afterEach((to) => {
+  if (to.hash) {
+    requestAnimationFrame(() => scrollToTarget(to.hash, { offset: -80 }))
+  } else {
+    resetScroll()
+  }
 })
 
 export default router

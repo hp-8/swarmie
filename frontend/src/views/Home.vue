@@ -59,7 +59,7 @@
       </section>
 
       <!-- HONESTY band -->
-      <section class="truth">
+      <section class="truth" v-reveal>
         <p class="truth-line">
           <span class="h-eyebrow">A note before we start. <AiDisclosure aria-label="How this was generated" /></span>
           <span class="truth-text">
@@ -73,23 +73,23 @@
 
       <!-- LOOP — the walkthrough video is the proof, captions ride below -->
       <section id="how" class="loop">
-        <header class="section-head">
+        <header class="section-head" v-reveal>
           <span class="h-eyebrow">the loop</span>
           <h2 class="section-title h-display">Three turns. Sixty seconds.</h2>
         </header>
 
         <ol class="loop-steps">
-          <li>
+          <li v-reveal="0">
             <span class="loop-num">i.</span>
             <h3 class="loop-step-title">Paste a pitch.</h3>
             <p class="loop-step-copy">Deck text, landing copy, half a tweet. We parse the ICP, problem, solution and price.</p>
           </li>
-          <li>
+          <li v-reveal="120">
             <span class="loop-num">ii.</span>
             <h3 class="loop-step-title">The swarm reacts.</h3>
             <p class="loop-step-copy">100 to 500 personas post, comment, upvote or scroll past. Skeptics, lurkers, fans, trolls.</p>
           </li>
-          <li>
+          <li v-reveal="240">
             <span class="loop-num">iii.</span>
             <h3 class="loop-step-title">Get a decision.</h3>
             <p class="loop-step-copy">A verdict, the objections to test, and why the silent ones scrolled past.</p>
@@ -98,7 +98,7 @@
       </section>
 
       <!-- AHA — the output, shown -->
-      <section class="aha">
+      <section class="aha" v-reveal>
         <div class="aha-copy">
           <span class="h-eyebrow">what you walk away with</span>
           <h2 class="aha-title h-display">You don't get a grade.<br />You get a <em>decision.</em></h2>
@@ -114,7 +114,7 @@
       </section>
 
       <!-- FOUNDER -->
-      <section class="founder">
+      <section class="founder" v-reveal>
         <div class="founder-grid">
           <div class="founder-left">
             <span class="h-eyebrow">who made this</span>
@@ -142,7 +142,7 @@
       </section>
 
       <!-- CLOSING CTA -->
-      <section class="cta">
+      <section class="cta" v-reveal>
         <h2 class="cta-title h-display">What would <em>500 strangers</em> say about it today?</h2>
         <router-link to="/new" class="h-btn is-accent cta-btn">Run a roast →</router-link>
       </section>

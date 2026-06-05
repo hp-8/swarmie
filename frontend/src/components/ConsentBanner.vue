@@ -3,12 +3,11 @@
     <div v-if="show" class="consent" role="dialog" aria-label="Cookie consent" aria-live="polite">
       <div class="consent-body">
         <p class="consent-text">
-          We use essential cookies to run Swarmie. With your OK we also use privacy-analytics
-          (device signal, usage) to improve the product. Your pitch text is sent to AI providers to generate reactions.
+          Cookies keep Swarmie running and help us make it better. The choice is yours.
         </p>
         <p class="consent-sub">
-          Reject keeps <em>essential only</em>.
-          <router-link to="/privacy" class="consent-link">Privacy Policy</router-link>
+          Reject keeps <em>essentials only</em>.
+          <router-link to="/privacy" class="consent-link">Privacy</router-link>
           <span class="consent-dot">·</span>
           <router-link to="/terms" class="consent-link">Terms</router-link>
         </p>
@@ -69,15 +68,32 @@ function choose(choice) {
 }
 .consent-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .consent-btn:active { transform: translateY(1px); }
-.consent-btn.reject { background: transparent; border: 1px solid var(--rule-2); color: var(--ink-2); }
-.consent-btn.reject:hover { border-color: var(--ink-3); color: var(--ink); }
-.consent-btn.accept { background: var(--accent); border: 1px solid var(--accent); color: var(--paper); }
-.consent-btn.accept:hover { background: var(--accent-bright); }
+/* Equal prominence (GDPR/ePrivacy): reject must be as easy + visible as accept.
+   Identical chrome; accept steered only by accent-colored label, not a louder fill. */
+.consent-btn.reject,
+.consent-btn.accept {
+  background: var(--paper-3);
+  border: 1px solid var(--rule-2);
+  color: var(--ink);
+}
+.consent-btn.reject:hover,
+.consent-btn.accept:hover {
+  background: var(--paper-4);
+  border-color: var(--ink-4);
+}
+.consent-btn.accept { color: var(--accent-bright); }
 
 @media (max-width: 640px) {
-  .consent { flex-direction: column; align-items: stretch; gap: var(--space-3); bottom: 0; left: 0; transform: none; width: 100%; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .consent {
+    flex-direction: column; align-items: stretch; gap: var(--space-3);
+    bottom: 0; left: 0; transform: none; width: 100%;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: none;
+    padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
+  }
+  .consent-text { font-size: var(--text-sm); }
   .consent-actions { width: 100%; }
-  .consent-btn { flex: 1; }
+  .consent-btn { flex: 1; min-height: 44px; padding: 12px 18px; }
 }
 
 .consent-enter-active { animation: consent-in 280ms var(--ease-out); }
