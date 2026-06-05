@@ -20,13 +20,14 @@ import argparse
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import cross_val_predict
-from sklearn.preprocessing import StandardScaler
+# numpy + sklearn are eval-only deps (eval/requirements-eval.txt). Imported
+# lazily inside functions so this module imports cleanly in CI (uv sync), where
+# those deps are absent — the production app never imports this module.
+# TYPE_CHECKING import resolves the `np.ndarray` annotations for linters only.
+if TYPE_CHECKING:
+    import numpy as np
 
 # ---------------------------------------------------------------------------
 # Public constants
@@ -67,6 +68,8 @@ def load_features(path: str) -> tuple[np.ndarray, np.ndarray, list[str]]:
         y   — int array of shape (n,)  (0 = flop, 1 = hit)
         ids — list[str] of case ids
     """
+    import numpy as np
+
     raw: list[dict[str, Any]] = json.loads(Path(path).read_text())
 
     X_rows: list[list[float]] = []
@@ -118,6 +121,12 @@ def calibrate(
         scaler_mean, scaler_scale, cv_auc,
         n, n_hits, n_flops, generated_at
     """
+    import numpy as np
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import roc_auc_score
+    from sklearn.model_selection import cross_val_predict
+    from sklearn.preprocessing import StandardScaler
+
     scaler = StandardScaler()
     model = LogisticRegression(
         max_iter=1000,

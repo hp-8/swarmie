@@ -12,10 +12,16 @@ import json
 import tempfile
 from pathlib import Path
 
-import numpy as np
-from sklearn.datasets import make_blobs
+import pytest
 
-from eval.backtest.calibrate import (
+# numpy + sklearn are eval-only deps (eval/requirements-eval.txt) and are NOT
+# installed in the CI base env (uv sync). Skip the whole module when absent so
+# `uv run pytest` stays green without them; run locally after installing
+# `pip install -r eval/requirements-eval.txt`.
+np = pytest.importorskip("numpy")
+make_blobs = pytest.importorskip("sklearn.datasets").make_blobs
+
+from eval.backtest.calibrate import (  # noqa: E402 — must follow importorskip
     DIM_ORDER,
     calibrate,
     load_features,
