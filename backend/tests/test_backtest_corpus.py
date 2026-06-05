@@ -7,11 +7,21 @@ Run: cd backend && python -m pytest tests/test_backtest_corpus.py -q
 import pytest
 
 from eval.backtest.corpus import (
+    DATA_PATH,
     batch_year,
     label_of,
     load_raw,
     load_tier1,
 )
+
+# The yc_all.json corpus cache is gitignored (data/ rule) — absent on a fresh
+# CI checkout. Skip the whole module when it isn't cached locally; fetch it via
+# the Colab notebook or `python -m eval.backtest.corpus`.
+if not DATA_PATH.exists():
+    pytest.skip(
+        "yc_all.json corpus cache absent — gitignored; fetch to run these pins",
+        allow_module_level=True,
+    )
 
 
 # ---------------------------------------------------------------------------
