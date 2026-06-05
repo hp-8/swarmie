@@ -236,6 +236,7 @@
           <span class="h-eyebrow">do this next</span>
           <h1 class="next-action h-display">{{ report.next_action || report.headline }}</h1>
           <p v-if="report.verdict_reason" class="verdict-reason">{{ report.verdict_reason }}</p>
+          <SharpenPanel :report="report" :parsed-pitch="parsedPitch" />
         </div>
         <div class="cell cell-launch-sentiment">
           <span class="h-eyebrow">sentiment of those who spoke</span>
@@ -437,6 +438,7 @@
             <span class="target-key">target:</span>
             <span class="target-val">{{ parsedPitch.target_icp }}</span>
           </p>
+          <SharpenPanel :report="report" :parsed-pitch="parsedPitch" />
         </div>
         <div class="cell cell-sentiment">
           <span class="h-eyebrow">sentiment of those who spoke</span>
@@ -559,6 +561,7 @@ import AgentChatPanel from './AgentChatPanel.vue'
 import AiDisclosure from '../../components/AiDisclosure.vue'
 import ObjectionList from '../../components/swarm/ObjectionList.vue'
 import QuotesList from '../../components/swarm/QuotesList.vue'
+import SharpenPanel from '../../components/swarm/SharpenPanel.vue'
 import FeedbackWidget from '../../components/feedback/FeedbackWidget.vue'
 import { useRoute } from 'vue-router'
 import { roastApi } from '../../api/roast'
