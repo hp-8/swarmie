@@ -4,6 +4,11 @@ Offline quality evaluation for the Swarmie roast pipeline. Measures whether the
 LLM output pipeline produces verdicts, objection themes, report schemas, and PMF
 scores that are consistent with human-annotated expectations.
 
+> **Planned — `eval/backtest/`:** PMF Readiness Index calibration against real YC
+> outcomes (separate from this annotation-consistency harness). Tunes the index's
+> dimension weights to separate hits from flops, reports CV AUC. See
+> [`docs/superpowers/specs/2026-06-05-pmf-readiness-index-design.md`](../../docs/superpowers/specs/2026-06-05-pmf-readiness-index-design.md).
+
 ---
 
 ## Quick Start

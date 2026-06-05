@@ -82,13 +82,25 @@ Two goals: realism *and* extreme cost-efficiency.
 
 ## Phase 4 — Calibration & Trust
 
-A simulation is only worth trusting if it's been measured.
+A simulation is only worth trusting if it's been measured. The long game: make
+the **PMF Readiness Index** a *cited standard* for measuring startup ideas — a
+credible, versioned number that backs the verdict (never replaces it). Earned
+via real backtest, never asserted.
 
 - [x] Per-sim confidence band in the report (deterministically clamped)
 - [x] Feedback collection shipped (per-objection votes + product feedback → Supabase) — the calibration dataset
-- [ ] Backtest harness — `npm run eval`
-- [ ] 20 ground-truth cases (10 hits, 10 flops)
+- [ ] **PMF Readiness Index v1** — reframe heuristic `pmf_score` into a versioned, 0–100, transparent 6-dim linear composite (engagement, sentiment, segment-fit, objection-severity, silence, confidence-band). Backs the verdict. See [spec](docs/superpowers/specs/2026-06-05-pmf-readiness-index-design.md).
+- [ ] **YC backtest corpus (tiered)** — calibrate-first against real outcomes from `yc-oss` public data. Tier-1: ~1,052 matured (≤2018 batch) labeled cases (Acquired/Public = hit, Inactive = flop, Active excluded) for scale. Tier-2: ~50–100 HN/Wayback *contemporaneous* pitches for the honest headline claim. Decontaminate (strip names + outcome phrases — directory text literally embeds exits).
+- [ ] **Weight calibration** — logistic regression over the 6 dims, 5-fold CV, report CV AUC never train AUC. Locked into versioned `index_weights_v1.json`.
+- [ ] **Published rubric** — dimensions, weights, bands, what it does NOT measure, named biases (survivorship, narrow dynamic range, acqui-hire label noise, hindsight residual), live calibration result. Every index output self-labels `calibration_status`.
+- [ ] Surface index + band + label under the verdict (frontend follow-up spec)
+- [ ] First-party outcomes (v2) — fold Swarmie's own users tracked to real outcomes into the corpus over time; the truest, on-distribution calibration ground
 - [ ] Public scoreboard pinned to corpus version
+
+> Honesty guardrail: the backtest calibrates *reaction-signal quality against
+> outcomes* — it does **not** turn Swarmie into a success-predictor (see
+> Non-Goals). The index claims usefulness, pinned to a corpus version, not
+> realism.
 
 ## Phase 5 — More Swarms (platform expansion)
 
