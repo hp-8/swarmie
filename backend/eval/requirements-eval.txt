@@ -1,0 +1,8 @@
+# Eval / backtest-only dependencies.
+# These MUST NOT be added to requirements-prod.txt.
+# The runtime app (app/) never imports sklearn or numpy.
+# Install into the venv with:
+#   .venv/bin/pip install -r eval/requirements-eval.txt
+
+scikit-learn>=1.4.0
+numpy>=1.26.0

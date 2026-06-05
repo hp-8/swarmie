@@ -47,6 +47,8 @@ class RoastReport:
     deck_diagnosis: dict[str, Any] | None = None  # DeckDiagnosis.to_dict() or None
     # --- launch brief (launch swarm): community stress-test summary ---
     launch_brief: dict[str, Any] | None = None  # None on non-launch runs
+    # --- PMF Readiness Index (calibrated composite; None if weights absent) ---
+    pmf_index: dict[str, Any] | None = None  # {value, band, index_version, calibration_status}
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -348,6 +350,23 @@ def _compute_pmf_score(
     return round(min(max(raw, 0.0), 10.0), 1)
 
 
+def _attach_pmf_index(report: RoastReport) -> RoastReport:
+    """Compute the calibrated PMF Readiness Index and attach it. Never raises.
+
+    The index is additive — a failure here (missing weights, bad field) leaves
+    pmf_index=None and never breaks a roast. The legacy pmf_score is untouched.
+    """
+    try:
+        from .pmf_index import dims_from_report, score
+        data = report.to_dict()
+        dims = dims_from_report(data)
+        report.pmf_index = score(dims, data.get("confidence", "low"))
+    except Exception as exc:  # noqa: BLE001 — index must never break a roast
+        logger.warning(f"pmf_index computation failed: {exc}")
+        report.pmf_index = None
+    return report
+
+
 def _pick_quoted_reactions(reactions: list[AgentReaction], k: int = 10) -> list[dict[str, Any]]:
     """Pick the most informative reactions: top by extremity of sentiment + has text."""
     with_text = [r for r in reactions if r.text]
@@ -389,7 +408,7 @@ class RoastReporter:
             ignore_reasons, silent_share_pct,
         )
 
-        return RoastReport(
+        report = RoastReport(
             pmf_score=pmf_score,
             headline=synth.headline,
             sentiment_split=sentiment_split,
@@ -407,6 +426,7 @@ class RoastReporter:
             ignore_reasons=ignore_reasons,
             silent_share_pct=silent_share_pct,
         )
+        return _attach_pmf_index(report)
 
     def _synthesize(
         self,
@@ -839,7 +859,7 @@ class LaunchReporter(RoastReporter):
             pitch, reactions, quoted, top_objections, ignore_reasons, silent_share_pct
         )
 
-        return RoastReport(
+        report = RoastReport(
             pmf_score=pmf_score,
             headline=synth.headline,
             sentiment_split=sentiment_split,
@@ -858,6 +878,7 @@ class LaunchReporter(RoastReporter):
             silent_share_pct=silent_share_pct,
             launch_brief=launch_brief,
         )
+        return _attach_pmf_index(report)
 
     def _synthesize_launch_brief(
         self,

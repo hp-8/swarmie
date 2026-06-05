@@ -76,3 +76,6 @@ test-pitches.local.txt
 # Heavy remotion assets — kept local, too large for git (regenerate/host elsewhere)
 remotion/voices-v1.0.bin
 remotion/public/demo-music.mp3
+
+# PMF backtest generated outputs (regenerate with runner.py --out)
+backend/eval/backtest/data/features_tier1.json
