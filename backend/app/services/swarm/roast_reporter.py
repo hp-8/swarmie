@@ -230,6 +230,99 @@ def _compute_icp_fit(reactions: list[AgentReaction]) -> dict[str, dict[str, Any]
     return out
 
 
+# ---------------------------------------------------------------------------
+# PMF Readiness Index — helper dimensions (deterministic, no LLM)
+# ---------------------------------------------------------------------------
+
+# Severity keyword table: maps substrings found in an objection `category`
+# string to a weight tier. Checked in order; first match wins.
+# FUNDAMENTAL (1.0) = demand / willingness-to-pay objections
+# FRAMING     (0.5) = positioning / messaging / clarity objections
+# COSMETIC    (0.2) = surface-level / UI / naming objections
+_OBJECTION_SEVERITY_TIERS: dict[str, float] = {
+    # FUNDAMENTAL
+    "demand": 1.0,
+    "don't need": 1.0,
+    "dont need": 1.0,
+    "willingness-to-pay": 1.0,
+    "willingness to pay": 1.0,
+    "won't pay": 1.0,
+    "wont pay": 1.0,
+    "pricing": 1.0,
+    "no problem": 1.0,
+    "market-size": 1.0,
+    "market size": 1.0,
+    # FRAMING
+    "positioning": 0.5,
+    "messaging": 0.5,
+    "unclear": 0.5,
+    "differentiation": 0.5,
+    "who is this for": 0.5,
+    # COSMETIC
+    "ui": 0.2,
+    "naming": 0.2,
+    "onboarding": 0.2,
+    "minor": 0.2,
+}
+
+_TIER_DEFAULT = 0.5  # FRAMING — used when no keyword matches
+
+
+def compute_objection_severity(top_objections: list[dict]) -> float:
+    """Return a 0..1 severity score for a list of top-objection dicts.
+
+    Each dict must have a ``category`` (str) and a ``count`` (int) key,
+    matching the shape emitted by ``_compute_top_objections``.
+
+    The category string is matched (case-insensitive, substring) against
+    ``_OBJECTION_SEVERITY_TIERS`` to assign a tier weight:
+
+    - FUNDAMENTAL (1.0): demand / willingness-to-pay / pricing / "no problem" / market-size
+    - FRAMING     (0.5): positioning / messaging / "unclear" / differentiation / "who is this for"
+    - COSMETIC    (0.2): UI / naming / onboarding / minor
+    - default to FRAMING (0.5) when no keyword matches.
+
+    severity = sum(tier_weight * count) / total_count
+
+    Higher return value = worse (more fundamental objections).
+    Returns 0.0 when ``top_objections`` is empty (guard against divide-by-zero).
+    """
+    if not top_objections:
+        return 0.0
+
+    total_count = sum(obj.get("count", 0) for obj in top_objections)
+    if total_count == 0:
+        return 0.0
+
+    weighted_sum = 0.0
+    for obj in top_objections:
+        category = str(obj.get("category", "")).lower()
+        count = int(obj.get("count", 0))
+        tier_weight = _TIER_DEFAULT
+        for keyword, weight in _OBJECTION_SEVERITY_TIERS.items():
+            if keyword in category:
+                tier_weight = weight
+                break
+        weighted_sum += tier_weight * count
+
+    return round(weighted_sum / total_count, 6)
+
+
+def compute_silence_penalty(silent_share_pct: float) -> float:
+    """Return a 0..1 penalty score from a silent-share percentage (0..100).
+
+    ``silent_share_pct`` is the share of agents that ignored the pitch,
+    as returned by ``_compute_ignore_reasons`` (the ``silent_share_pct``
+    value in ``RoastReport``).
+
+    penalty = clamp(silent_share_pct / 100, 0.0, 1.0)
+
+    Higher return value = higher penalty = worse pull signal.
+    Out-of-range inputs (negative or > 100) are clamped to [0, 1].
+    """
+    return round(max(0.0, min(silent_share_pct / 100.0, 1.0)), 6)
+
+
 def _compute_pmf_score(
     sentiment_split: dict[str, float],
     action_split: dict[str, int],
