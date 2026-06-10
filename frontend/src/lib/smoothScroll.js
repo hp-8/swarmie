@@ -24,6 +24,11 @@ export function startSmoothScroll() {
     wheelMultiplier: 1,
     smoothWheel: true,
     syncTouch: false,   // native momentum on touch devices
+    // Let inner scrollable panes (.scroll-zone) and any [data-lenis-prevent]
+    // element keep native wheel scroll instead of being hijacked by Lenis.
+    prevent: (node) =>
+      node?.classList?.contains('scroll-zone') ||
+      node?.hasAttribute?.('data-lenis-prevent'),
   })
 
   const raf = (time) => {

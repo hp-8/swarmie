@@ -112,7 +112,7 @@ defineProps({
 
 .dbp-verdict-chip {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
   font-weight: 600;
   font-variation-settings: 'opsz' 144, 'wght' 600;
   font-size: clamp(28px, 6vw, 44px);
@@ -164,7 +164,7 @@ defineProps({
 
 .dbp-next-action {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
   font-weight: 500;
   font-variation-settings: 'opsz' 72, 'wght' 500;
   font-size: clamp(var(--text-base), 3vw, var(--text-md));

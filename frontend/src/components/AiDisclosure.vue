@@ -185,7 +185,7 @@ onUnmounted(() => {
 
 .aid-title {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
   font-size: var(--text-3xl, 2rem);
   font-weight: 500;
   line-height: 1.05;

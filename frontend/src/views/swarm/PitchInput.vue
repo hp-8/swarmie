@@ -529,7 +529,7 @@ async function onSubmit() {
 @keyframes spin { to { transform: rotate(360deg); } }
 .launch-text { text-align: center; display: flex; flex-direction: column; gap: var(--space-1); }
 .launch-label {
-  font-family: var(--font-display); font-style: italic; font-weight: 500;
+  font-family: var(--font-display); font-style: normal; font-weight: 500;
   font-size: var(--text-xl); color: var(--ink);
 }
 .launch-sub {

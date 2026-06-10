@@ -461,66 +461,68 @@
         </div>
       </section>
 
-      <!-- ROW 2 — Three columns: narrative · objections · quotes -->
-      <section class="strip strip-three">
-        <article class="cell cell-narrative">
-          <header class="cell-head"><span class="h-eyebrow">synthesis</span></header>
-          <div class="scroll-zone narrative-scroll">
-            <p class="narrative-body">{{ report.narrative }}</p>
-            <div v-if="report.messaging_gaps?.length" class="fixes">
-              <span class="h-eyebrow">fixes to try</span>
-              <ul class="fix-list">
-                <li v-for="g in report.messaging_gaps" :key="g">{{ g }}</li>
-              </ul>
-            </div>
-            <div v-if="report.ignore_reasons?.length" class="silence">
-              <span class="h-eyebrow">{{ copy.silence(report.silent_share_pct) }}</span>
-              <ul class="silence-list">
-                <li v-for="ir in report.ignore_reasons" :key="ir.category" class="silence-row">
-                  <div class="silence-head">
-                    <span class="silence-label">{{ ir.label }}</span>
-                    <span class="silence-share">{{ ir.share_pct }}%</span>
-                  </div>
-                  <p v-if="ir.example" class="silence-ex">"{{ ir.example }}"</p>
-                  <p v-if="ir.implication" class="silence-imp">{{ ir.implication }}</p>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </article>
+      <!-- Detail tabs — supporting panes, one at a time -->
+      <nav class="detail-tabs" role="tablist" aria-label="Report detail">
+        <button
+          v-for="t in detailTabs"
+          :key="t.id"
+          type="button"
+          class="detail-tab"
+          :class="{ active: detailTab === t.id }"
+          role="tab"
+          :aria-selected="detailTab === t.id"
+          @click="detailTab = t.id"
+        >
+          {{ t.label }}<span v-if="t.count != null" class="detail-tab-count">{{ t.count }}</span>
+        </button>
+      </nav>
 
-        <article class="cell cell-objections">
-          <header class="cell-head">
-            <span class="h-eyebrow">{{ copy.objections }}</span>
-            <span class="cell-meta">{{ report.top_objections?.length || 0 }}</span>
-          </header>
+      <!-- Active pane — full width, one scroll, room to breathe -->
+      <section class="detail-pane">
+        <!-- Objections (self-scrolling list) -->
+        <div v-show="detailTab === 'objections'" class="pane" role="tabpanel">
           <ObjectionList :objections="report.top_objections" :copy="copy" :job-id="jobId" />
-        </article>
+        </div>
 
-        <article class="cell cell-quotes">
-          <header class="cell-head">
-            <span class="h-eyebrow">{{ copy.voices }}</span>
-            <span class="cell-meta">{{ report.quoted_reactions?.length || 0 }}</span>
-          </header>
+        <!-- Synthesis -->
+        <div v-show="detailTab === 'synthesis'" class="pane pane-padded scroll-zone" role="tabpanel">
+          <p class="narrative-body">{{ report.narrative }}</p>
+          <div v-if="report.messaging_gaps?.length" class="fixes">
+            <span class="h-eyebrow">fixes to try</span>
+            <ul class="fix-list">
+              <li v-for="g in report.messaging_gaps" :key="g">{{ g }}</li>
+            </ul>
+          </div>
+          <div v-if="report.ignore_reasons?.length" class="silence">
+            <span class="h-eyebrow">{{ copy.silence(report.silent_share_pct) }}</span>
+            <ul class="silence-list">
+              <li v-for="ir in report.ignore_reasons" :key="ir.category" class="silence-row">
+                <div class="silence-head">
+                  <span class="silence-label">{{ ir.label }}</span>
+                  <span class="silence-share">{{ ir.share_pct }}%</span>
+                </div>
+                <p v-if="ir.example" class="silence-ex">"{{ ir.example }}"</p>
+                <p v-if="ir.implication" class="silence-imp">{{ ir.implication }}</p>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Voices (self-scrolling list) -->
+        <div v-show="detailTab === 'voices'" class="pane" role="tabpanel">
           <QuotesList :quotes="report.quoted_reactions" />
-        </article>
-      </section>
+        </div>
 
-      <!-- ROW 3 — ICP fit + usage strip -->
-      <section class="strip strip-foot">
-        <article class="cell cell-icp" v-if="segmentNames.length">
-          <header class="cell-head">
-            <span class="h-eyebrow">{{ copy.segments }}</span>
-            <span class="cell-meta">{{ segmentNames.length }}</span>
-          </header>
+        <!-- Segments -->
+        <div v-show="detailTab === 'segments'" class="pane pane-padded scroll-zone" role="tabpanel">
           <div class="segment-tags">
             <span v-for="name in segmentNames" :key="name" class="segment-tag">{{ name }}</span>
           </div>
-        </article>
+        </div>
 
-        <article v-if="usage" class="cell cell-usage">
-          <header class="cell-head"><span class="h-eyebrow">run cost</span></header>
-          <div class="usage-row">
+        <!-- Run cost -->
+        <div v-show="detailTab === 'cost'" class="pane pane-padded scroll-zone" role="tabpanel">
+          <div v-if="usage" class="usage-row">
             <div class="usage-stat">
               <div class="usage-num">${{ costDisplay.value }}</div>
               <div class="usage-label">total</div>
@@ -534,7 +536,7 @@
               <div class="usage-label">calls</div>
             </div>
           </div>
-        </article>
+        </div>
       </section>
     </main>
 
@@ -617,6 +619,21 @@ const costDisplay = computed(() => {
 })
 
 const jobShort = computed(() => (jobId || '').replace('roast_', '').slice(0, 8))
+
+// Decongested detail view: the verdict hero stays pinned; everything else lives
+// behind tabs so only one pane reads at a time. Tabs with no content are hidden.
+const detailTab = ref('objections')
+const detailTabs = computed(() => {
+  const r = report.value
+  const tabs = [
+    { id: 'objections', label: copy.value.objections, count: r?.top_objections?.length || 0 },
+    { id: 'synthesis', label: 'synthesis', count: null },
+    { id: 'voices', label: copy.value.voices, count: r?.quoted_reactions?.length || 0 },
+  ]
+  if (segmentNames.value.length) tabs.push({ id: 'segments', label: copy.value.segments, count: segmentNames.value.length })
+  if (usage.value) tabs.push({ id: 'cost', label: 'run cost', count: null })
+  return tabs
+})
 
 async function load() {
   try {
@@ -881,7 +898,7 @@ onMounted(() => {
 .dash {
   flex: 1;
   display: grid;
-  grid-template-rows: minmax(150px, 0.7fr) minmax(0, 1.4fr) minmax(110px, 0.4fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   max-width: 1480px;
@@ -928,10 +945,105 @@ onMounted(() => {
 }
 .cell-meta { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); }
 
+/* --- Decongested detail: segmented-control tabs --- */
+/* Recessed track holds the tabs; the active tab reads as a raised pill via the
+   paper depth ladder (track = deepest paper, pill = one step up + top highlight). */
+.detail-tabs {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 3px;
+  width: max-content;
+  max-width: 100%;
+  padding: 4px;
+  flex-shrink: 0;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 2px color-mix(in oklch, black 30%, transparent);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.detail-tabs::-webkit-scrollbar { display: none; }
+.detail-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 7px var(--space-3);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out);
+}
+.detail-tab:hover { color: var(--ink-2); background: var(--paper-2); }
+.detail-tab.active {
+  color: var(--ink);
+  background: var(--paper-3);
+  border-color: var(--rule-2);
+  box-shadow: inset 0 1px 0 color-mix(in oklch, white 7%, transparent),
+              0 1px 3px color-mix(in oklch, black 35%, transparent);
+}
+.detail-tab:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.detail-tab-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink-4);
+  padding: 2px 6px;
+  background: color-mix(in oklch, var(--ink) 8%, transparent);
+  border-radius: var(--radius-pill);
+  transition: color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+}
+.detail-tab.active .detail-tab-count {
+  color: var(--accent-bright);
+  background: var(--accent-soft);
+}
+
+.detail-pane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 1px 0 color-mix(in oklch, white 4%, transparent);
+  overflow: hidden;
+}
+/* Each pane fills the bezel. Self-scrolling list panes (objections / voices)
+   let their inner .scroll-zone do the scrolling; padded panes scroll themselves. */
+.pane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pane-padded {
+  display: block;
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-5) var(--space-6);
+}
+.pane :deep(.obj-list),
+.pane :deep(.quotes-list) {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: var(--space-4);
+}
+
 /* SCORE */
 .cell-score { text-align: center; justify-content: center; align-items: center; padding: var(--space-3); }
 .score-num {
-  font-family: var(--font-display); font-style: italic; font-weight: 600;
+  font-family: var(--font-display); font-style: normal; font-weight: 600;
   font-variation-settings: 'opsz' 144, 'wght' 600;
   font-size: clamp(72px, 11vh, 120px);
   line-height: 0.85; letter-spacing: -0.05em;
@@ -953,7 +1065,7 @@ onMounted(() => {
 /* VERDICT (reframed hero) */
 .cell-verdict { text-align: center; justify-content: center; align-items: center; padding: var(--space-3); gap: var(--space-2); }
 .verdict-chip {
-  font-family: var(--font-display); font-style: italic; font-weight: 600;
+  font-family: var(--font-display); font-style: normal; font-weight: 600;
   font-variation-settings: 'opsz' 144, 'wght' 600;
   font-size: clamp(28px, 5vh, 50px); line-height: 0.95; letter-spacing: -0.02em;
   text-transform: uppercase; text-shadow: 0 0 40px currentColor;
@@ -1001,7 +1113,7 @@ onMounted(() => {
 .silence-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2); }
 .silence-label { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
 .silence-share { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); }
-.silence-ex { margin: 0; font-family: var(--font-display); font-style: italic; font-size: var(--text-sm); line-height: 1.4; color: var(--ink-2); }
+.silence-ex { margin: 0; font-family: var(--font-display); font-style: normal; font-size: var(--text-sm); line-height: 1.4; color: var(--ink-2); }
 .silence-imp { margin: 0; font-size: var(--text-sm); line-height: 1.5; color: var(--ink); }
 
 /* ICP fit — plain orange tags. Nothing else. */
@@ -1030,7 +1142,7 @@ onMounted(() => {
 .cell-usage { gap: var(--space-3); }
 .usage-row { display: flex; gap: var(--space-5); }
 .usage-stat { display: flex; flex-direction: column; gap: 1px; }
-.usage-num { font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: var(--text-xl); color: var(--ink); }
+.usage-num { font-family: var(--font-display); font-style: normal; font-weight: 500; font-size: var(--text-xl); color: var(--ink); }
 .usage-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
 
 /* FOOT */
@@ -1131,7 +1243,7 @@ onMounted(() => {
 }
 .nd-close:hover { color: var(--ink); }
 .nd-head { display: flex; flex-direction: column; gap: var(--space-2); }
-.nd-name { font-family: var(--font-display); font-style: italic; font-size: var(--text-2xl); margin: 0; }
+.nd-name { font-family: var(--font-display); font-style: normal; font-size: var(--text-2xl); margin: 0; }
 .nd-meta { display: flex; gap: 6px; flex-wrap: wrap; }
 .nd-chip {
   font-family: var(--font-mono);
@@ -1208,7 +1320,7 @@ onMounted(() => {
 .cell-readiness { text-align: center; justify-content: center; align-items: center; gap: var(--space-3); }
 .readiness-pct {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
   font-weight: 600;
   font-variation-settings: 'opsz' 144, 'wght' 600;
   font-size: clamp(52px, 9vh, 88px);
@@ -1234,7 +1346,7 @@ onMounted(() => {
 .cell-diag-meta { justify-content: center; gap: var(--space-2); }
 .diag-stage {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
   font-size: clamp(20px, 3vh, 28px);
   font-weight: 500;
   font-variation-settings: 'opsz' 144, 'wght' 500;
@@ -1245,7 +1357,7 @@ onMounted(() => {
 .diag-stage-hint { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-4); margin: var(--space-2) 0 0; }
 .diag-overall {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
   font-weight: 600;
   font-size: clamp(28px, 4vh, 40px);
   line-height: 0.9;
@@ -1257,7 +1369,7 @@ onMounted(() => {
 .cell-next-move { justify-content: center; }
 .next-move-text {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
   font-size: clamp(18px, 2.4vh, 26px);
   font-weight: 500;
   font-variation-settings: 'opsz' 144, 'wght' 500;
@@ -1296,7 +1408,7 @@ onMounted(() => {
 .slide-issue { font-size: var(--text-sm); color: var(--ink-3); margin: 0; line-height: 1.4; }
 .slide-score {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
   font-weight: 600;
   font-size: var(--text-xl);
   line-height: 0.9;
@@ -1355,7 +1467,7 @@ onMounted(() => {
 .inv-sim-scroll { padding-right: var(--space-2); }
 .inv-sim-text {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
   font-size: clamp(var(--text-sm), 1.6vw, var(--text-md));
   font-weight: 500;
   font-variation-settings: 'opsz' 96, 'wght' 500;
@@ -1506,16 +1618,18 @@ onMounted(() => {
 /* responsive for main dashboard */
 @media (max-width: 1100px) {
   .strip-hero { grid-template-columns: 180px 1fr 196px; }
-  .strip-three { grid-template-columns: 0.85fr 1.15fr; }
-  .strip-three .cell-quotes { display: none; }
 }
 
 @media (max-width: 760px) {
   .dash { grid-template-rows: auto auto auto; overflow: visible; }
   .dash .scroll-zone { overflow: visible; }
   .page.page-fixed { height: auto; overflow: auto; }
-  .strip-hero, .strip-three, .strip-foot { grid-template-columns: 1fr; }
-  .strip-three .cell-quotes { display: flex; }
+  .strip-hero { grid-template-columns: 1fr; }
+  /* Page scrolls now — let the active pane grow instead of trapping a scroll. */
+  .detail-pane { overflow: visible; }
+  .pane, .pane-padded { overflow: visible; }
+  .pane :deep(.obj-list),
+  .pane :deep(.quotes-list) { overflow: visible; }
 }
 
 /* responsive for launch brief */
@@ -1539,13 +1653,14 @@ onMounted(() => {
  * into a comfortable scrolling 2-column flow. */
 @media (min-width: 761px) and (max-width: 1024px) {
   .page.page-fixed { height: auto; overflow: auto; }
-  .dash { grid-template-rows: auto; overflow: visible; max-width: 920px; }
+  .dash { grid-template-rows: auto auto auto; overflow: visible; max-width: 920px; }
   .cell { overflow: visible; }
   .scroll-zone { overflow: visible; }
   .strip-hero { grid-template-columns: 200px 1fr; }
   .strip-hero .cell-sentiment { grid-column: 1 / -1; }
-  .strip-three { grid-template-columns: 1fr 1fr; }
-  .strip-three .cell-quotes { display: flex; grid-column: 1 / -1; }
-  .strip-foot { grid-template-columns: 1fr 1fr; }
+  .detail-pane { overflow: visible; min-height: 50vh; }
+  .pane, .pane-padded { overflow: visible; }
+  .pane :deep(.obj-list),
+  .pane :deep(.quotes-list) { overflow: visible; }
 }
 </style>

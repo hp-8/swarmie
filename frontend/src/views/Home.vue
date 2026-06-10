@@ -288,7 +288,7 @@ import DecisionBriefPreview from '../components/marketing/DecisionBriefPreview.v
   margin: 0 0 var(--space-4); color: var(--ink);
   overflow-wrap: anywhere; min-width: 0;
 }
-.hero-title em { font-style: italic; color: var(--accent-bright); }
+.hero-title em { font-style: normal; color: var(--accent-bright); }
 .hero-lede {
   max-width: 600px; font-family: var(--font-body);
   font-size: clamp(var(--text-base), 2.2vw, var(--text-lg));
@@ -310,8 +310,8 @@ import DecisionBriefPreview from '../components/marketing/DecisionBriefPreview.v
 }
 .truth-line { max-width: var(--max-narrow); margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-3); }
 .truth-text { font-family: var(--font-body); font-size: clamp(var(--text-md), 2.4vw, var(--text-lg)); line-height: 1.65; color: var(--ink); }
-.truth-em { color: var(--ink); font-style: italic; }
-.truth-text em { color: var(--ink); font-style: italic; }
+.truth-em { color: var(--ink); font-style: normal; }
+.truth-text em { color: var(--ink); font-style: normal; }
 .warm { color: var(--accent-bright); font-weight: 500; }
 
 /* shared section heads */
@@ -325,8 +325,8 @@ import DecisionBriefPreview from '../components/marketing/DecisionBriefPreview.v
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-6);
 }
 .loop-steps li { display: flex; flex-direction: column; gap: var(--space-2); }
-.loop-num { font-family: var(--font-display); font-style: italic; font-size: var(--text-xl); color: var(--accent-bright); }
-.loop-step-title { font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: var(--text-xl); margin: 0; color: var(--ink); }
+.loop-num { font-family: var(--font-display); font-style: normal; font-size: var(--text-xl); color: var(--accent-bright); }
+.loop-step-title { font-family: var(--font-display); font-style: normal; font-weight: 500; font-size: var(--text-xl); margin: 0; color: var(--ink); }
 .loop-step-copy { font-family: var(--font-body); font-size: var(--text-base); line-height: 1.6; color: var(--ink-2); margin: 0; }
 
 /* AHA */
@@ -336,7 +336,7 @@ import DecisionBriefPreview from '../components/marketing/DecisionBriefPreview.v
   gap: clamp(var(--space-6), 5vw, var(--space-9)); align-items: center;
 }
 .aha-title { font-size: clamp(32px, 5.5vw, 56px); font-weight: 500; font-variation-settings: 'opsz' 144, 'wght' 500; margin: var(--space-3) 0 var(--space-4); color: var(--ink); }
-.aha-title em { color: var(--accent-bright); font-style: italic; }
+.aha-title em { color: var(--accent-bright); font-style: normal; }
 .aha-lede { font-family: var(--font-body); font-size: var(--text-md); line-height: 1.65; color: var(--ink-2); max-width: 460px; margin: 0 0 var(--space-6); }
 .aha-visual { min-width: 0; }
 
@@ -358,7 +358,7 @@ import DecisionBriefPreview from '../components/marketing/DecisionBriefPreview.v
 /* CLOSING CTA */
 .cta { max-width: var(--max-narrow); margin: 0 auto; text-align: center; border-top: 1px solid var(--rule); padding: var(--space-10) var(--space-5); }
 .cta-title { font-size: clamp(36px, 7vw, 76px); font-weight: 500; font-variation-settings: 'opsz' 144, 'wght' 500; margin: 0 auto var(--space-6); color: var(--ink); }
-.cta-title em { color: var(--accent-bright); font-style: italic; }
+.cta-title em { color: var(--accent-bright); font-style: normal; }
 .cta-btn { padding: 16px 30px; font-size: var(--text-md); }
 
 /* FOOT */

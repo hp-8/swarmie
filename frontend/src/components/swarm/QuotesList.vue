@@ -36,7 +36,7 @@ defineProps({ quotes: { type: Array, default: () => [] } })
 .quote.tone-curious { border-left-color: var(--info); }
 .q-handle { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; color: var(--accent-bright); margin-bottom: 4px; }
 .q-text {
-  font-family: var(--font-display); font-style: italic; font-weight: 500;
+  font-family: var(--font-display); font-style: normal; font-weight: 500;
   font-size: var(--text-sm); line-height: 1.45; color: var(--ink); margin: 0 0 var(--space-2);
 }
 .q-meta { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--ink-3); }

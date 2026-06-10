@@ -4,6 +4,7 @@
       Sharpen this →
     </button>
 
+    <Teleport to="body">
     <transition name="sharpen-fade">
       <div v-if="visible" class="sharpen-overlay" @click.self="visible = false">
         <div class="sharpen-card" role="dialog" aria-label="Sharpen plan">
@@ -63,6 +64,7 @@
         </div>
       </div>
     </transition>
+    </Teleport>
   </div>
 </template>
 

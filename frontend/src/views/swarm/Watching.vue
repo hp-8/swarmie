@@ -488,7 +488,7 @@ onBeforeUnmount(() => {
 }
 .pitch-line {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
   font-weight: 500;
   font-variation-settings: 'opsz' 96, 'wght' 500;
   font-size: var(--text-xl);
@@ -530,7 +530,7 @@ onBeforeUnmount(() => {
 }
 .counter-num {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
   font-size: var(--text-3xl);
   line-height: 1;
   color: var(--accent-bright);
@@ -651,7 +651,7 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-lg);
   color: var(--warn);
 }
-.error-box strong { color: var(--ink); font-family: var(--font-display); font-style: italic; font-size: var(--text-lg); }
+.error-box strong { color: var(--ink); font-family: var(--font-display); font-style: normal; font-size: var(--text-lg); }
 .retry-btn { align-self: flex-start; }
 
 /* slide-in for new reactions */
@@ -742,7 +742,7 @@ onBeforeUnmount(() => {
 }
 .nd-close:hover { color: var(--ink); }
 .nd-head { display: flex; flex-direction: column; gap: var(--space-2); }
-.nd-name { font-family: var(--font-display); font-style: italic; font-size: var(--text-2xl); margin: 0; }
+.nd-name { font-family: var(--font-display); font-style: normal; font-size: var(--text-2xl); margin: 0; }
 .nd-meta { display: flex; gap: 6px; flex-wrap: wrap; }
 .nd-chip {
   font-family: var(--font-mono);

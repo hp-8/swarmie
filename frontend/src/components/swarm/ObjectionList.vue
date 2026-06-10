@@ -43,29 +43,84 @@ async function copyTest(obj) {
 </script>
 
 <style scoped>
-.obj-list { list-style: none; padding: 0 var(--space-3) 0 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-4); }
-.obj-row { display: grid; grid-template-columns: 34px 1fr; gap: var(--space-3); align-items: start; padding-bottom: var(--space-4); border-bottom: 1px solid var(--rule); }
-.obj-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.obj-list {
+  list-style: none; margin: 0; padding: 2px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
+  gap: var(--space-3);
+  align-content: start;
+}
+.obj-row {
+  display: grid; grid-template-columns: 30px 1fr; gap: var(--space-3);
+  align-items: start;
+  background: var(--paper-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: inset 0 1px 0 color-mix(in oklch, white 4%, transparent);
+}
 .obj-rank {
-  font-family: var(--font-display); font-style: italic; font-weight: 600;
+  font-family: var(--font-display); font-style: normal; font-weight: 600;
   font-size: var(--text-2xl); color: var(--accent-bright); line-height: 0.9;
 }
 .obj-head-row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); margin-bottom: var(--space-1); }
 .obj-cat { font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
 .obj-count { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); flex-shrink: 0; }
 .obj-quote {
-  font-family: var(--font-display); font-style: italic; font-weight: 500;
+  font-family: var(--font-display); font-style: normal; font-weight: 500;
   font-variation-settings: 'opsz' 96, 'wght' 500;
-  font-size: var(--text-md); line-height: 1.45; color: var(--ink); margin: 0;
+  font-size: var(--text-sm); line-height: 1.4; color: var(--ink-2); margin: 0;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .obj-tag { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin-right: var(--space-2); padding: 1px 5px; border: 1px solid var(--rule); border-radius: 4px; white-space: nowrap; }
 .obj-tag.warn { color: var(--warn); border-color: color-mix(in oklch, var(--warn) 35%, transparent); }
 .obj-tag.accent { color: var(--accent-bright); border-color: color-mix(in oklch, var(--accent) 35%, transparent); }
-.obj-test { margin-top: var(--space-2); }
-.obj-test-q { display: flex; align-items: baseline; gap: var(--space-2); width: 100%; text-align: left; background: var(--paper-3); border: 1px solid var(--rule); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out); }
-.obj-test-q:hover { border-color: var(--ink-3); }
-.obj-test-text { flex: 1; font-size: var(--text-md); color: var(--ink); line-height: 1.45; }
-.obj-copy { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); }
-.obj-kill, .obj-fix { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--ink); line-height: 1.55; }
+.obj-test { margin-top: var(--space-3); }
+.obj-test-q {
+  display: flex; align-items: center; gap: var(--space-3);
+  width: 100%; text-align: left;
+  background: color-mix(in oklch, var(--accent) 7%, var(--paper));
+  border: 1px solid color-mix(in oklch, var(--accent) 22%, transparent);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+}
+.obj-test-q:hover {
+  border-color: color-mix(in oklch, var(--accent) 50%, transparent);
+  background: color-mix(in oklch, var(--accent) 11%, var(--paper));
+}
+.obj-test-q:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* "GET PROOF" tag — filled coral micro-pill, not the outlined gray default */
+.obj-test-q .obj-tag {
+  align-self: flex-start;
+  margin-right: 0;
+  color: var(--accent-bright);
+  border-color: transparent;
+  background: var(--accent-soft);
+}
+.obj-test-text {
+  flex: 1; min-width: 0; font-size: var(--text-sm); color: var(--ink); line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.obj-copy {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--ink) 8%, transparent);
+  color: var(--ink-2);
+  font-size: 13px; line-height: 1;
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+.obj-test-q:hover .obj-copy { background: var(--accent-soft); color: var(--accent-bright); transform: translateY(-1px); }
+.obj-kill, .obj-fix {
+  margin: var(--space-2) 0 0; font-size: var(--text-xs); color: var(--ink-3); line-height: 1.45;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 .muted { color: var(--ink-3); font-size: var(--text-sm); margin: 0; }
 </style>

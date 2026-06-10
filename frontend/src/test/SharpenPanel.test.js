@@ -11,6 +11,8 @@ const stubs = {
   AiDisclosure: true,
   // router-link -> plain anchor so the re-roast CTA renders without a router.
   'router-link': { props: ['to'], template: '<a><slot /></a>' },
+  // The overlay teleports to <body>; stub it so content stays inside the wrapper.
+  teleport: true,
 }
 
 const REPORT = {
