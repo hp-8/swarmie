@@ -1,47 +1,126 @@
 {
-  "_comment": "PLACEHOLDER DATA — replace every entry with a real Swarmie pipeline run before launch (LAUNCH.md §2). Schema mirrors the report fields the Result page reads.",
+  "_note": "REAL run output — batch of 2026-06-11 against the live pipeline (deepseek/deepseek-v4-flash, 100 agents/run). Quotes are exact contiguous substrings of agent reactions. Source JSONs archived from /tmp/roast_results/. Do not hand-edit verdicts or quotes.",
+  "run_date": "2026-06-11",
   "roasts": [
-    {
-      "slug": "juicero",
-      "name": "Juicero",
-      "one_liner": "A $699 Wi-Fi-connected press for proprietary juice packs.",
-      "verdict": "kill",
-      "confidence": "high",
-      "agent_count": 150,
-      "top_objections": [
-        { "text": "PLACEHOLDER — I can squeeze the pack with my hands. What am I paying $699 for?" },
-        { "text": "PLACEHOLDER — subscription packs lock me in; the hardware is a DRM dongle for juice." }
-      ],
-      "silence_pct": 64,
-      "blurb": "The swarm found the hand-squeeze objection in under a minute. Bloomberg needed a camera crew."
-    },
     {
       "slug": "quibi",
       "name": "Quibi",
-      "one_liner": "Premium 10-minute shows, mobile-only, $4.99/mo with ads.",
-      "verdict": "wrong_audience",
-      "confidence": "medium",
-      "agent_count": 150,
+      "one_liner": "Premium Hollywood shows in 10-minute chapters, built for your phone. $1.75B raised pre-launch. (2018 pitch)",
+      "verdict": "kill",
+      "confidence": "med",
+      "agent_count": 100,
       "top_objections": [
-        { "text": "PLACEHOLDER — YouTube and TikTok are free and already in my pocket. Why pay for shorter Netflix?" },
-        { "text": "PLACEHOLDER — mobile-only means I can't cast it to my TV. You built a restriction, not a feature." }
+        {
+          "text": "$5/month for 10-min chunks of hollywood fluff? my subway wifi barely loads youtube. and turnstyle? just let me rotate my phone like a normal person."
+        }
       ],
-      "silence_pct": 58,
-      "blurb": "$1.75B raised. The swarm's silent majority scrolled past for the same reason real audiences did."
+      "silence_pct": 24,
+      "blurb": "The only kill verdict in the batch. The swarm wouldn't pay $5/month for premium phone video when free already fills the same in-between moments — which is roughly how it went."
     },
     {
-      "slug": "ai-for-x-2026",
-      "name": "YetAnotherAI (composite)",
-      "one_liner": "AI-powered everything-assistant for busy professionals. (A composite of 2026's most common pitch.)",
+      "slug": "juicero",
+      "name": "Juicero",
+      "one_liner": "A $699 Wi-Fi cold-press juicer with QR-verified produce packs. (2016 pitch)",
       "verdict": "sharpen_positioning",
       "confidence": "high",
-      "agent_count": 150,
+      "agent_count": 100,
       "top_objections": [
-        { "text": "PLACEHOLDER — 'AI-powered' is the category, not the product. What do you do that a ChatGPT tab doesn't?" },
-        { "text": "PLACEHOLDER — 'busy professionals' is everyone and no one. Whose Tuesday gets better?" }
+        {
+          "text": "a $699 press for juice? i can squeeze a lemon with my hands and clean up in 30 seconds. this is just another overpriced counter hog that screams 'i have more money than sense.'"
+        }
       ],
-      "silence_pct": 71,
-      "blurb": "We roast the pitch we see most in 2026 — including, fairly, our own category."
+      "silence_pct": 22,
+      "blurb": "Not a kill — the swarm liked 'no cleanup', hated the $699 price shock, and said reframe or die. It can't squeeze a pack by hand; it only reads the pitch. Known limit, disclosed."
+    },
+    {
+      "slug": "theranos",
+      "name": "Theranos",
+      "one_liner": "200 blood tests from a few drops of a finger-stick, results in hours. (2013-era pitch)",
+      "verdict": "sharpen_positioning",
+      "confidence": "med",
+      "agent_count": 100,
+      "top_objections": [
+        {
+          "text": "oh great, another silicon valley savior who thinks a finger-prick and a 'proprietary device' (aka glorified glucose meter) is gonna take down quest and labcorp. sure jan. let me know when your edison machine actually works outside a demo room."
+        }
+      ],
+      "silence_pct": 23,
+      "blurb": "The swarm made trust the fatal objection and demanded the device work 'outside a demo room' — but it called positioning, not fraud. Synthetic users can't audit a lab. And personas carry training-data hindsight on famous names; salt accordingly."
+    },
+    {
+      "slug": "wework",
+      "name": "WeWork",
+      "one_liner": "Space-as-a-service with community at the center, elevating the world's consciousness. (2017-era pitch)",
+      "verdict": "sharpen_positioning",
+      "confidence": "high",
+      "agent_count": 100,
+      "top_objections": [
+        {
+          "text": "ran the numbers on wework vs a standard 5-year lease and the per-sq-ft premium is wild. 'community' doesn't show up on the p&l. hard pass."
+        }
+      ],
+      "silence_pct": 25,
+      "blurb": "The swarm ran the per-square-foot math and found 'community' missing from the P&L — the same math the market eventually did. Freelancers in the swarm loved it; the CFO personas passed."
+    },
+    {
+      "slug": "segway",
+      "name": "Segway",
+      "one_liner": "Self-balancing personal transport; cities would be redesigned around it. (2001 pitch)",
+      "verdict": "sharpen_positioning",
+      "confidence": "med",
+      "agent_count": 100,
+      "top_objections": [
+        {
+          "text": "comparing yourself to the car? please. at $5k i can buy a decent e-bike or a used car that actually works in rain and snow. what's the real-world range when you're not on a perfectly flat demo floor?"
+        }
+      ],
+      "silence_pct": 18,
+      "blurb": "The synthesis line, verbatim: 'pivot to niche B2B or kill.' Which is what history did — warehouses, police, tours. The car comparison didn't survive contact with the swarm."
+    },
+    {
+      "slug": "color-labs",
+      "name": "Color Labs",
+      "one_liner": "See every photo taken within 150 feet of you. $41M raised pre-launch. (2011 pitch)",
+      "verdict": "sharpen_positioning",
+      "confidence": "med",
+      "agent_count": 100,
+      "top_objections": [
+        {
+          "text": "so you want strangers at a wedding to dump their blurry phone snaps into the same pool as my paid work? no thanks — this is a copyright nightmare, not a feature."
+        }
+      ],
+      "silence_pct": 28,
+      "blurb": "Privacy and consent objections dominated, and the silent agents shrugged 'AirDrop and hashtags exist.' $41M pre-launch didn't change either reaction."
+    },
+    {
+      "slug": "airbnb-2008",
+      "name": "Airbnb (2008)",
+      "one_liner": "Book a room with a local instead of a hotel — air beds when conferences sell hotels out. (2008 pitch — the control)",
+      "verdict": "sharpen_positioning",
+      "confidence": "high",
+      "agent_count": 100,
+      "top_objections": [
+        {
+          "text": "ah yes, let perfect strangers sleep in my home while i'm at a conference, what could go wrong? great way to get murdered or robbed for $70/night. good luck building 'trust' without a massive fraud team."
+        }
+      ],
+      "silence_pct": 26,
+      "blurb": "The control. Hosts in the swarm were ready to list; guests wanted to not get murdered. Verdict: sharpen, lead with safety proof — the exact gap Airbnb spent years closing with reviews and insurance. It didn't predict a $100B company. It found the right first objection. That's all this tool claims to do."
+    },
+    {
+      "slug": "swarmie",
+      "name": "Swarmie (yes, us)",
+      "one_liner": "Roast your startup with 500 AI users in 60 seconds. (our own pitch, June 2026)",
+      "verdict": "sharpen_positioning",
+      "confidence": "med",
+      "agent_count": 100,
+      "top_objections": [
+        {
+          "text": "a swarm of bots with 'distinct biases' is just a fancier way to confirm my own bias. i'll stick to cold emailing 10 real people."
+        }
+      ],
+      "silence_pct": 24,
+      "blurb": "We ran our own pitch before asking you to. The swarm's kill signal: 3 of 5 founders calling it 'a bot with different temperature settings.' That objection is now on our roadmap instead of hidden in a drawer."
     }
   ]
 }

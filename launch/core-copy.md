@@ -11,7 +11,7 @@ Paste your startup pitch and 500 synthetic AI personas react like Reddit, HN, an
 
 ## One-Paragraph Pitch
 
-Swarmie runs a swarm of 100–500 AI personas against your pitch. Each persona has a distinct background, bias, and attention span — ~60% silently scroll past, because real audiences do. The ones who react post objections, questions, and snark. In about 60 seconds you get a **Decision Brief**: a verdict (ship it / sharpen / wrong audience / kill), the single next action, your top objections with the exact question to ask 5 real users, the kill-criteria that would prove each objection is fatal, and a silence analysis explaining why the scrollers left. It's a pre-interview filter, not a research replacement. Free. No signup. Runs for $0 on local Ollama. Open-source under AGPL-3.0.
+Swarmie runs a swarm of 100–500 AI personas against your pitch. Each persona has a distinct background, bias, and attention span — part of the swarm silently scrolls past, because real audiences do. The ones who react post objections, questions, and snark. In about 60 seconds you get a **Decision Brief**: a verdict (ship it / sharpen / wrong audience / kill), the single next action, your top objections with the exact question to ask 5 real users, the kill-criteria that would prove each objection is fatal, and a silence analysis explaining why the scrollers left. It's a pre-interview filter, not a research replacement. Free. No signup. Runs for $0 on local Ollama. Open-source under AGPL-3.0.
 
 ---
 
@@ -58,7 +58,7 @@ Investor Swarm stress-tests fundability: it generates the questions a partner is
 
 *Partly, yes — and the honest answer matters.*
 
-Asking a single LLM "does this idea work?" averages everything into mush. It wants to be helpful; it hedges; it says "it depends." Swarmie does something structurally different: it forces 100–500 distinct personas to react independently, with different biases, different skepticism levels, and different reasons to scroll past. The silent majority is explicitly modeled — about 60% of agents produce zero output because ignoring a pitch costs zero tokens and real audiences do the same. The output is a falsifiable decision brief: kill-criteria you can test with 5 actual humans. And it's disclosed synthetic from the first pixel. We never call it research.
+Asking a single LLM "does this idea work?" averages everything into mush. It wants to be helpful; it hedges; it says "it depends." Swarmie does something structurally different: it forces 100–500 distinct personas to react independently, with different biases, different skepticism levels, and different reasons to scroll past. Silence is explicitly modeled — agents that ignore the pitch produce zero output because ignoring costs zero tokens and real audiences do the same. The output is a falsifiable decision brief: kill-criteria you can test with 5 actual humans. And it's disclosed synthetic from the first pixel. We never call it research.
 
 ---
 

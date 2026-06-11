@@ -12,7 +12,7 @@
 
 ## Description (≤ 260 chars)
 
-Paste your pitch. A swarm of 100–500 AI personas reacts like Reddit, HN, and Product Hunt at once — ~60% scroll past, the rest roast it. You get a Decision Brief: verdict, top objections, kill-criteria, and why the silent ones left.
+Paste your pitch. A swarm of 100–500 AI personas reacts like Reddit, HN, and Product Hunt at once — some scroll past, the rest roast it. You get a Decision Brief: verdict, top objections, kill-criteria, and why the silent ones left.
 
 ---
 
@@ -29,7 +29,7 @@ Swarmie is built around a different premise: **the output should cost something 
 Here's what it actually does:
 
 - Runs 100–500 AI personas against your pitch, each with a different background, bias, and attention span
-- ~60% scroll past without reacting — because real audiences do that, and modeling silence is free
+- Part of the swarm scrolls past without reacting — because real audiences do that, and modeling silence is free
 - The ones who stop leave objections, questions, snark
 - The output is a **Decision Brief**: verdict, the single next action, each objection with the exact question to ask 5 real users, kill-criteria (what a real user would have to say to kill the objection), and a silence analysis explaining why the majority left without engaging
 
@@ -60,7 +60,7 @@ swarmie.vercel.app | github.com/hp-8/swarmie
 
 2. **The Decision Brief.** Full Decision Brief output: verdict chip ("sharpen"), confidence band, "do this next" block, one complete objection card showing the category, example quote, "ask 5 users" question, kill signal, and fix. This is the core product value — make it legible.
 
-3. **The Swarm in Motion.** The Watching screen mid-run. Brain graph or reaction stream with the counter ticking up. Shows 300+ agents reacting live. Add an annotation: "~60% scroll past — zero tokens wasted."
+3. **The Swarm in Motion.** The Watching screen mid-run. Brain graph or reaction stream with the counter ticking up. Shows 300+ agents reacting live. Add an annotation: "silent agents cost zero tokens."
 
 4. **Inside the Neuron.** The neuron drawer opened on a specific agent — shows the persona card, the agent's segment, tone, biases, and their actual reaction text. Demonstrates the depth behind each dot.
 
@@ -74,7 +74,7 @@ swarmie.vercel.app | github.com/hp-8/swarmie
 
 ### "Isn't this just asking ChatGPT?"
 
-Partly, yes — and the honest answer matters. Asking a single LLM "does this idea work?" averages everything into mush: it hedges, it says "it depends," it wants to be helpful. Swarmie does something structurally different: it forces 100–500 personas to react independently, with different biases, different skepticism thresholds, and different reasons to leave. The silent majority is explicitly modeled — ~60% of agents produce no output, because ignoring a pitch is free and real audiences do the same. The output is a falsifiable decision brief with kill-criteria you can test with 5 real humans. And every screen discloses it's synthetic. We don't call it research.
+Partly, yes — and the honest answer matters. Asking a single LLM "does this idea work?" averages everything into mush: it hedges, it says "it depends," it wants to be helpful. Swarmie does something structurally different: it forces 100–500 personas to react independently, with different biases, different skepticism thresholds, and different reasons to leave. Silence is explicitly modeled — agents that ignore the pitch produce no output at all, because ignoring is free and real audiences do the same. The output is a falsifiable decision brief with kill-criteria you can test with 5 real humans. And every screen discloses it's synthetic. We don't call it research.
 
 ---
 

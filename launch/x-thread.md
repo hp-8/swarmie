@@ -3,15 +3,15 @@
 
 ---
 
-## Post 1 — Hook (the founder ran Swarmie on Swarmie's own pitch)
+## Post 1 — Hook (the founder ran Swarmie on Swarmie's own pitch — REAL output, 2026-06-11 run)
 
 I ran Swarmie through Swarmie.
 
-Top objection: "Another AI wrapper. Scrolling."
+Top objection: "a swarm of bots with 'distinct biases' is just a fancier way to confirm my own bias. i'll stick to cold emailing 10 real people."
 
-Kill signal: 3 of 5 technical founders say the same thing when asked cold.
+Kill signal it handed me: 3/5 founders call it "a bot with different temperature settings."
 
-That one stung. Here's what we built anyway — and why that objection is exactly the point.
+Verdict: sharpen. Fair.
 
 [IMAGE: Screenshot of Swarmie's own Decision Brief — show the verdict chip ("sharpen"), the PRICE or TRUST objection card, the "ask 5 users" question highlighted, and the silence analysis line. Crop to fit. The sting should be visible.]
 
@@ -21,7 +21,7 @@ That one stung. Here's what we built anyway — and why that objection is exactl
 
 Paste a pitch. 100–500 AI personas react.
 
-Skeptics, lurkers, fans, trolls. ~60% scroll past without saying a word — because real audiences do that too, and modeling silence is free.
+Skeptics, lurkers, fans, trolls. A chunk of the swarm scrolls past without saying a word — because real audiences do that too, and modeling silence is free.
 
 The ones who stop: post objections, ask hard questions, write snark.
 
@@ -56,17 +56,17 @@ That's not the same thing.
 
 ---
 
-## Post 5 — The famous-roast tease
+## Post 5 — The famous-roast tease (REAL output, 2026-06-11 batch)
 
-One user ran their B2B SaaS pitch through it last week.
+We fed it famous pitches, as they were told at the time.
 
-Verdict: wrong audience.
+Quibi was the only kill. Top objection: "just let me rotate my phone like a normal person."
 
-The silence analysis said: "Couldn't tell who it was for. Moved on."
+Theranos got: "let me know when your edison machine actually works outside a demo room."
 
-They rewrote the ICP. Re-ran it. Verdict flipped.
+swarmie.vercel.app/roasts
 
-[IMAGE: Two side-by-side Decision Brief screenshots — before verdict ("wrong audience") and after verdict ("ship it" or "sharpen"). Or a single before/after objection card showing how the top objection changed. Blur any identifying pitch text.]
+[IMAGE: /roasts gallery page screenshot — Quibi "kill" card and Airbnb (2008) card visible side by side.]
 
 ---
 

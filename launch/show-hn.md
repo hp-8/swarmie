@@ -16,7 +16,7 @@
 
 Swarmie takes a startup pitch and runs an async LLM swarm of 100–500 personas against it.
 
-The architecture: a two-tier model router picks between a small fast model for simple reactions and a larger model for synthesis tasks (objection clustering, verdict generation, silence analysis). About 60% of agents are configured to silently ignore the pitch — we call this the "scroll past" tier. They produce no LLM call at all, which keeps costs near zero for the majority and models the fact that real audiences do the same. There's a hard cost ceiling on the hosted version; the Gemini fallback kicks in if the primary model is rate-limited.
+The architecture: a two-tier model router picks between a small fast model for simple reactions and a larger model for synthesis tasks (objection clustering, verdict generation, silence analysis). Each persona rolls an action from its archetype's likelihood distribution — post, comment, upvote, or scroll past. Ignorers (beyond a small sampled subset we ask "why'd you scroll past?") produce no LLM call at all: silence and upvotes are free, which models real-audience attention without paying for it. There's a hard per-run cost cap on the hosted version; a Gemini fallback route exists if the primary model is rate-limited.
 
 The output is a Decision Brief, not a score: verdict (ship it / sharpen / wrong audience / kill) + confidence band, a single next action, ranked objections each with a kill-criteria and the exact question to test with 5 real users, and a silence analysis explaining why the majority didn't engage.
 
@@ -51,7 +51,7 @@ True — they share the same weights. The diversity comes from prompt conditioni
 
 ### 3. "Cost ceiling — what is it, and what happens when you hit it?"
 
-The hosted version has a per-run token cap and a monthly ceiling on our end. When the ceiling is hit, new runs queue or the Gemini fallback route is used (lower cost per token). Users are not billed. We don't collect payment information. If costs become unsustainable, the hosted version goes offline and the AGPL source remains. Self-hosting with your own Ollama or API key has no ceiling at all.
+Two layers. Each run has a hard cost cap (`ROAST_MAX_COST_USD`) — if a run exceeds it, the run cancels and reports that honestly instead of degrading silently. Above that, the provider credit balance is the global ceiling: when it's exhausted, hosted runs fail with a clear error rather than billing anyone. Users are never billed and we don't collect payment information. If hosting becomes unsustainable, the hosted version goes offline and the AGPL source remains. Self-hosting with your own Ollama or API key has no ceiling at all.
 
 ---
 
@@ -63,6 +63,6 @@ Intentional choice. AGPL ensures that if someone builds a hosted service on top 
 
 ### 5. "How do you validate that the Decision Brief output is actually useful?"
 
-We don't have a rigorous benchmark, and I won't pretend we do. The most honest current answer: we have qualitative feedback from founders who ran pitches and found the top objection was something they'd been avoiding in real conversations — and that running the brief before a user interview changed the questions they asked. That's not a controlled study. The kill-criteria in the output are designed to be testable with 5 real users, which is the closest thing to ground truth we can point to. If anyone wants to build an eval benchmark for this (pitch → brief → real user interview concordance), I'd contribute to that.
+We don't have a rigorous benchmark, and I won't pretend we do. The most honest current answer: I ran Swarmie's own pitch through it before this post. Verdict: sharpen, medium confidence. Top objection the swarm wrote: "a swarm of bots with 'distinct biases' is just a fancier way to confirm my own bias. i'll stick to cold emailing 10 real people." The kill-criteria it handed me: if 3 of 5 founders say "it's just a bot with different temperature settings," the positioning is dead. That's not validation — it's one data point that the output stings in the right place. The kill-criteria are designed to be testable with 5 real users, which is the closest thing to ground truth we can point to. If anyone wants to build an eval benchmark for this (pitch → brief → real user interview concordance), I'd contribute to that.
 
 ---

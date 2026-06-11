@@ -58,6 +58,11 @@ _PRICING: dict[str, tuple[float, float]] = {
     "qwen-turbo": (0.05, 0.20),
     # DeepSeek
     "deepseek-chat": (0.27, 1.10),
+    # OpenRouter-routed DeepSeek (verified openrouter.ai/api/v1/models, 2026-06)
+    "deepseek/deepseek-v4-flash": (0.0983, 0.1966),
+    "deepseek/deepseek-v4-pro": (0.435, 0.87),
+    # Google
+    "gemini-2.0-flash": (0.10, 0.40),
     # Local — free
     "ollama": (0.0, 0.0),
 }

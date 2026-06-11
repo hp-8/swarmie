@@ -45,7 +45,7 @@ Swarmie isn't a replacement for talking to real users. It's a **pre-interview fi
 
 1. **Paste** your pitch (problem / product / audience / pricing / competitors).
 2. Swarmie parses it, then builds a swarm of 100–500 agents with distinct personas, biases, and tone.
-3. Agents react: post, comment, upvote, ask questions, raise objections — or scroll past. ~60% ignore (matching real social base rates) and cost zero tokens.
+3. Agents react: post, comment, upvote, ask questions, raise objections — or scroll past. Each persona rolls its action from its archetype's likelihood distribution; silent ignores and upvotes cost zero tokens.
 4. You get a **decision brief**, not a vanity score:
    - **Verdict** — `ship it` / `sharpen` / `wrong audience` / `kill`, with a confidence band.
    - **Next action** — the single most important move before writing more code.

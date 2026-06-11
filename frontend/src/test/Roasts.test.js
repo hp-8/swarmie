@@ -21,7 +21,7 @@ describe('Roasts gallery', () => {
   it('shows each name, verdict label and color class', () => {
     const w = mountPage()
     const cards = w.findAll('.roast-card')
-    expect(cards[0].text()).toContain('Juicero')
+    expect(cards[0].text()).toContain('Quibi')
     expect(cards[0].find('.verdict').classes()).toContain('is-kill')
     expect(cards[0].find('.verdict').text()).toBe('kill')
   })

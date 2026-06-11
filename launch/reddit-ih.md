@@ -10,7 +10,7 @@
 
 Spent the last few weeks building Swarmie.
 
-You paste a startup pitch. A swarm of 100–500 AI personas reacts like a Reddit/HN/Product Hunt thread — objections, questions, snark. About 60% silently scroll past without saying anything, because real audiences do that too.
+You paste a startup pitch. A swarm of 100–500 AI personas reacts like a Reddit/HN/Product Hunt thread — objections, questions, snark. Part of the swarm silently scrolls past without saying anything, because real audiences do that too.
 
 In ~60 seconds you get a Decision Brief:
 - Verdict: ship it / sharpen / wrong audience / kill
@@ -48,7 +48,7 @@ I built Swarmie because I kept running into this problem when helping founders s
 
 **What Swarmie does**
 
-You paste your pitch text. Swarmie parses the ICP, problem, solution, and price from it, then spawns 100–500 AI personas — each with a distinct background, tone, and objection bias. About 60% silently scroll past (zero LLM calls, zero cost — they just don't engage, because real audiences don't). The ones who stop post reactions: objections, questions, snark, upvotes.
+You paste your pitch text. Swarmie parses the ICP, problem, solution, and price from it, then spawns 100–500 AI personas — each with a distinct background, tone, and objection bias. Each persona can also just scroll past (zero LLM calls, zero cost — they don't engage, because real audiences don't either; how many ignore you depends on the pitch). The ones who stop post reactions: objections, questions, snark, upvotes.
 
 The output is a Decision Brief:
 
@@ -72,12 +72,12 @@ The correct framing: Swarmie is a pre-interview filter, not a research replaceme
 **The tech (briefly)**
 
 - Async LLM swarm with two-tier model routing (fast model for reactions, larger model for synthesis)
-- ~60% of agents silently ignore — no LLM call, models real-audience attention
+- Silent ignores and upvotes cost zero LLM calls — models real-audience attention without paying for it
 - Hard cost ceiling on the hosted version; Gemini fallback for rate limits
 - Runs for $0 on local Ollama
 - AGPL-3.0 — full source on GitHub
 
-I ran Swarmie through Swarmie before launch. The top objection was "another AI wrapper." The kill-criteria: 3 of 5 technical founders say it in the first 10 seconds when described cold.
+I ran Swarmie through Swarmie before launch (real run, not a hypothetical). Verdict: **sharpen**, medium confidence. The top objection the swarm wrote: *"a swarm of bots with 'distinct biases' is just a fancier way to confirm my own bias. i'll stick to cold emailing 10 real people."* The kill-criteria it handed me: if 3 of 5 founders say "it's just a bot with different temperature settings," the positioning is dead. 100% of the silent agents binned it as "seen this before — me-too AI tool."
 
 That one landed. I haven't fully solved it. But at least I know exactly what question to bring to the next five conversations.
 
