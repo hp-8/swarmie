@@ -79,3 +79,4 @@ remotion/public/demo-music.mp3
 
 # PMF backtest generated outputs (regenerate with runner.py --out)
 backend/eval/backtest/data/features_tier1.json
+backend/eval/backtest/data/yc_all.json
