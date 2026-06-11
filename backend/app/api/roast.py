@@ -25,9 +25,11 @@ from typing import Any
 from flask import Blueprint, Response, jsonify, request, stream_with_context
 
 from ..config import Config
+from ..extensions import limiter
 from ..services.swarm import (
     AgentReaction,
     CHAT_SOFT_CAP,
+    CostCeilingExceeded,
     DEFAULT_SWARM,
     DeckEvaluator,
     DeckExtractor,
@@ -141,6 +143,28 @@ _store = _JobStore()
 
 
 # ---------- background pipeline ----------
+
+# Pipeline errors raised with a message written FOR the user keep it verbatim;
+# everything else (provider failures, retry exhaustion, bugs) maps to a generic
+# line so internals never reach the client. Raw tracebacks are always logged.
+_USER_FACING_ERROR_PREFIXES = ("Couldn't read the deck", "cancelled")
+
+
+def _public_error_message(exc: Exception) -> str:
+    """User-safe error string for job.error / SSE status events."""
+    if isinstance(exc, CostCeilingExceeded):
+        return (
+            "This run was stopped early because it hit the per-run cost limit. "
+            "Try again with fewer agents."
+        )
+    msg = str(exc)
+    if msg.startswith(_USER_FACING_ERROR_PREFIXES):
+        return msg
+    return (
+        "The run hit an unexpected error on our end (the AI provider may be "
+        "overloaded). Please try again in a few minutes."
+    )
+
 
 def _push_event(job: RoastJob, event_type: str, payload: Any) -> None:
     """Append an SSE-shaped event to the job queue."""
@@ -288,7 +312,7 @@ def _run_pipeline(job: RoastJob) -> None:
             job.status = "cancelled"
         else:
             job.status = "failed"
-            job.error = str(exc)
+            job.error = _public_error_message(exc)
             logger.exception("roast pipeline failed for %s", job.job_id)
         job.finished_at = time.time()
         job.usage = tracker.summary()
@@ -310,6 +334,7 @@ MAX_DECK_BYTES = 25 * 1024 * 1024  # 25 MB
 
 
 @roast_bp.route("", methods=["POST"])
+@limiter.limit(lambda: Config.RATE_LIMIT_ROAST)  # callable: env/test overridable
 def create_roast():
     """Start a new roast job.
 
@@ -435,6 +460,7 @@ def _sse(event: dict) -> str:
 
 
 @roast_bp.route("/<job_id>/agents/<agent_id>/chat", methods=["POST"])
+@limiter.limit(lambda: Config.RATE_LIMIT_CHAT)  # callable: env/test overridable
 def chat_agent(job_id: str, agent_id: str):
     """Send a follow-up message to a specific agent.
 
@@ -482,9 +508,12 @@ def chat_agent(job_id: str, agent_id: str):
             )
         finally:
             loop.close()
-    except Exception as exc:
+    except Exception:
         logger.exception("chat failed for %s/%s", job_id, agent_id)
-        return jsonify({"error": str(exc)}), 500
+        return jsonify({
+            "error": "The agent couldn't reply just now (our AI provider hiccuped). "
+                     "Please try again in a moment.",
+        }), 500
 
     history.append({"role": "user", "content": message})
     history.append({"role": "assistant", "content": reply})

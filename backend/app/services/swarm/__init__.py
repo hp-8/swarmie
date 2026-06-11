@@ -11,7 +11,13 @@ tier routing so cost is bounded and predictable.
 
 from .pitch_parser import PitchParser, InvestorPitchParser, LaunchPitchParser, ParsedPitch
 from .archetype_generator import ArchetypeGenerator, InvestorArchetypeGenerator, LaunchArchetypeGenerator, Archetype
-from .swarm_runner import SwarmRunner, InvestorSwarmRunner, LaunchSwarmRunner, AgentReaction
+from .swarm_runner import (
+    SwarmRunner,
+    InvestorSwarmRunner,
+    LaunchSwarmRunner,
+    AgentReaction,
+    CostCeilingExceeded,
+)
 from .roast_reporter import RoastReporter, InvestorReporter, LaunchReporter, RoastReport
 from .agent_chat import chat_with_agent, SOFT_CAP as CHAT_SOFT_CAP
 from .registry import SWARMS, DEFAULT_SWARM, SwarmSpec, get_swarm
@@ -32,6 +38,7 @@ __all__ = [
     "InvestorSwarmRunner",
     "LaunchSwarmRunner",
     "AgentReaction",
+    "CostCeilingExceeded",
     "RoastReporter",
     "InvestorReporter",
     "LaunchReporter",

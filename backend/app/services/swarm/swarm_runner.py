@@ -29,6 +29,10 @@ from .pitch_parser import ParsedPitch
 logger = logging.getLogger("swarmie.swarm.swarm_runner")
 
 
+class CostCeilingExceeded(RuntimeError):
+    """Run aborted by the cost watchdog: cumulative spend exceeded the ceiling."""
+
+
 @dataclass
 class AgentReaction:
     """One agent's reaction to the pitch."""
@@ -138,6 +142,8 @@ class SwarmRunner:
     IGNORE_SYSTEM = _IGNORE_SYSTEM
     IGNORE_CATEGORIES = _IGNORE_CATEGORIES
     DEFAULT_IGNORE_CATEGORY = "dont_care"
+    # Watchdog poll interval; class attr so unit tests can shrink it.
+    WATCHDOG_POLL_SECONDS = 2.0
 
     def _build_reaction_prompt(self, pitch: ParsedPitch, arch: Archetype, action: str) -> str:
         return (
@@ -181,6 +187,7 @@ class SwarmRunner:
         self.cheap = cheap_tier_llm or LLM(tier="cheap", tracker=self.tracker)
         self.deep = deep_tier_llm or LLM(tier="deep", tracker=self.tracker)
         self.max_cost_usd = max_cost_usd if max_cost_usd is not None else Config.ROAST_MAX_COST_USD
+        self._ceiling_hit = False  # set by _cost_watchdog when it cancels the run
 
     async def run(
         self,
@@ -272,9 +279,21 @@ class SwarmRunner:
         watchdog = asyncio.create_task(self._cost_watchdog(task_objs))
         try:
             for t in asyncio.as_completed(task_objs):
-                reactions.append(await t)
+                try:
+                    reactions.append(await t)
+                except asyncio.CancelledError:
+                    # Task was cancelled by the cost watchdog. CancelledError is a
+                    # BaseException — swallow it here so the abort surfaces as a
+                    # regular Exception (below) instead of killing the worker thread.
+                    continue
         finally:
             watchdog.cancel()
+
+        if self._ceiling_hit:
+            raise CostCeilingExceeded(
+                f"run aborted: cost ${self.tracker.total_cost_usd:.4f} exceeded "
+                f"ceiling ${self.max_cost_usd:.4f}"
+            )
 
         return reactions
 
@@ -372,12 +391,13 @@ class SwarmRunner:
     async def _cost_watchdog(self, tasks: list[asyncio.Task]) -> None:
         """Cancel outstanding tasks if cumulative cost exceeds ceiling."""
         while True:
-            await asyncio.sleep(2)
+            await asyncio.sleep(self.WATCHDOG_POLL_SECONDS)
             cost = self.tracker.total_cost_usd
             if cost > self.max_cost_usd:
                 logger.warning(
                     f"cost ceiling hit (${cost:.4f} > ${self.max_cost_usd:.4f}); cancelling swarm"
                 )
+                self._ceiling_hit = True
                 for t in tasks:
                     if not t.done():
                         t.cancel()

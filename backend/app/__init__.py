@@ -3,16 +3,19 @@ Swarmie Backend - Flask Application Factory
 """
 
 import os
+import time
 import warnings
 
 # Suppress multiprocessing resource_tracker warnings (from third-party libs like transformers)
 # Must be set before all other imports
 warnings.filterwarnings("ignore", message=".*resource_tracker.*")
 
-from flask import Flask, request
+from flask import Flask, jsonify, request
 from flask_cors import CORS
+from werkzeug.exceptions import HTTPException
 
 from .config import Config
+from .extensions import limiter
 from .utils.logger import setup_logger, get_logger
 
 
@@ -39,8 +42,43 @@ def create_app(config_class=Config):
         logger.info("Swarmie Backend is starting...")
         logger.info("=" * 50)
     
-    # Enable CORS
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    # Enable CORS — allowlist only (env CORS_ORIGINS, comma-separated)
+    CORS(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", [])}})
+
+    # Per-IP rate limiting (in-memory; flask-limiter honors RATELIMIT_ENABLED)
+    limiter.init_app(app)
+
+    @app.errorhandler(429)
+    def handle_rate_limit(exc):
+        """JSON 429 in the API's standard {error: ...} envelope."""
+        desc = getattr(exc, "description", None) or "rate limit exceeded"
+        retry_hint = "Please try again later."
+        try:
+            reset_at = limiter.current_limit.reset_at  # epoch seconds of window reset
+            minutes = max(1, int(reset_at - time.time()) // 60 + 1)
+            plural = "s" if minutes != 1 else ""
+            retry_hint = f"Please try again in about {minutes} minute{plural}."
+        except Exception:
+            pass  # header Retry-After still set by flask-limiter
+        if request.path.endswith("/chat"):
+            msg = f"You've hit the agent chat limit ({desc}). {retry_hint}"
+        elif request.path.startswith("/api/roast"):
+            msg = f"You've hit the roast limit ({desc}). {retry_hint}"
+        else:
+            msg = f"Too many requests ({desc}). {retry_hint}"
+        return jsonify({"error": msg}), 429
+
+    @app.errorhandler(Exception)
+    def handle_unhandled_exception(exc):
+        """Catch-all: JSON {error} + 500, real traceback only in server logs."""
+        if isinstance(exc, HTTPException):
+            return exc  # 404/405/413/429... keep their dedicated handling
+        get_logger('swarmie.errors').exception(
+            "unhandled exception on %s %s", request.method, request.path
+        )
+        return jsonify({
+            "error": "Something went wrong on our end. Please try again in a moment.",
+        }), 500
 
     # Request logging middleware
     @app.before_request
