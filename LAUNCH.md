@@ -35,7 +35,7 @@ Everything below serves one loop: **see it → run it → share it → next foun
 - [x] PH kit → `launch/producthunt.md` (taglines, description, maker comment, 6 prepared replies) ✅ — gallery images still need capturing
 - [x] Show HN draft + 5 prepared answers → `launch/show-hn.md` ✅ — placeholder claims replaced with real dogfood output + accurate cost-cap mechanics
 - [x] Reddit/IH variants + concierge reply templates + DM templates → `launch/reddit-ih.md`, `launch/dm-template.md` ✅
-- [ ] 3 famous-roast screenshots cropped for replies/comments
+- [x] 3 famous-roast screenshots cropped for replies/comments ✅ 2026-06-11 — `launch/assets/`: share-card PNGs (quibi-kill, wework, dogfood), gallery shots, brief hero, objection closeup, brain view, live watching shot
 - [ ] DM list: 20–30 founder friends / mutuals — ask them to *run a pitch and tell us where it's wrong* (genuine usage, not upvote begging)
 - [ ] PH maker account active this week (comment on others' launches daily)
 - [ ] Optional: custom domain (`swarmie.app`-style, ~$10) — vercel.app subdomain reads alpha-grade on PH
@@ -104,7 +104,7 @@ BetaList · Uneed · SaasHub · AlternativeTo (list as alternative to ValidatorA
 2. **One-liner** — ✅ done: "Roast your startup with 500 AI users in 60 seconds." (`launch/core-copy.md` has 3 variants)
 3. **Short description** — ✅ done: PH ≤260-char block in `launch/producthunt.md`, reusable on every directory
 4. ~~Pitch deck~~ — **cut.** No launch platform needs a deck; it's investor-outreach material. Don't build launch-blocking work that isn't launch-blocking.
-5. **Product images** — capture after famous-roasts data lands: (a) share-card PNGs ×3, (b) decision-brief screenshot, (c) /roasts gallery shot, (d) swarm-watching shot. Promo poster + 14s video ✅ already exist
+5. **Product images** — ✅ done 2026-06-11, all in `launch/assets/`: (a) share-card PNGs ×3 (real run data via app's own shareCard.js), (b) decision-brief hero + full + objection closeup, (c) /roasts gallery hero + Airbnb/Swarmie + full-page, (d) swarm-watching live shot + brain view. Promo poster + 14s video ✅ already exist
 6. **Real dogfood run** — ✅ done 2026-06-11; output in x-thread Post 1, show-hn Answer 5, /roasts card 8
 7. **Famous-roast real runs** — ✅ done 2026-06-11; 8 real runs in `famousRoasts.json`, batch cost < $0.10 total (~450k tokens at deepseek-v4-flash rates)
 
