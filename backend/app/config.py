@@ -15,6 +15,11 @@ def _bool(name: str, default: bool = False) -> bool:
     return os.environ.get(name, str(default)).lower() in ("1", "true", "yes", "on")
 
 
+def _csv(name: str, default: str) -> list[str]:
+    """Parse a comma-separated env var into a list (whitespace-trimmed, empties dropped)."""
+    return [item.strip() for item in os.environ.get(name, default).split(",") if item.strip()]
+
+
 class Config:
     # --- Flask ---
     _secret = os.environ.get("SECRET_KEY")
@@ -77,6 +82,17 @@ class Config:
     ROAST_CONCURRENCY = int(os.environ.get("ROAST_CONCURRENCY", "20"))
     # Hard cost ceiling per sim in USD. Aborts mid-run if exceeded.
     ROAST_MAX_COST_USD = float(os.environ.get("ROAST_MAX_COST_USD", "1.00"))
+
+    # --- API hardening (public launch) ---
+    # Browser origins allowed to call /api/* (comma-separated env CORS_ORIGINS).
+    CORS_ORIGINS = _csv("CORS_ORIGINS", "https://swarmie.vercel.app,http://localhost:3000")
+    # Per-IP rate limits (flask-limiter notation). Roast creation + agent chat
+    # both burn LLM tokens; reads and the SSE stream are deliberately unlimited.
+    RATE_LIMIT_ROAST = os.environ.get("RATE_LIMIT_ROAST", "5 per hour")
+    RATE_LIMIT_CHAT = os.environ.get("RATE_LIMIT_CHAT", "30 per hour")
+    # Master switch (flask-limiter reads RATELIMIT_ENABLED from app config).
+    # Tests set RATE_LIMIT_ENABLED=false so the suite never trips limits.
+    RATELIMIT_ENABLED = _bool("RATE_LIMIT_ENABLED", True)
 
     @classmethod
     def validate(cls):

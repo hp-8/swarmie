@@ -11,3 +11,7 @@ import os
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 # Intentionally leave LLM_API_KEY unset: the suite must be offline-safe.
 # Anything needing the LLM should mock it or skip without a key.
+
+# Rate limiting OFF for the suite — tests that exercise the limiter opt back in
+# via a config override (see test_api_hardening.py).
+os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
