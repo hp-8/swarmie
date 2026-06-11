@@ -56,8 +56,8 @@ backend/logs/
 # Uploads / runtime data
 backend/uploads/
 
-# Docker data
-data/
+# Docker data (repo root only — src/data dirs are source)
+/data/
 
 # Build artifacts
 frontend/dist/

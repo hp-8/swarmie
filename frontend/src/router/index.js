@@ -13,6 +13,9 @@ const routes = [
   { path: '/run/:jobId', name: 'Watching', component: () => import('../views/swarm/Watching.vue'), props: true },
   { path: '/result/:jobId', name: 'Result', component: () => import('../views/swarm/Result.vue'), props: true },
 
+  // --- Marketing ---
+  { path: '/roasts', name: 'Roasts', component: () => import('../views/Roasts.vue') },
+
   // --- Legal ---
   { path: '/terms', name: 'Terms', component: () => import('../views/legal/Terms.vue') },
   { path: '/privacy', name: 'Privacy', component: () => import('../views/legal/Privacy.vue') },

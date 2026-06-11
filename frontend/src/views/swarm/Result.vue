@@ -14,6 +14,10 @@
         <button class="rail-action" @click="copyShareUrl">
           {{ copied ? '✓ copied' : 'copy link' }}
         </button>
+        <button class="rail-action" @click="shareCard" :disabled="sharingCard || !report">
+          <span v-if="sharingCard">rendering…</span>
+          <span v-else>↑ share card</span>
+        </button>
         <button class="rail-action rail-pdf" @click="downloadPdf" :disabled="downloading || !report">
           <span v-if="downloading">building…</span>
           <span v-else>↓ download PDF</span>
@@ -567,6 +571,8 @@ import SharpenPanel from '../../components/swarm/SharpenPanel.vue'
 import FeedbackWidget from '../../components/feedback/FeedbackWidget.vue'
 import { useRoute } from 'vue-router'
 import { roastApi } from '../../api/roast'
+import { verdictMeta } from '../../lib/verdict'
+import { buildShareCardBlob, downloadBlob } from '../../lib/shareCard'
 import { generateRoastPDF } from '../../lib/pdf/template'
 import { trackRoastComplete, trackParsedPitch, trackReport, trackReactions, trackPdfDownload } from '../../lib/analytics'
 
@@ -686,26 +692,6 @@ async function load() {
   }
 }
 
-const VERDICT_META = {
-  // validate swarm
-  ship_it: { label: 'ship it', cls: 'is-ship' },
-  sharpen_positioning: { label: 'sharpen', cls: 'is-sharpen' },
-  wrong_audience: { label: 'wrong audience', cls: 'is-wrong' },
-  kill: { label: 'kill', cls: 'is-kill' },
-  // investor swarm
-  fundable: { label: 'fundable', cls: 'is-ship' },
-  sharpen_story: { label: 'sharpen story', cls: 'is-sharpen' },
-  wrong_stage: { label: 'wrong stage', cls: 'is-wrong' },
-  not_fundable: { label: 'not fundable', cls: 'is-kill' },
-  // launch swarm
-  go: { label: 'go', cls: 'is-ship' },
-  sharpen: { label: 'sharpen', cls: 'is-sharpen' },
-  hold: { label: 'hold', cls: 'is-wrong' },
-}
-function verdictMeta(v) {
-  return VERDICT_META[v] || { label: v || '—', cls: 'is-sharpen' }
-}
-
 // Per-swarm display vocabulary. Data shape is identical across swarms — only
 // the founder-facing labels change.
 const COPY = {
@@ -795,6 +781,52 @@ async function copyShareUrl() {
   await navigator.clipboard.writeText(window.location.href)
   copied.value = true
   setTimeout(() => (copied.value = false), 1500)
+}
+
+// --- Share card (1200×630 PNG, drawn client-side) -------------------------
+const sharingCard = ref(false)
+
+function shareCardData() {
+  const r = report.value
+  const top = r.top_objections?.[0]
+  return {
+    verdict: r.verdict,
+    pmf_score: r.pmf_score,
+    confidence: r.confidence,
+    agentCount: reactions.value.length,
+    objectionCategory: top?.category || '',
+    objectionText: top?.example_quote || top?.real_test || '',
+    url: 'swarmie.vercel.app',
+  }
+}
+
+async function shareCard() {
+  if (sharingCard.value || !report.value) return
+  sharingCard.value = true
+  try {
+    const { blob } = await buildShareCardBlob(shareCardData())
+    const filename = `swarmie-roast-${jobShort.value || 'card'}.png`
+    const file = new File([blob], filename, { type: 'image/png' })
+    // Web Share API with files (mobile) is the primary path; download is the fallback.
+    if (navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Swarmie roast',
+          text: `${verdictMeta(report.value.verdict).label} — what ${reactions.value.length || 'a swarm of'} synthetic users said about my pitch. swarmie.vercel.app`,
+        })
+        return
+      } catch (e) {
+        if (e?.name === 'AbortError') return // user closed the share sheet
+        // any other share failure → fall through to plain download
+      }
+    }
+    downloadBlob(blob, filename)
+  } catch (e) {
+    console.error('share card failed', e)
+  } finally {
+    sharingCard.value = false
+  }
 }
 
 // --- PDF download (free) -------------------------------------------------

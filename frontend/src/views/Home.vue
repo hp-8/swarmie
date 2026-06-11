@@ -155,6 +155,7 @@
         <div class="foot-row foot-sub">
           <span>Built by <a href="https://github.com/hp-8" target="_blank">@hp-8</a>.</span>
           <a href="https://github.com/hp-8/swarmie" target="_blank">github.com/hp-8/swarmie</a>
+          <router-link to="/roasts">Famous roasts</router-link>
           <router-link to="/terms">Terms</router-link>
           <router-link to="/privacy">Privacy</router-link>
         </div>

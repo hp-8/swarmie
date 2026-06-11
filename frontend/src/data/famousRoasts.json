@@ -1,0 +1,47 @@
+{
+  "_comment": "PLACEHOLDER DATA — replace every entry with a real Swarmie pipeline run before launch (LAUNCH.md §2). Schema mirrors the report fields the Result page reads.",
+  "roasts": [
+    {
+      "slug": "juicero",
+      "name": "Juicero",
+      "one_liner": "A $699 Wi-Fi-connected press for proprietary juice packs.",
+      "verdict": "kill",
+      "confidence": "high",
+      "agent_count": 150,
+      "top_objections": [
+        { "text": "PLACEHOLDER — I can squeeze the pack with my hands. What am I paying $699 for?" },
+        { "text": "PLACEHOLDER — subscription packs lock me in; the hardware is a DRM dongle for juice." }
+      ],
+      "silence_pct": 64,
+      "blurb": "The swarm found the hand-squeeze objection in under a minute. Bloomberg needed a camera crew."
+    },
+    {
+      "slug": "quibi",
+      "name": "Quibi",
+      "one_liner": "Premium 10-minute shows, mobile-only, $4.99/mo with ads.",
+      "verdict": "wrong_audience",
+      "confidence": "medium",
+      "agent_count": 150,
+      "top_objections": [
+        { "text": "PLACEHOLDER — YouTube and TikTok are free and already in my pocket. Why pay for shorter Netflix?" },
+        { "text": "PLACEHOLDER — mobile-only means I can't cast it to my TV. You built a restriction, not a feature." }
+      ],
+      "silence_pct": 58,
+      "blurb": "$1.75B raised. The swarm's silent majority scrolled past for the same reason real audiences did."
+    },
+    {
+      "slug": "ai-for-x-2026",
+      "name": "YetAnotherAI (composite)",
+      "one_liner": "AI-powered everything-assistant for busy professionals. (A composite of 2026's most common pitch.)",
+      "verdict": "sharpen_positioning",
+      "confidence": "high",
+      "agent_count": 150,
+      "top_objections": [
+        { "text": "PLACEHOLDER — 'AI-powered' is the category, not the product. What do you do that a ChatGPT tab doesn't?" },
+        { "text": "PLACEHOLDER — 'busy professionals' is everyone and no one. Whose Tuesday gets better?" }
+      ],
+      "silence_pct": 71,
+      "blurb": "We roast the pitch we see most in 2026 — including, fairly, our own category."
+    }
+  ]
+}
