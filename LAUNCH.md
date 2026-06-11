@@ -7,33 +7,34 @@ Everything below serves one loop: **see it → run it → share it → next foun
 
 ## 1. Pre-flight — safety (BLOCKING, do first)
 
-- [ ] Rate limit `/api/roast` (per-IP, e.g. 5 runs/hour) — no net today
-- [ ] Lock CORS to prod origin (`backend/app/__init__.py`, currently `*`) — tech_debt P0-3
-- [ ] Verify `ROAST_MAX_COST_USD` cap fires mid-run (test with tiny cap)
-- [ ] Set a global daily spend ceiling on the LLM provider dashboard (independent of app cap)
+- [x] Rate limit `/api/roast` (per-IP 5/h, chat 30/h; env-tunable, `RATE_LIMIT_*`) ✅ 2026-06-11
+- [x] Lock CORS to prod origin (`CORS_ORIGINS` allowlist) ✅ 2026-06-11
+- [x] Cost-cap cancellation unit-tested ✅ — still do one LIVE check: tiny `ROAST_MAX_COST_USD`, real run
+- [ ] Set a global daily spend ceiling on the LLM provider dashboard (independent of app cap) — **Harsh, 5 min**
 - [ ] Confirm Gemini fallback path works (kill primary key locally, run a roast)
-- [ ] Friendly error states: LLM down / cost cap hit / malformed pitch — no raw stack traces
+- [x] Friendly error states: 429 + catch-all 500 return clean JSON `{error}`; tracebacks stay server-side ✅ 2026-06-11
+- [ ] **Deploy envs (Render):** set `CORS_ORIGINS`, leave `RATE_LIMIT_ENABLED=true` — without this the new code defaults are fine, but verify after deploy
 - [ ] Supabase: check row limits / free-tier quotas survive ~500 runs
 - [ ] Add one line to site footer/ToS: pitches stored, used only in aggregate for calibration, never shared or sold
 - [ ] `./ci-local.sh` green before every push
 
 ## 2. Pre-flight — product (the viral mechanics)
 
-- [ ] **Share-card PNG** — auto-generated per result: verdict + confidence + top objection + swarm visual + URL. Doubles as OG image so pasted links unfurl. *(~1 day — the single highest-leverage build)*
-- [ ] OG/Twitter meta tags on result pages point at the share card
-- [ ] **Email-me-my-brief** field on result page (optional, post-result) → the only retention/list asset we'll have *(~2h)*
-- [ ] **Famous-roasts gallery** — pre-run 6–8 known startups (Juicero, Quibi, WeWork, Theranos pitch-as-written, + 2 currently-hyped AI startups), static page `/roasts` *(~half day, mostly pipeline runs)*
+- [x] **Share-card PNG** — "↑ share card" on Result: 1200×630 canvas PNG (verdict + confidence + top objection + dot-swarm + URL + "synthetic users · disclosed"), Web Share on mobile ✅ 2026-06-11
+- [x] OG/Twitter meta — already complete in index.html (poster + video + summary_large_image); per-result dynamic OG = post-launch (SPA, needs edge fn) ✅
+- [~] **Email capture** — SharpenPanel email-gate (2nd sharpen) already captures emails; dedicated "email-me-my-brief" field still optional, not blocking
+- [~] **Famous-roasts gallery** — `/roasts` page + footer link SHIPPED with 3 PLACEHOLDER entries. **Open: run the real pipeline on 6–8 famous pitches and replace `frontend/src/data/famousRoasts.json`**
 - [ ] **Dogfood gate:** run Swarmie's own pitch through Swarmie. If the brief doesn't sting, fix synthesis prompts before any launch. Re-run eval harness on golden set after changes.
 - [ ] Mobile pass on result page + share card (most Reddit/X clicks are mobile)
 - [ ] Light concurrency check: 5 simultaneous SSE runs don't fall over
 
 ## 3. Assets (write once, remix per channel)
 
-- [ ] **Core copy block** — one paragraph, anti-wrapper angle: *"Validators give you a score. Swarmie hands you the objection you're avoiding + the exact question to ask 5 real users. Synthetic, disclosed, free, open-source, $0 on Ollama."*
-- [ ] X thread draft (5–8 posts): hook = own roast verdict screenshot → how it works → famous roast → swarm video → CTA
-- [ ] PH kit: tagline (<60 chars), 5 gallery images (share cards + brief screenshot), 14s promo video, maker first-comment (story + honesty angle), topics picked
-- [ ] Show HN draft: title `Show HN: Swarmie – open-source AI swarm that roasts your startup (free on Ollama)` + first comment covering: cost engineering, ~60% silent agents = zero tokens, AGPL, synthetic-disclosure stance
-- [ ] Reddit/IH variants — story-first, no link-drop tone; lead with what the roast got right/wrong about our own pitch
+- [x] **Core copy block** → `launch/core-copy.md` ✅
+- [x] X thread draft → `launch/x-thread.md` ✅ ⚠️ contains placeholder dogfood claims — swap in REAL dogfood output before posting (honesty brand: never post fabricated roast results)
+- [x] PH kit → `launch/producthunt.md` (taglines, description, maker comment, 6 prepared replies) ✅ — gallery images still need capturing
+- [x] Show HN draft + 5 prepared answers → `launch/show-hn.md` ✅ ⚠️ same dogfood-placeholder caveat
+- [x] Reddit/IH variants + concierge reply templates + DM templates → `launch/reddit-ih.md`, `launch/dm-template.md` ✅
 - [ ] 3 famous-roast screenshots cropped for replies/comments
 - [ ] DM list: 20–30 founder friends / mutuals — ask them to *run a pitch and tell us where it's wrong* (genuine usage, not upvote begging)
 - [ ] PH maker account active this week (comment on others' launches daily)
@@ -76,6 +77,36 @@ Everything below serves one loop: **see it → run it → share it → next foun
 | Concierge sales ($49–99) | ≥2 | no WTP at this wedge → pivot monetization to investor prep only |
 
 **Miss all → don't iterate the roast; pivot wedge or kill. Miss two → fix quality before buying more attention.**
+
+## Platforms — triaged (18 → 3 tiers; don't spread thin)
+
+**Tier 1 — active channels (real effort, real conversations; the week lives here):**
+| Platform | Play |
+|---|---|
+| Reddit (r/SideProject, r/alphaandbetausers, r/startups, r/Startup_Ideas, r/SaaS) | soft-launch posts + concierge replies (run THEIR pitch) |
+| Indie Hackers | build-story post + feedback-thread concierge replies |
+| X (Twitter) | launch thread + daily best-roast screenshots |
+| Product Hunt | Saturday launch, full kit ready in `launch/` |
+| Hacker News | Show HN Tuesday, engineering angle |
+
+**Tier 2 — directory batch (one sitting, ~2h total, backlinks + drip traffic; do D4 while PH runs):**
+BetaList · Uneed · SaasHub · AlternativeTo (list as alternative to ValidatorAI/IdeaProof — free positioning) · Launching Next · StartupBase · Orynth (verify what it is first) · "Side Project Ideas"-type listings. All need: logo 240×240, one-liner, short desc, 2–3 screenshots — see assets below. Submit once, never babysit.
+
+**Tier 3 — post-launch / SEO drip (NOT this week; each is a content channel, not a launch channel):**
+- Quora + Medium — answer/write "how to validate a startup idea" evergreen pieces linking the famous-roasts gallery (week 2+)
+- LinkedIn — investor-swarm angle for the fundraising audience (week 2, pairs with first paid offer)
+- TikTok — only if the 14s promo repurposes for free; zero new production this week
+- Facebook groups — skip; mod-hostile to tools, wrong density
+
+## Things we need before launching:
+
+1. **Logo** — have `favicon.svg` + `icon.png`; need one 240×240+ square PNG export for directories *(15 min, Harsh)*
+2. **One-liner** — ✅ done: "Roast your startup with 500 AI users in 60 seconds." (`launch/core-copy.md` has 3 variants)
+3. **Short description** — ✅ done: PH ≤260-char block in `launch/producthunt.md`, reusable on every directory
+4. ~~Pitch deck~~ — **cut.** No launch platform needs a deck; it's investor-outreach material. Don't build launch-blocking work that isn't launch-blocking.
+5. **Product images** — capture after famous-roasts data lands: (a) share-card PNGs ×3, (b) decision-brief screenshot, (c) /roasts gallery shot, (d) swarm-watching shot. Promo poster + 14s video ✅ already exist
+6. **Real dogfood run** — Swarmie on Swarmie's own pitch; its output replaces every placeholder claim in `launch/` copy (BLOCKING for posting)
+7. **Famous-roast real runs** — 6–8 pipelines, replace `famousRoasts.json` placeholders (BLOCKING for /roasts going live in launch posts)
 
 ---
 
