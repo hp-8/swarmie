@@ -19,6 +19,13 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Vite's __vitePreload + Rollup CommonJS interop helpers are shared by
+          // every lazy route. Pin them to the always-eager `vue` chunk, else
+          // Rollup co-locates them inside a big lazy chunk (e.g. pdf) and the
+          // entry modulepreloads that whole chunk just to reach the helper.
+          if (id.includes('vite/preload-helper') || id.includes('commonjsHelpers')) {
+            return 'vue'
+          }
           // PDF generation — only needed on the Result page
           if (id.includes('jspdf') || id.includes('html2canvas')) {
             return 'pdf'
@@ -26,10 +33,6 @@ export default defineConfig({
           // D3 — only used by BrainGraph (lazy-loaded via Result)
           if (id.includes('node_modules/d3') || id.includes('node_modules/d3-')) {
             return 'd3'
-          }
-          // Supabase SDK
-          if (id.includes('@supabase')) {
-            return 'supabase'
           }
           // Vue core + Vue Router
           if (id.includes('node_modules/vue') || id.includes('node_modules/@vue') || id.includes('node_modules/vue-router')) {
