@@ -33,3 +33,8 @@ services:
         sync: false
       - key: LLM_FALLBACK_MODEL_NAME
         sync: false
+      # Roast job store. Set to an Upstash Redis URL (rediss://...) so roast
+      # jobs + SSE survive worker restarts/redeploys/idle spin-down. Unset →
+      # in-process store (jobs lost on restart → "job not found" 404s).
+      - key: REDIS_URL
+        sync: false

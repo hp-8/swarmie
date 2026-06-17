@@ -6,8 +6,10 @@ GET  /api/roast/<job_id>   poll job status + result (when complete)
 GET  /api/roast/<job_id>/stream   SSE feed of agent reactions as they land
 DELETE /api/roast/<job_id> cancel + drop job (best-effort)
 
-Jobs live in-process (no DB). They are short-lived (60s typical).
-Production deployment will need a real job store (Redis) — out of scope today.
+Job state + the SSE event log live in the job store (see services/job_store):
+Redis when REDIS_URL is set (survives worker restart / redeploy / idle
+spin-down), in-process otherwise. The pipeline still runs in a daemon thread
+in this web worker — Redis is a state store, not a task queue.
 """
 
 from __future__ import annotations
@@ -15,17 +17,16 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import queue
 import threading
 import time
 import uuid
-from dataclasses import dataclass, field
 from typing import Any
 
 from flask import Blueprint, Response, jsonify, request, stream_with_context
 
 from ..config import Config
 from ..extensions import limiter
+from ..services.job_store import RoastJob, make_store
 from ..services.swarm import (
     AgentReaction,
     CHAT_SOFT_CAP,
@@ -46,100 +47,28 @@ logger = logging.getLogger("swarmie.api.roast")
 roast_bp = Blueprint("roast", __name__)
 
 
-# ---------- in-process job store ----------
+# ---------- job store ----------
 
-@dataclass
-class RoastJob:
-    job_id: str
-    status: str = "pending"  # pending | parsing | generating_archetypes | running_swarm | reporting | completed | failed | cancelled
-    progress: float = 0.0  # 0..1
-    pitch_text: str = ""
-    swarm_type: str = DEFAULT_SWARM
-    source: str = "text"  # "text" | "deck"
-    n_agents: int = 0
-    error: str | None = None
-    # transient: raw uploaded PDF bytes, discarded after parse (never serialized)
-    deck_bytes: bytes | None = None
-    deck_slides: list[dict] = field(default_factory=list)
-    started_at: float = field(default_factory=time.time)
-    finished_at: float | None = None
-
-    # accumulating outputs
-    parsed_pitch: dict | None = None
-    archetypes: list[dict] = field(default_factory=list)
-    reactions: list[dict] = field(default_factory=list)
-    report: dict | None = None
-    usage: dict | None = None
-
-    # streaming
-    event_queue: queue.Queue[dict] = field(default_factory=queue.Queue)
-    cancelled: threading.Event = field(default_factory=threading.Event)
-
-    # per-agent chat history: agent_id -> list[{role, content}]
-    chats: dict[str, list[dict[str, str]]] = field(default_factory=dict)
-
-    def to_dict(self, include_full: bool = False) -> dict[str, Any]:
-        out: dict[str, Any] = {
-            "job_id": self.job_id,
-            "status": self.status,
-            "progress": round(self.progress, 3),
-            "swarm_type": self.swarm_type,
-            "source": self.source,
-            "n_agents": self.n_agents,
-            "started_at": self.started_at,
-            "finished_at": self.finished_at,
-            "error": self.error,
-        }
-        if include_full or self.status == "completed":
-            out["parsed_pitch"] = self.parsed_pitch
-            out["archetypes"] = self.archetypes
-            out["reactions"] = self.reactions
-            out["report"] = self.report
-            out["usage"] = self.usage
-            out["deck_slides"] = self.deck_slides
-        return out
+# Redis-backed when REDIS_URL is set (survives worker restart / redeploy /
+# idle spin-down — the cause of "job not found" 404s); in-process otherwise.
+_store = make_store(Config.REDIS_URL, Config.ROAST_JOB_TTL)
 
 
-class _JobStore:
-    def __init__(self):
-        self._jobs: dict[str, RoastJob] = {}
-        self._lock = threading.Lock()
-
-    def create(self, pitch_text: str, n_agents: int, swarm_type: str = DEFAULT_SWARM,
-               source: str = "text", deck_bytes: bytes | None = None) -> RoastJob:
-        job_id = f"roast_{uuid.uuid4().hex[:16]}"
-        job = RoastJob(
-            job_id=job_id, pitch_text=pitch_text, n_agents=n_agents,
-            swarm_type=swarm_type, source=source, deck_bytes=deck_bytes,
-        )
-        with self._lock:
-            self._jobs[job_id] = job
-        return job
-
-    def get(self, job_id: str) -> RoastJob | None:
-        with self._lock:
-            return self._jobs.get(job_id)
-
-    def drop(self, job_id: str) -> bool:
-        with self._lock:
-            return self._jobs.pop(job_id, None) is not None
-
-    def gc(self, max_age_seconds: int = 3600) -> int:
-        """Drop jobs older than max_age_seconds. Returns count dropped."""
-        now = time.time()
-        dropped = 0
-        with self._lock:
-            stale_ids = [
-                jid for jid, j in self._jobs.items()
-                if (j.finished_at or j.started_at) < now - max_age_seconds
-            ]
-            for jid in stale_ids:
-                del self._jobs[jid]
-                dropped += 1
-        return dropped
+def _new_job(pitch_text: str, n_agents: int, swarm_type: str = DEFAULT_SWARM,
+             source: str = "text", deck_bytes: bytes | None = None) -> RoastJob:
+    job_id = f"roast_{uuid.uuid4().hex[:16]}"
+    return _store.create(RoastJob(
+        job_id=job_id, pitch_text=pitch_text, n_agents=n_agents,
+        swarm_type=swarm_type, source=source, deck_bytes=deck_bytes,
+    ))
 
 
-_store = _JobStore()
+def _is_stale(job: RoastJob) -> bool:
+    """A non-terminal job whose pipeline thread died (e.g. with the worker):
+    no progress for ROAST_STALE_SECONDS. Surfaced as failed instead of stuck."""
+    if job.status in ("completed", "failed", "cancelled"):
+        return False
+    return (time.time() - (job.finished_at or job.started_at)) > Config.ROAST_STALE_SECONDS
 
 
 # ---------- background pipeline ----------
@@ -167,11 +96,8 @@ def _public_error_message(exc: Exception) -> str:
 
 
 def _push_event(job: RoastJob, event_type: str, payload: Any) -> None:
-    """Append an SSE-shaped event to the job queue."""
-    try:
-        job.event_queue.put_nowait({"type": event_type, "data": payload})
-    except queue.Full:
-        pass  # drop event if consumer is slow; status endpoint still works
+    """Append an SSE-shaped event to the job's replayable event log."""
+    _store.append_event(job.job_id, {"type": event_type, "data": payload})
 
 
 def _run_pipeline(job: RoastJob) -> None:
@@ -184,6 +110,7 @@ def _run_pipeline(job: RoastJob) -> None:
     def _stage(name: str, fraction: float) -> float:
         job.status = name
         job.progress = fraction
+        _store.persist(job)  # checkpoint status before the (slow) stage work
         _push_event(job, "status", {"status": name, "progress": fraction})
         elapsed = time.time() - t0
         print(f"[{job.job_id}] STAGE='{name}' elapsed={elapsed:.1f}s", flush=True)
@@ -209,9 +136,10 @@ def _run_pipeline(job: RoastJob) -> None:
             parser = spec.parser_cls(tracker=tracker)
             pitch = parser.parse(job.pitch_text)
         job.parsed_pitch = pitch.to_dict()
+        _store.persist(job)
         _push_event(job, "parsed_pitch", pitch.to_dict())
         logger.info(f"[{job.job_id}] parsing done in {time.time()-t:.1f}s")
-        if job.cancelled.is_set():
+        if _store.is_cancelled(job.job_id):
             raise RuntimeError("cancelled")
 
         # Stage 2 — generate archetypes
@@ -219,12 +147,13 @@ def _run_pipeline(job: RoastJob) -> None:
         archgen = spec.archgen_cls(tracker=tracker)
         archetypes = archgen.generate(pitch, n_archetypes=spec.n_archetypes)
         job.archetypes = [a.to_dict() for a in archetypes]
+        _store.persist(job)
         _push_event(job, "archetypes", [a.to_dict() for a in archetypes])
         logger.info(
             f"[{job.job_id}] archetypes done in {time.time()-t:.1f}s "
             f"(got {len(archetypes)})"
         )
-        if job.cancelled.is_set():
+        if _store.is_cancelled(job.job_id):
             raise RuntimeError("cancelled")
 
         # Stage 3 — run swarm
@@ -274,7 +203,7 @@ def _run_pipeline(job: RoastJob) -> None:
             f"(got {len(reactions)} reactions)"
         )
 
-        if job.cancelled.is_set():
+        if _store.is_cancelled(job.job_id):
             raise RuntimeError("cancelled")
 
         # Stage 3.5 — deck diagnosis (deck uploads only): pitch-intelligence EVALUATE
@@ -285,7 +214,7 @@ def _run_pipeline(job: RoastJob) -> None:
             deck_diagnosis = diagnosis.to_dict()
             _push_event(job, "deck_diagnosis", deck_diagnosis)
             logger.info(f"[{job.job_id}] deck diagnosis done in {time.time()-t:.1f}s")
-            if job.cancelled.is_set():
+            if _store.is_cancelled(job.job_id):
                 raise RuntimeError("cancelled")
 
         # Stage 4 — synthesize report
@@ -298,17 +227,18 @@ def _run_pipeline(job: RoastJob) -> None:
         _push_event(job, "report", report.to_dict())
         logger.info(f"[{job.job_id}] report done in {time.time()-t:.1f}s")
 
-        # Done
+        # Done — persist the full result (all reactions/report) before signalling.
         job.status = "completed"
         job.progress = 1.0
         job.usage = tracker.summary()
         job.finished_at = time.time()
+        _store.persist(job)
         _push_event(job, "status", {"status": job.status, "progress": 1.0})
         _push_event(job, "usage", job.usage)
         _push_event(job, "done", {"job_id": job.job_id})
 
     except Exception as exc:
-        if job.cancelled.is_set():
+        if _store.is_cancelled(job.job_id):
             job.status = "cancelled"
         else:
             job.status = "failed"
@@ -316,6 +246,7 @@ def _run_pipeline(job: RoastJob) -> None:
             logger.exception("roast pipeline failed for %s", job.job_id)
         job.finished_at = time.time()
         job.usage = tracker.summary()
+        _store.persist(job)
         _push_event(job, "status", {"status": job.status, "error": job.error})
 
 
@@ -367,7 +298,7 @@ def create_roast():
             n_agents = Config.ROAST_AGENT_COUNT
         n_agents = max(10, min(n_agents, 500))
 
-        job = _store.create(
+        job = _new_job(
             pitch_text="", n_agents=n_agents, swarm_type=swarm_type,
             source="deck", deck_bytes=data,
         )
@@ -387,7 +318,7 @@ def create_roast():
         n_agents = int(body.get("n_agents") or Config.ROAST_AGENT_COUNT)
         n_agents = max(10, min(n_agents, 500))  # clamp 10..500
 
-        job = _store.create(pitch_text=pitch_text, n_agents=n_agents, swarm_type=swarm_type)
+        job = _new_job(pitch_text=pitch_text, n_agents=n_agents, swarm_type=swarm_type)
 
     print(f"[{job.job_id}] creating background thread (n_agents={n_agents}, source={job.source})", flush=True)
     thread = threading.Thread(target=_run_pipeline, args=(job,), daemon=True)
@@ -403,15 +334,30 @@ def get_roast(job_id: str):
     job = _store.get(job_id)
     if not job:
         return jsonify({"error": "job not found"}), 404
+    if _is_stale(job):
+        job.status = "failed"
+        job.error = _STALE_ERROR
     return jsonify(job.to_dict()), 200
+
+
+# Stream tuning: poll the event log this often for new events (also the
+# keepalive cadence). Kept >=1s to stay within Redis free-tier command budgets.
+_STREAM_POLL_SECONDS = 1.0
+_STALE_ERROR = (
+    "This run was interrupted before it finished (our server may have restarted). "
+    "Please start a new roast."
+)
 
 
 @roast_bp.route("/<job_id>/stream", methods=["GET"])
 def stream_roast(job_id: str):
     """Server-sent events feed of pipeline events.
 
-    Event types: status, parsed_pitch, archetypes, reaction, report, usage, done.
-    Client should disconnect on `done` or on `status` with status == 'failed'/'cancelled'.
+    Replays the full event log from the start (so a reconnecting or late client
+    catches up on everything), then tails new events. Event types: status,
+    parsed_pitch, archetypes, thinking, reaction, deck_slides, deck_diagnosis,
+    report, usage, done. Client disconnects on `done` or a failed/cancelled
+    `status`.
     """
     job = _store.get(job_id)
     if not job:
@@ -419,23 +365,36 @@ def stream_roast(job_id: str):
 
     @stream_with_context
     def generate():
-        # Emit current snapshot so reconnecting clients catch up.
+        # Initial snapshot so a client that connects before any event isn't blank.
         yield _sse({"type": "status", "data": {
             "status": job.status, "progress": job.progress,
         }})
+        cursor = 0
         while True:
-            try:
-                event = job.event_queue.get(timeout=30)
-                yield _sse(event)
-                if event["type"] == "done" or (
-                    event["type"] == "status"
-                    and event["data"].get("status") in ("failed", "cancelled")
-                ):
-                    return
-            except queue.Empty:
-                yield ": keepalive\n\n"
-                if job.status in ("completed", "failed", "cancelled"):
-                    return
+            events = _store.get_events(job_id, cursor)
+            if events:
+                cursor += len(events)
+                for event in events:
+                    yield _sse(event)
+                    if event["type"] == "done" or (
+                        event["type"] == "status"
+                        and event["data"].get("status") in ("failed", "cancelled")
+                    ):
+                        return
+                continue
+            # No new events — keepalive + terminal/staleness checks.
+            yield ": keepalive\n\n"
+            snap = _store.get(job_id)
+            if snap is None:
+                return  # job expired / dropped
+            if snap.status in ("completed", "failed", "cancelled"):
+                return
+            if _is_stale(snap):
+                yield _sse({"type": "status", "data": {
+                    "status": "failed", "error": _STALE_ERROR,
+                }})
+                return
+            time.sleep(_STREAM_POLL_SECONDS)
 
     return Response(generate(), mimetype="text/event-stream", headers={
         "Cache-Control": "no-cache",
@@ -445,12 +404,15 @@ def stream_roast(job_id: str):
 
 @roast_bp.route("/<job_id>", methods=["DELETE"])
 def cancel_roast(job_id: str):
-    """Cancel + drop a job (best-effort)."""
+    """Cancel a job (best-effort). Sets the cancel flag the pipeline polls; the
+    running pipeline then marks the job cancelled. The job state is left to
+    expire via TTL so a reconnecting client sees `cancelled`, not a 404."""
     job = _store.get(job_id)
     if not job:
         return jsonify({"error": "job not found"}), 404
-    job.cancelled.set()
-    _store.drop(job_id)
+    _store.set_cancelled(job_id)
+    if job.status in ("completed", "failed", "cancelled"):
+        _store.drop(job_id)  # nothing running; safe to reclaim immediately
     return jsonify({"ok": True}), 200
 
 
@@ -518,6 +480,7 @@ def chat_agent(job_id: str, agent_id: str):
     history.append({"role": "user", "content": message})
     history.append({"role": "assistant", "content": reply})
     user_turns += 1
+    _store.persist(job)  # persist chat history (no-op for in-memory store)
 
     return jsonify({
         "reply": reply,

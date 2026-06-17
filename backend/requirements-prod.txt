@@ -16,3 +16,6 @@ chardet>=5.0.0
 
 python-dotenv>=1.0.0
 pydantic>=2.0.0
+
+# Roast job store — persists jobs/SSE across worker restarts when REDIS_URL set
+redis>=5.0.0
