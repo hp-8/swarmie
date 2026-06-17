@@ -1,0 +1,63 @@
+You are simulating an audience swarm for startup pitch validation.
+
+For EACH pitch below, simulate 20 distinct, realistic audience members
+(mix of skeptical potential customers, industry insiders, and casual browsers
+appropriate to that pitch's market). Judge each pitch AS IF AT LAUNCH TIME —
+you have no knowledge of what happened to the company later. Do NOT try to
+identify the company. React only to the text as written. Be harsh and
+realistic: most pitches bore most people. Vary your judgments across pitches —
+do not give every pitch similar numbers.
+
+For each pitch output ONE JSON object:
+
+{
+  "id": <the case id, copied exactly>,
+  "sentiment_split": {"positive": P, "neutral": N, "negative": G},
+  "action_split": {"post": a, "comment": b, "upvote": c, "ignore": d},
+  "icp_fit": {"<segment name>": {"count": k, "avg_sentiment": s}, ...},
+  "top_objections": [{"category": "<category>", "count": m}, ...]
+}
+
+Rules:
+- sentiment_split: integer percentages, must sum to exactly 100.
+- action_split: integer counts of what each of the 20 members would do,
+  must sum to exactly 20. "ignore" = scrolled past, said nothing.
+- icp_fit: 3-5 audience segments you simulated; counts sum to 20;
+  avg_sentiment is that segment's mean sentiment in [-1.0, 1.0].
+- top_objections: the 1-3 most common objections, count = how many of the
+  20 members raised it. Pick each category ONLY from this list:
+  no demand, won't pay, pricing too high, no problem worth solving, market size too small, positioning unclear, messaging unclear, differentiation weak, who is this for, ui concerns, naming, onboarding friction, minor nitpicks.
+- Output ONLY a JSON array containing one object per pitch, in the same order.
+  No commentary, no markdown, no code fences.
+
+PITCHES:
+
+--- case id: 917 ---
+jumpstarts definitions checks. In seconds, it highlights undefined terms and unused definitions right in the text of documents, so that lawyers can focus on harder problems. Not so long ago, a corporate associate experienced firsthand the stress of definitions checking. Catching all undefined terms and unused definitions is hard, especially when time is short and terms complex.
+
+--- case id: 1952 ---
+is a direct-to-consumer business focused on bringing authentic and simple recipes from different cuisines to an American audience. We curate recipes from the local community and create packets filled with real, fresh ingredients and no preservatives. You can make a homemade meal in 5 minutes! We also give back a portion of our sales to the people who gave us the recipes.
+
+--- case id: 527 ---
+is an open source, high-volume digital trading engine used to arrange trades in an order book.
+
+--- case id: 519 ---
+helps companies hire, manage and retain international employees. Our software platform enables companies to manage immigration, reporting, and compliance all in one place, and our network of providers deliver related services through our platform. Our customers range from small startups to large corporations, and our investors include Y Combinator, Khosla Ventures, IDG, and others.
+
+--- case id: 1792 ---
+is a messenger for communities. It is focused on fundamental human needs: making new friends, safe self-expression, and learning from others. is a home for some of the most active and supportive chat communities on the Internet. Anyone can start and grow their own community on , for free. was founded in 2017 and is based in San Francisco. The company is backed by 30 prominent venture investors, including Y Combinator, Gagarin Capital, Sinai Ventures, Soma Capital, Liquid 2 Ventures, and Rainfall Ventures.
+
+--- case id: 668 ---
+OwnersCircle provides small business owners with the online tools and financial information that they need in order to navigate the complex world of business financing. The reality is that there is no easy way to search for small business financial products, which creates a headache for already time-strapped business owners. Recent reports show that owners spend an enormous amount of time (25 hrs on average) searching and applying for loan products, with many focusing on lenders that have high rejection rates and long, complex processes. There's a better way! There are a growing number of banks and alternative lenders that want to work with small businesses and are willing to compete for their business. Our platform provides owners with the information they need in order to identify, compare, and apply for financial products that can help take their business to the next level. Why Use OwnersCircle? 1. Get access to free, online tools to identify financial institutions that actively lend to growing small businesses 2. Shop and compare a variety of lenders and their loan products 3. Use one platform to complete your financing search versus spending countless days researching and comp
+
+--- case id: 779 ---
+2000+ customers use including Samsung, Reddit, Soylent, and the Golden State Warriors. We make it insanely easy to design, price, and manufacture custom product packaging. Leveraging in house software to automate operations, an incredibly user-friendly customer-facing interface, plus amazing people + vendors. is an unbeatable experience and price compared to brokers or direct manufacturers. Packaging is the most slept-on market in the world, a $500B market just domestically representing over 2% of US GDP. We're a startup of < 10 people. Come build something special with us, and have a huge role in doing so.
+
+--- case id: 338 ---
+offers a software download, only for windows, that allows users to stream music from your friends who also have installed . It launched into public beta on Feb. 5th, 2008, and is a Y Combinator-funded company.
+
+--- case id: 831 ---
+fundamentally changes the way people interact with each other. brings people closer to on another through genuine gestures that are fueled by technology. With a tool that empowers its users to engage in positive human interaction, inspire them to give, and enhances how they receive. Using technology, predicts what makes someone happy and leverages on-demand logistics to make it happen. With you can make anyone happy as easily as calling an Uber. is all about the experience we provides to both the sender and the recipient. Focusing on how we want the recipient to feel, each step of the process leverages the right emotions and builds a story around the being received. This makes sending a a thoughtful gesture as opposed to just an exchange of items. help individuals and corporations acknowledge people around them through genuine gestures. It is the only medium accessible to everyone that builds simple, contagious and ubiquitous happiness. Because, we believe that everyone should be Spoiled.
+
+--- case id: 1822 ---
+is the central interface for your team’s knowledge. Thanks to our browser extension teams easily visualize and switch across all apps, documents, notes, messages, and more. Connect any app to , customize your interface and watch how creates links between files and highlights the information you need when you need it. It’s a one click install.

@@ -1,0 +1,231 @@
+{
+  "n": 1010,
+  "hits": 479,
+  "flops": 531,
+  "n_folds": 5,
+  "seed": 42,
+  "models": {
+    "tfidf_lr": {
+      "cv_auc_mean": 0.6604,
+      "cv_auc_std": 0.0392
+    },
+    "tfidf_char": {
+      "cv_auc_mean": 0.6451,
+      "cv_auc_std": 0.0454
+    },
+    "svd_gbm": {
+      "cv_auc_mean": 0.6105,
+      "cv_auc_std": 0.0373
+    },
+    "embed_lr": {
+      "cv_auc_mean": 0.6443,
+      "cv_auc_std": 0.0488
+    }
+  },
+  "top_features": {
+    "predicts_hit": [
+      {
+        "term": "com",
+        "coef": 1.1021
+      },
+      {
+        "term": "teams",
+        "coef": 0.8953
+      },
+      {
+        "term": "more",
+        "coef": 0.8561
+      },
+      {
+        "term": "over",
+        "coef": 0.8552
+      },
+      {
+        "term": "provides",
+        "coef": 0.841
+      },
+      {
+        "term": "media",
+        "coef": 0.8142
+      },
+      {
+        "term": "experiences",
+        "coef": 0.8003
+      },
+      {
+        "term": "credit",
+        "coef": 0.794
+      },
+      {
+        "term": "world",
+        "coef": 0.7896
+      },
+      {
+        "term": "companies",
+        "coef": 0.7785
+      },
+      {
+        "term": "time",
+        "coef": 0.7498
+      },
+      {
+        "term": "and",
+        "coef": 0.7461
+      },
+      {
+        "term": "payments",
+        "coef": 0.7375
+      },
+      {
+        "term": "apis",
+        "coef": 0.6881
+      },
+      {
+        "term": "as",
+        "coef": 0.6871
+      },
+      {
+        "term": "capital",
+        "coef": 0.686
+      },
+      {
+        "term": "in san",
+        "coef": 0.6776
+      },
+      {
+        "term": "this",
+        "coef": 0.6704
+      },
+      {
+        "term": "or",
+        "coef": 0.6656
+      },
+      {
+        "term": "driving",
+        "coef": 0.6629
+      },
+      {
+        "term": "technology",
+        "coef": 0.655
+      },
+      {
+        "term": "work",
+        "coef": 0.6547
+      },
+      {
+        "term": "empowers",
+        "coef": 0.6366
+      },
+      {
+        "term": "more than",
+        "coef": 0.6348
+      },
+      {
+        "term": "google",
+        "coef": 0.6304
+      }
+    ],
+    "predicts_flop": [
+      {
+        "term": "an",
+        "coef": -0.9135
+      },
+      {
+        "term": "using",
+        "coef": -0.8311
+      },
+      {
+        "term": "them",
+        "coef": -0.7386
+      },
+      {
+        "term": "way to",
+        "coef": -0.6953
+      },
+      {
+        "term": "is an",
+        "coef": -0.629
+      },
+      {
+        "term": "is",
+        "coef": -0.6084
+      },
+      {
+        "term": "to the",
+        "coef": -0.5969
+      },
+      {
+        "term": "that",
+        "coef": -0.5963
+      },
+      {
+        "term": "their own",
+        "coef": -0.5945
+      },
+      {
+        "term": "ipad",
+        "coef": -0.5708
+      },
+      {
+        "term": "it",
+        "coef": -0.5595
+      },
+      {
+        "term": "proprietary",
+        "coef": -0.5473
+      },
+      {
+        "term": "start",
+        "coef": -0.5468
+      },
+      {
+        "term": "network",
+        "coef": -0.5429
+      },
+      {
+        "term": "can be",
+        "coef": -0.5227
+      },
+      {
+        "term": "makes",
+        "coef": -0.5188
+      },
+      {
+        "term": "currently",
+        "coef": -0.5168
+      },
+      {
+        "term": "different",
+        "coef": -0.5112
+      },
+      {
+        "term": "trading",
+        "coef": -0.5037
+      },
+      {
+        "term": "users to",
+        "coef": -0.4971
+      },
+      {
+        "term": "games",
+        "coef": -0.4962
+      },
+      {
+        "term": "store",
+        "coef": -0.4916
+      },
+      {
+        "term": "its users",
+        "coef": -0.4798
+      },
+      {
+        "term": "online",
+        "coef": -0.4641
+      },
+      {
+        "term": "manufacturing",
+        "coef": -0.4553
+      }
+    ]
+  }
+}
