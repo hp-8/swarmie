@@ -83,6 +83,17 @@ class Config:
     # Hard cost ceiling per sim in USD. Aborts mid-run if exceeded.
     ROAST_MAX_COST_USD = float(os.environ.get("ROAST_MAX_COST_USD", "1.00"))
 
+    # --- Roast job store ---
+    # When set, roast jobs + the SSE event log live in Redis so they survive a
+    # worker restart / redeploy / idle spin-down (the cause of "job not found"
+    # 404s on the stream/poll endpoints). Unset → in-process store (dev/test).
+    REDIS_URL = os.environ.get("REDIS_URL")
+    # How long a job's state lives in Redis after its last write.
+    ROAST_JOB_TTL = int(os.environ.get("ROAST_JOB_TTL", "3600"))
+    # A non-terminal job with no progress for this long is treated as failed
+    # (its pipeline thread died with the worker). Guards against "stuck running".
+    ROAST_STALE_SECONDS = int(os.environ.get("ROAST_STALE_SECONDS", "180"))
+
     # --- API hardening (public launch) ---
     # Browser origins allowed to call /api/* (comma-separated env CORS_ORIGINS).
     CORS_ORIGINS = _csv("CORS_ORIGINS", "https://swarmie.vercel.app,http://localhost:3000")

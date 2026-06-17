@@ -28,3 +28,6 @@ chardet>=5.0.0
 # Env + validation
 python-dotenv>=1.0.0
 pydantic>=2.0.0
+
+# Roast job store (used only when REDIS_URL is set; in-memory otherwise)
+redis>=5.0.0
