@@ -41,7 +41,10 @@ export async function registerDevice() {
 
 export async function trackRoastStart(jobId, { pitchText, pitchLength, nAgents, swarmType, source } = {}) {
   if (!supabase || !hasAnalyticsConsent()) return
-  const fingerprint = await getFingerprint()
+  // Must land before the insert below: roast_runs.fingerprint_id has an FK to
+  // devices, and registerDevice() at app-boot is fire-and-forget so it can
+  // still be in flight (or have silently failed) when a run starts.
+  const fingerprint = await registerDevice()
 
   const { error } = await supabase
     .from('roast_runs')
@@ -161,7 +164,7 @@ export async function trackReactions(jobId, reactions) {
 
 export async function trackPdfDownload(jobId) {
   if (!supabase || !hasAnalyticsConsent()) return
-  const fingerprint = await getFingerprint()
+  const fingerprint = await registerDevice()
 
   const { error } = await supabase
     .from('pdf_downloads')
