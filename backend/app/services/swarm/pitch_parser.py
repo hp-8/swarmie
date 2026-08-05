@@ -93,7 +93,7 @@ class PitchParser:
             {"role": "system", "content": self.SYSTEM_PROMPT},
             {"role": "user", "content": f"PITCH:\n\n{pitch_text.strip()}"},
         ]
-        data = self.llm.chat_json(messages, temperature=0.2, max_tokens=1500)
+        data = self.llm.chat_json(messages, temperature=0.2, max_tokens=2500)
         return self._build(data)
 
     def _build(self, data: dict[str, Any]) -> ParsedPitch:
