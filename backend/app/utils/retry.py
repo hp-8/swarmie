@@ -3,10 +3,12 @@ API调用重试机制
 用于处理LLM等外部API调用的重试逻辑
 """
 
-import time
-import random
 import functools
-from typing import Callable, Any, Optional, Type, Tuple
+import random
+import time
+from collections.abc import Callable
+from typing import Any
+
 from ..utils.logger import get_logger
 
 logger = get_logger('swarmie.retry')
@@ -18,8 +20,8 @@ def retry_with_backoff(
     max_delay: float = 30.0,
     backoff_factor: float = 2.0,
     jitter: bool = True,
-    exceptions: Tuple[Type[Exception], ...] = (Exception,),
-    on_retry: Optional[Callable[[Exception, int], None]] = None
+    exceptions: tuple[type[Exception], ...] = (Exception,),
+    on_retry: Callable[[Exception, int], None] | None = None
 ):
     """
     带指数退避的重试装饰器
@@ -52,7 +54,7 @@ def retry_with_backoff(
                     last_exception = e
                     
                     if attempt == max_retries:
-                        logger.error(f"函数 {func.__name__} 在 {max_retries} 次重试后仍失败: {str(e)}")
+                        logger.error(f"函数 {func.__name__} 在 {max_retries} 次重试后仍失败: {e!s}")
                         raise
                     
                     # 计算延迟
@@ -61,7 +63,7 @@ def retry_with_backoff(
                         current_delay = current_delay * (0.5 + random.random())
                     
                     logger.warning(
-                        f"函数 {func.__name__} 第 {attempt + 1} 次尝试失败: {str(e)}, "
+                        f"函数 {func.__name__} 第 {attempt + 1} 次尝试失败: {e!s}, "
                         f"{current_delay:.1f}秒后重试..."
                     )
                     
@@ -83,8 +85,8 @@ def retry_with_backoff_async(
     max_delay: float = 30.0,
     backoff_factor: float = 2.0,
     jitter: bool = True,
-    exceptions: Tuple[Type[Exception], ...] = (Exception,),
-    on_retry: Optional[Callable[[Exception, int], None]] = None
+    exceptions: tuple[type[Exception], ...] = (Exception,),
+    on_retry: Callable[[Exception, int], None] | None = None
 ):
     """
     异步版本的重试装饰器
@@ -105,7 +107,7 @@ def retry_with_backoff_async(
                     last_exception = e
                     
                     if attempt == max_retries:
-                        logger.error(f"异步函数 {func.__name__} 在 {max_retries} 次重试后仍失败: {str(e)}")
+                        logger.error(f"异步函数 {func.__name__} 在 {max_retries} 次重试后仍失败: {e!s}")
                         raise
                     
                     current_delay = min(delay, max_delay)
@@ -113,7 +115,7 @@ def retry_with_backoff_async(
                         current_delay = current_delay * (0.5 + random.random())
                     
                     logger.warning(
-                        f"异步函数 {func.__name__} 第 {attempt + 1} 次尝试失败: {str(e)}, "
+                        f"异步函数 {func.__name__} 第 {attempt + 1} 次尝试失败: {e!s}, "
                         f"{current_delay:.1f}秒后重试..."
                     )
                     
@@ -150,7 +152,7 @@ class RetryableAPIClient:
         self,
         func: Callable,
         *args,
-        exceptions: Tuple[Type[Exception], ...] = (Exception,),
+        exceptions: tuple[type[Exception], ...] = (Exception,),
         **kwargs
     ) -> Any:
         """
@@ -176,14 +178,14 @@ class RetryableAPIClient:
                 last_exception = e
                 
                 if attempt == self.max_retries:
-                    logger.error(f"API调用在 {self.max_retries} 次重试后仍失败: {str(e)}")
+                    logger.error(f"API调用在 {self.max_retries} 次重试后仍失败: {e!s}")
                     raise
                 
                 current_delay = min(delay, self.max_delay)
                 current_delay = current_delay * (0.5 + random.random())
                 
                 logger.warning(
-                    f"API调用第 {attempt + 1} 次尝试失败: {str(e)}, "
+                    f"API调用第 {attempt + 1} 次尝试失败: {e!s}, "
                     f"{current_delay:.1f}秒后重试..."
                 )
                 
@@ -196,9 +198,9 @@ class RetryableAPIClient:
         self,
         items: list,
         process_func: Callable,
-        exceptions: Tuple[Type[Exception], ...] = (Exception,),
+        exceptions: tuple[type[Exception], ...] = (Exception,),
         continue_on_failure: bool = True
-    ) -> Tuple[list, list]:
+    ) -> tuple[list, list]:
         """
         批量调用并对每个失败项单独重试
         
@@ -224,7 +226,7 @@ class RetryableAPIClient:
                 results.append(result)
                 
             except Exception as e:
-                logger.error(f"处理第 {idx + 1} 项失败: {str(e)}")
+                logger.error(f"处理第 {idx + 1} 项失败: {e!s}")
                 failures.append({
                     "index": idx,
                     "item": item,

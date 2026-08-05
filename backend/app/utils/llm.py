@@ -90,7 +90,7 @@ class Usage:
     cached: bool = False
 
     @classmethod
-    def from_response(cls, resp: Any, model: str, tier: str) -> "Usage":
+    def from_response(cls, resp: Any, model: str, tier: str) -> Usage:
         u = getattr(resp, "usage", None)
         if u is None:
             return cls(model=model, tier=tier)
@@ -357,7 +357,7 @@ class LLM:
         model = payload.get("model", self.model)
         max_tok = payload.get("max_tokens", "?")
         # Coarse prompt size for logging — sum of message content lengths.
-        prompt_chars = sum(len((m.get("content") or "")) for m in payload.get("messages", []))
+        prompt_chars = sum(len(m.get("content") or "") for m in payload.get("messages", []))
         for attempt in range(self.max_retries):
             print(
                 f"[llm.{self.tier}] -> {model} max_tokens={max_tok} prompt_chars={prompt_chars} attempt={attempt + 1}",

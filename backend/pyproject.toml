@@ -64,6 +64,18 @@ packages = ["app"]
 line-length = 100
 target-version = "py311"
 
+[tool.ruff.lint]
+ignore = [
+    # Every LLM/PDF/callback boundary in this codebase deliberately catches
+    # broad Exception + logs + falls back (one bad provider response must
+    # not crash the whole swarm run). That's the architecture, not sloppiness.
+    "BLE001",
+    # Flagged class attrs (Config, RoastReporter and subclasses) are plain
+    # class-level constants on classes that are never instantiated per-request
+    # — not dataclass fields, so there's no shared-mutable-default bug here.
+    "RUF012",
+]
+
 [tool.ruff.lint.per-file-ignores]
 # app/__init__.py intentionally places imports after warnings.filterwarnings(),
 # which must run before third-party imports — so E402 is expected there.

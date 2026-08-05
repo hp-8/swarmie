@@ -3,9 +3,9 @@
 提供统一的日志管理，同时输出到控制台和文件
 """
 
+import logging
 import os
 import sys
-import logging
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
@@ -64,7 +64,7 @@ def setup_logger(name: str = 'swarmie', level: int = logging.DEBUG) -> logging.L
     )
     
     # 1. 文件处理器 - 详细日志（按日期命名，带轮转）
-    log_filename = datetime.now().strftime('%Y-%m-%d') + '.log'
+    log_filename = datetime.now().strftime('%Y-%m-%d') + '.log'  # noqa: DTZ005 — file rolls at local midnight, intentional
     file_handler = RotatingFileHandler(
         os.path.join(LOG_DIR, log_filename),
         maxBytes=10 * 1024 * 1024,  # 10MB

@@ -1,6 +1,7 @@
 """Configuration. All env-loaded from project-root `.env`."""
 
 import os
+
 from dotenv import load_dotenv
 
 # Load .env from project root (../../.env relative to this file).

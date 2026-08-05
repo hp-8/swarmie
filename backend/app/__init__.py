@@ -16,7 +16,7 @@ from werkzeug.exceptions import HTTPException
 
 from .config import Config
 from .extensions import limiter
-from .utils.logger import setup_logger, get_logger
+from .utils.logger import get_logger, setup_logger
 
 
 def create_app(config_class=Config):
@@ -59,7 +59,7 @@ def create_app(config_class=Config):
             plural = "s" if minutes != 1 else ""
             retry_hint = f"Please try again in about {minutes} minute{plural}."
         except Exception:
-            pass  # header Retry-After still set by flask-limiter
+            logger.debug("rate-limit retry hint failed; header Retry-After still set by flask-limiter", exc_info=True)
         if request.path.endswith("/chat"):
             msg = f"You've hit the agent chat limit ({desc}). {retry_hint}"
         elif request.path.startswith("/api/roast"):

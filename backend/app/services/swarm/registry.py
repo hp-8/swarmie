@@ -13,9 +13,12 @@ register the bundle here. No changes to the pipeline runner required.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Type
 
-from .archetype_generator import ArchetypeGenerator, InvestorArchetypeGenerator, LaunchArchetypeGenerator
+from .archetype_generator import (
+    ArchetypeGenerator,
+    InvestorArchetypeGenerator,
+    LaunchArchetypeGenerator,
+)
 from .pitch_parser import InvestorPitchParser, LaunchPitchParser, PitchParser
 from .roast_reporter import InvestorReporter, LaunchReporter, RoastReporter
 from .swarm_runner import InvestorSwarmRunner, LaunchSwarmRunner, SwarmRunner
@@ -28,10 +31,10 @@ class SwarmSpec:
     label: str            # short display name ("Validate", "Investor")
     blurb: str            # one-line description of the decision it answers
     agent_noun: str       # what one agent is called ("commenter", "investor")
-    parser_cls: Type[PitchParser]
-    archgen_cls: Type[ArchetypeGenerator]
-    runner_cls: Type[SwarmRunner]
-    reporter_cls: Type[RoastReporter]
+    parser_cls: type[PitchParser]
+    archgen_cls: type[ArchetypeGenerator]
+    runner_cls: type[SwarmRunner]
+    reporter_cls: type[RoastReporter]
     n_archetypes: int = 12
 
     def to_dict(self) -> dict:

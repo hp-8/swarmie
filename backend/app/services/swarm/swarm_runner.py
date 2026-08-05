@@ -18,8 +18,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 from ...config import Config
 from ...utils.llm import LLM, UsageTracker
@@ -254,7 +255,7 @@ class SwarmRunner:
         # Promote a fraction to the `deep` tier for influencer-grade output.
         random.shuffle(speaking)
         n_deep = int(len(speaking) * influencer_ratio)
-        deep_set = set(idx for idx in range(n_deep))
+        deep_set = set(range(n_deep))
 
         sem = asyncio.Semaphore(concurrency)
 
@@ -313,7 +314,7 @@ class SwarmRunner:
                 try:
                     on_thinking(agent_id, arch, action)
                 except Exception:
-                    pass
+                    logger.debug("on_thinking callback failed for %s/%s", agent_id, arch.id, exc_info=True)
             user_prompt = self._build_reaction_prompt(pitch, arch, action)
             try:
                 data = await llm.achat_json(
@@ -361,7 +362,7 @@ class SwarmRunner:
                 try:
                     on_thinking(agent_id, arch, "ignore")
                 except Exception:
-                    pass
+                    logger.debug("on_thinking callback failed for %s/%s", agent_id, arch.id, exc_info=True)
             user_prompt = self._build_ignore_prompt(pitch, arch)
             reason = ""
             category = ""

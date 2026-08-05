@@ -108,7 +108,7 @@ class RoastJob:
         }
 
     @classmethod
-    def from_state(cls, state: dict[str, Any]) -> "RoastJob":
+    def from_state(cls, state: dict[str, Any]) -> RoastJob:
         job = cls(job_id=state["job_id"])
         for key, value in state.items():
             if hasattr(job, key):

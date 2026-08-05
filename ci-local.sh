@@ -13,7 +13,9 @@ echo "==> [1/6] backend pytest (stripped env — mirror CI's bare environment)"
 ( cd backend && env -u SECRET_KEY -u LLM_API_KEY .venv/bin/python -m pytest -q )
 
 echo "==> [2/6] backend ruff"
-( cd backend && uvx ruff check app )
+# Use the locked venv ruff, not `uvx ruff` — uvx always fetches latest, so its
+# default rule set silently drifts out from under pyproject.toml's config.
+( cd backend && .venv/bin/ruff check app )
 
 echo "==> [3/6] frontend eslint"
 ( cd frontend && npm run lint )

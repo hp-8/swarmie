@@ -37,7 +37,7 @@ jobs:
         run: uv run pytest -q
 
       - name: Lint (ruff)
-        run: uvx ruff check app
+        run: uv run ruff check app
 
       # Informational — surfaces high-complexity functions without blocking.
       - name: Complexity (radon, C+ only)
