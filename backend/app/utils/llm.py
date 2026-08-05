@@ -141,6 +141,16 @@ class UsageTracker:
 
 # --- tier resolution ---
 
+def _mask_key(key: str) -> str:
+    """First 6 / last 4 chars only — enough to eyeball 'is this the key I pasted'
+    without logging a usable credential."""
+    if not key:
+        return "<empty>"
+    if len(key) <= 12:
+        return key[:2] + "…" + key[-2:]
+    return f"{key[:6]}…{key[-4:]} (len={len(key)})"
+
+
 def _resolve_fallback() -> tuple[str, str, str] | None:
     """Resolve fallback provider creds, if configured.
 
@@ -243,6 +253,17 @@ class LLM:
         self._fallback = _resolve_fallback()
         self._fallback_sync: OpenAI | None = None
         self._fallback_async: AsyncOpenAI | None = None
+
+        print(
+            f"[llm.{self.tier}] config: model={self.model} base_url={self.base_url} "
+            f"key={_mask_key(self.api_key)}"
+            + (
+                f" | fallback: model={self._fallback[2]} base_url={self._fallback[1]} "
+                f"key={_mask_key(self._fallback[0])}"
+                if self._fallback else " | fallback: none configured"
+            ),
+            flush=True,
+        )
 
     @property
     def aclient(self) -> AsyncOpenAI:
