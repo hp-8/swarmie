@@ -13,6 +13,7 @@ warnings.filterwarnings("ignore", message=".*resource_tracker.*")
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .config import Config
 from .extensions import limiter
@@ -23,6 +24,12 @@ def create_app(config_class=Config):
     """Flask application factory function"""
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    # Behind Render's proxy, remote_addr is the proxy — without this every client
+    # shares one rate-limit bucket. Trust only the hops we control (0 = no proxy).
+    hops = app.config.get("TRUSTED_PROXY_HOPS", 1)
+    if hops:
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=hops)
     
     # Configure JSON encoding: ensure text is rendered directly (not in \uXXXX format)
     # Flask >= 2.3 uses app.json.ensure_ascii, older versions use JSON_AS_ASCII
