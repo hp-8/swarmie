@@ -60,6 +60,8 @@ class RoastJob:
     reactions: list[dict] = field(default_factory=list)
     report: dict | None = None
     usage: dict | None = None
+    # user charged one credit for this review (refunded if it fails/cancels)
+    charged_user: str | None = None
 
     # per-agent chat history: agent_id -> list[{role, content}]
     chats: dict[str, list[dict[str, str]]] = field(default_factory=dict)
@@ -105,6 +107,7 @@ class RoastJob:
             "report": self.report,
             "usage": self.usage,
             "chats": self.chats,
+            "charged_user": self.charged_user,
         }
 
     @classmethod

@@ -38,3 +38,18 @@ services:
       # in-process store (jobs lost on restart → "job not found" 404s).
       - key: REDIS_URL
         sync: false
+      # Billing (credits via Stripe Checkout, ledger in Supabase). Leave
+      # BILLING_ENABLED false until the keys below are set and the
+      # 20261110200000_billing_credits migration has been applied.
+      - key: BILLING_ENABLED
+        value: "false"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: APP_BASE_URL
+        value: https://swarmie.vercel.app

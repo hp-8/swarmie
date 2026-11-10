@@ -66,7 +66,7 @@
           <div class="side-block field-wrap field-size">
             <div class="field-head">
               <label for="size" class="field-label">Panel size</label>
-              <span class="field-meta">{{ agentCount }} reviewers · est. ${{ costEst }}</span>
+              <span class="field-meta">{{ agentCount }} reviewers · {{ sizeNote }}</span>
             </div>
             <input
               id="size"
@@ -89,7 +89,11 @@
             <router-link :to="{ path: '/', hash: '#pricing' }" class="pack-link">See planned pricing</router-link>
           </div>
 
-          <div v-if="error" class="error" role="alert">{{ error }}</div>
+          <div v-if="error" class="error" role="alert">
+            {{ error }}
+            <router-link v-if="errorCode === 'sign_in_required'" to="/signin" class="error-link">Sign in</router-link>
+            <router-link v-else-if="errorCode === 'no_credits'" to="/account" class="error-link">Buy a pack</router-link>
+          </div>
 
           <label v-if="showRunConsent" class="run-consent">
             <input v-model="runConsent" type="checkbox" :disabled="submitting" />
@@ -136,6 +140,7 @@ import { trackRoastStart } from '../../lib/analytics'
 import { track } from '../../lib/thirdParty'
 import { hasAcceptedRunTerms, acceptRunTerms } from '../../lib/consent'
 import { SWARMS, isLocked } from '../../lib/swarms'
+import { BILLING_ENABLED } from '../../lib/account'
 
 const router = useRouter()
 const swarmType = ref('validate')
@@ -149,10 +154,12 @@ function takeDraft() {
     return d
   } catch { return '' }
 }
-const agentCount = ref(100)
+// Billing on: start on the free panel size so a first review never needs an account.
+const agentCount = ref(BILLING_ENABLED ? 20 : 100)
 const submitting = ref(false)
 const launching = ref(false)
 const error = ref('')
+const errorCode = ref('')
 
 // Deck file lives here — read by canSubmit / runHint / onSubmit. The dropzone
 // widget owns its own drag + validation state (see DeckDropzone.vue).
@@ -196,6 +203,15 @@ const costEst = computed(() => {
   return usd < 0.01 ? '<0.01' : usd.toFixed(2)
 })
 
+// With billing on, larger panels and pack-only types cost one credit.
+const FREE_MAX_AGENTS = 20
+const usesCredit = computed(() => BILLING_ENABLED && (agentCount.value > FREE_MAX_AGENTS || activeSwarm.value.tier === 'pack'))
+const sizeNote = computed(() => {
+  if (usesCredit.value) return 'uses 1 credit'
+  if (BILLING_ENABLED) return 'free'
+  return 'est. $' + costEst.value
+})
+
 const runHint = computed(() => {
   if (submitting.value) return 'sending…'
   if (locked.value) return 'switch to Validate for a free review'
@@ -209,6 +225,7 @@ async function onSubmit() {
   if (!canSubmit.value || submitting.value) return
   acceptRunTerms()
   error.value = ''
+  errorCode.value = ''
   submitting.value = true
   launching.value = true
   try {
@@ -230,6 +247,7 @@ async function onSubmit() {
     router.push({ name: 'Watching', params: { jobId } })
   } catch (e) {
     error.value = e?.response?.data?.error || e?.message || 'Could not start the review. Try again in a moment.'
+    errorCode.value = e?.response?.data?.code || ''
     launching.value = false
   } finally {
     submitting.value = false
@@ -347,6 +365,7 @@ async function onSubmit() {
 .size-presets button.active { border-color: var(--ink); color: var(--ink); font-weight: 700; }
 
 .error { font-size: var(--text-sm); color: var(--warn); background: var(--warn-soft); padding: var(--space-3); border-radius: var(--radius-sm); }
+.error-link { margin-left: var(--space-2); font-weight: 700; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
 .run-consent { display: grid; grid-template-columns: auto 1fr; gap: var(--space-2); font-size: var(--text-sm); line-height: 1.5; color: var(--ink-2); }
 .run-consent input { accent-color: var(--ink); margin-top: 3px; width: 16px; height: 16px; }

@@ -6,10 +6,15 @@
       <router-link to="/roasts" class="nav-link">Archive</router-link>
       <router-link :to="{ path: '/', hash: '#pricing' }" class="nav-link">Pricing</router-link>
       <a href="https://github.com/hp-8/swarmie" target="_blank" rel="noopener" class="nav-link">GitHub</a>
+      <router-link v-if="BILLING_ENABLED" :to="session ? '/account' : '/signin'" class="nav-link nav-account">{{ session ? 'Account' : 'Sign in' }}</router-link>
       <router-link to="/new" class="nav-cta">Submit a pitch</router-link>
     </nav>
   </header>
 </template>
+
+<script setup>
+import { BILLING_ENABLED, session } from '../../lib/account'
+</script>
 
 <style scoped>
 .nav {
@@ -32,6 +37,6 @@
 .nav-cta:hover { background: var(--ink-2); }
 @media (max-width: 767px) {
   .nav { padding: var(--space-3) var(--space-4); }
-  .nav-link { display: none; }
+  .nav-link:not(.nav-account) { display: none; }
 }
 </style>

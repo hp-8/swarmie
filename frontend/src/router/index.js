@@ -15,6 +15,8 @@ const routes = [
 
   // --- Marketing ---
   { path: '/roasts', name: 'Roasts', component: () => import('../views/Roasts.vue') },
+  { path: '/signin', name: 'SignIn', component: () => import('../views/SignIn.vue') },
+  { path: '/account', name: 'Account', component: () => import('../views/Account.vue') },
 
   // --- Legal ---
   { path: '/terms', name: 'Terms', component: () => import('../views/legal/Terms.vue') },

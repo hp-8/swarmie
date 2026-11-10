@@ -91,4 +91,6 @@ TIMING: Why now? Is there a trend or moment this taps into?`,
 // Investor + Launch are pack-only. The server enforces this (402 pack_required);
 // the flag mirrors backend PAID_SWARMS_ENABLED for dev/demo builds.
 export const PAID_UNLOCKED = import.meta.env.VITE_PAID_SWARMS_ENABLED === 'true'
-export const isLocked = (swarm) => swarm?.tier === 'pack' && !PAID_UNLOCKED
+// With billing on, pack-only types are bought with credits (server returns 401/402).
+export const isLocked = (swarm) =>
+  swarm?.tier === 'pack' && !PAID_UNLOCKED && import.meta.env.VITE_BILLING_ENABLED !== 'true'

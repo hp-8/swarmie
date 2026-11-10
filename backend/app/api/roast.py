@@ -26,6 +26,7 @@ from flask import Blueprint, Response, jsonify, request, stream_with_context
 
 from ..config import Config
 from ..extensions import limiter
+from ..services import billing
 from ..services.job_store import RoastJob, make_store
 from ..services.swarm import (
     CHAT_SOFT_CAP,
@@ -41,6 +42,7 @@ from ..services.swarm import (
     load_pdf,
 )
 from ..utils.llm import UsageTracker
+from .billing import current_user
 
 logger = logging.getLogger("swarmie.api.roast")
 
@@ -274,6 +276,42 @@ def _run_pipeline_and_release(job: RoastJob) -> None:
         _run_pipeline(job)
     finally:
         _roast_slots.release()
+        if job.charged_user and job.status != "completed":
+            billing.refund(job.charged_user, _credit_ref(job))
+
+
+def _credit_ref(job: RoastJob) -> str:
+    return f"review:{job.job_id}"
+
+
+def _charge_for_review(job: RoastJob):
+    """Paid reviews cost one credit. Returns an error response, or None to proceed.
+
+    With billing off, pack-only review types stay locked (PAID_SWARMS_ENABLED)."""
+    if not billing.enabled():
+        if job.swarm_type in Config.PAID_SWARMS and not Config.PAID_SWARMS_ENABLED:
+            return jsonify({
+                "error": "Investor and Launch reviews are part of review packs, which launch soon.",
+                "code": "pack_required",
+            }), 402
+        return None
+    if not billing.needs_credit(job.swarm_type, job.n_agents):
+        return None  # free review: Validate, small panel, no account needed
+    user, err = current_user()
+    if err:
+        return err
+    try:
+        if not billing.consume(user.id, _credit_ref(job)):
+            return jsonify({
+                "error": "You're out of review credits. Buy a pack, or run a free review with 20 reviewers.",
+                "code": "no_credits",
+            }), 402
+    except billing.BillingError:
+        logger.exception("credit charge failed for %s", job.job_id)
+        return jsonify({"error": "Billing is temporarily unavailable. Please try again shortly.", "code": "billing_unavailable"}), 503
+    job.charged_user = user.id
+    _store.persist(job)
+    return None
 
 
 @roast_bp.route("", methods=["POST"])
@@ -335,13 +373,7 @@ def create_roast():
 
         job = _new_job(pitch_text=pitch_text, n_agents=n_agents, swarm_type=swarm_type)
 
-    if job.swarm_type in Config.PAID_SWARMS and not Config.PAID_SWARMS_ENABLED:
-        _store.drop(job.job_id)
-        return jsonify({
-            "error": "Investor and Launch reviews are part of review packs, which launch soon.",
-            "code": "pack_required",
-        }), 402
-
+    # Capacity first, so a busy server never charges a credit.
     if not _roast_slots.acquire(blocking=False):
         _store.drop(job.job_id)
         # Hint lives in the body: flask-limiter overwrites any Retry-After header
@@ -350,6 +382,12 @@ def create_roast():
             "error": "Swarmie is at capacity right now. Please try again in a minute.",
             "retry_after_seconds": _BUSY_RETRY_SECONDS,
         }), 503
+
+    denied = _charge_for_review(job)
+    if denied:
+        _roast_slots.release()
+        _store.drop(job.job_id)
+        return denied
 
     print(f"[{job.job_id}] creating background thread (n_agents={n_agents}, source={job.source})", flush=True)
     thread = threading.Thread(target=_run_pipeline_and_release, args=(job,), daemon=True)

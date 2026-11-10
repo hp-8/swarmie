@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { accessToken } from '../lib/account'
 
 // 创建axios实例
 const service = axios.create({
@@ -12,6 +13,9 @@ const service = axios.create({
 // 请求拦截器
 service.interceptors.request.use(
   config => {
+    // Signed-in users carry their Supabase token; the backend uses it for credits.
+    const token = accessToken()
+    if (token) config.headers.Authorization = `Bearer ${token}`
     return config
   },
   error => {

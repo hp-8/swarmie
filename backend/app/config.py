@@ -91,6 +91,17 @@ class Config:
     # are locked for everyone; set true to use them (dev, demos, or after billing).
     PAID_SWARMS_ENABLED = _bool("PAID_SWARMS_ENABLED", False)
     PAID_SWARMS = ("investor", "launch")
+
+    # --- Billing (credits via Stripe Checkout; ledger in Supabase) ---
+    # Off until keys are in: with it off, the PAID_SWARMS_ENABLED lock above applies.
+    BILLING_ENABLED = _bool("BILLING_ENABLED", False)
+    FREE_MAX_AGENTS = int(os.environ.get("FREE_MAX_AGENTS", "20"))
+    LAUNCH_BUYERS = int(os.environ.get("LAUNCH_BUYERS", "100"))
+    SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+    SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+    STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+    APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:3000")
     MAX_CONCURRENT_ROASTS = int(os.environ.get("MAX_CONCURRENT_ROASTS", "4"))
     ROAST_MAX_COST_USD = float(os.environ.get("ROAST_MAX_COST_USD", "1.00"))
 

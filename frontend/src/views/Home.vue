@@ -123,6 +123,9 @@
             </p>
             <p v-if="plan.regular" class="rate-launch">Launch price for the first {{ LAUNCH_BUYERS }} buyers. {{ plan.regular }} after that, save {{ plan.save }}.</p>
             <router-link v-if="plan.cta" :to="plan.cta" class="rate-cta">Start a free review</router-link>
+            <button v-else-if="BILLING_ENABLED" type="button" class="rate-cta rate-buy" :disabled="buying === plan.key" @click="buy(plan.key)">
+              {{ buying === plan.key ? 'Opening checkout…' : `Buy ${plan.short}` }}
+            </button>
             <span v-else class="rate-cta is-soon">Coming soon</span>
           </div>
 
@@ -180,10 +183,25 @@ import AiDisclosure from '../components/AiDisclosure.vue'
 import SiteNav from '../components/marketing/SiteNav.vue'
 import SiteFooter from '../components/marketing/SiteFooter.vue'
 import MemoArchiveCard from '../components/marketing/MemoArchiveCard.vue'
+import { BILLING_ENABLED, session } from '../lib/account'
+import { buyPack } from '../api/billing'
 import data from '../data/famousRoasts.json'
 
 const router = useRouter()
 const draft = ref('')
+const buying = ref('')
+
+// Signed in: straight to Stripe. Signed out: sign in first, then continue to checkout.
+async function buy(pack) {
+  if (!session.value) return router.push({ path: '/signin', query: { pack } })
+  buying.value = pack
+  try {
+    await buyPack(pack)
+  } catch {
+    buying.value = ''
+    router.push({ path: '/account', query: { buy: pack } })
+  }
+}
 const archive = data.roasts
 
 // Plans shown on the rate card. Pack prices are launch prices: `regular` is the
@@ -362,7 +380,11 @@ function startDraft() {
   color: var(--paper);
   transition: background var(--dur-fast) var(--ease-out);
 }
-a.rate-cta:hover { background: var(--ink-2); }
+a.rate-cta:hover, .rate-buy:hover:not(:disabled) { background: var(--ink-2); }
+.rate-buy { font: inherit; font-size: var(--text-sm); font-weight: 700; border: 0; cursor: pointer; }
+.rate-hero .rate-buy { background: var(--paper); color: var(--ink); }
+.rate-hero .rate-buy:hover:not(:disabled) { background: var(--paper-4); }
+.rate-buy:disabled { opacity: 0.7; cursor: wait; }
 .rate-cta.is-soon { background: transparent; color: var(--ink-3); border: 1px dashed var(--rule-2); }
 .rate-hero .rate-cta.is-soon { color: oklch(100% 0 0 / 0.75); border-color: oklch(100% 0 0 / 0.3); }
 
