@@ -4,12 +4,14 @@ import os
 
 from dotenv import load_dotenv
 
-# Load .env from project root (../../.env relative to this file).
+# Load .env from project root (../../.env relative to this file). Real
+# environment variables win (override=False): the test suite and hosts like
+# Render set them explicitly, and a local .env must not silently beat them.
 _root_env = os.path.join(os.path.dirname(__file__), "../../.env")
 if os.path.exists(_root_env):
-    load_dotenv(_root_env, override=True)
+    load_dotenv(_root_env, override=False)
 else:
-    load_dotenv(override=True)
+    load_dotenv(override=False)
 
 
 def _bool(name: str, default: bool = False) -> bool:
