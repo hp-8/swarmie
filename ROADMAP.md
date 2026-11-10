@@ -130,7 +130,9 @@ After the v1 swarms (Phase 2) prove the model. Each must still end in a decision
 
 **Freemium model (decided 2026-11-10):** usage-based, no subscription.
 - **Free:** unlimited reviews with 20-reviewer panels, Validate only, full decision memo.
-- **Review packs:** credit packs of 20 and 100 reviews; panels up to 500, Investor (incl. deck upload) and Launch reviews, PDF export and share cards. Prices TBD.
+- **Review packs (USD, launch prices):** Try 5 reviews $5; Starter 20 for $15 (regular $25 after launch); Sprint 100 for $49 (regular $82 after launch). Both packs flat 40% off at launch, for the first 100 paying buyers; checkout must count purchases and switch to regular prices after the 100th. One credit = one review at any panel size up to 500; Investor (incl. deck upload) and Launch reviews; PDF export and share cards. Failed reviews refund their credit.
+- **Reference-price rule:** the "after launch" prices must actually be charged once the launch window ends (Canada Competition Act / FTC ordinary-price rules). Launch window = first 100 buyers.
+- **Unit cost (measured from prompts, 2026-11-10):** ~$0.003 per free review (all-cheap model); ~$0.04-0.10 per paid review (cheap reviewer model + stronger memo model). Gross margin after Stripe fees ~76-90% worst case.
 - Shown on Home as "Planned pricing"; everything stays free during the alpha. Not yet enforced: needs accounts, a credits ledger with atomic server-side deduction, a payment provider + webhooks, and a per-account cap on free runs (unlimited free is the abuse/cost exposure).
 
 - [ ] **Live voice interview / panel** — talk to personas over the realtime API; they interrupt, object, follow up

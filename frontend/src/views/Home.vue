@@ -105,39 +105,36 @@
         <div class="rate-card">
           <div class="rate-intro">
             <p class="intro-title">Every pack</p>
-            <p class="intro-copy">One credit runs one full review. Credits never lapse on a monthly clock.</p>
+            <p class="intro-copy">One credit runs one full review, at any panel size. Buy once, no subscription.</p>
           </div>
-          <div class="rate rate-free">
-            <p class="rate-name">Free</p>
-            <p class="rate-qty">Unlimited</p>
-            <p class="rate-unit">small reviews</p>
-            <p class="rate-price">$0</p>
-            <router-link to="/new" class="rate-cta">Start a free review</router-link>
-          </div>
-          <div class="rate">
-            <p class="rate-name">Starter pack</p>
-            <p class="rate-qty">20</p>
-            <p class="rate-unit">full reviews</p>
-            <p class="rate-price is-soon">Price at launch</p>
-            <span class="rate-cta is-soon">Coming soon</span>
-          </div>
-          <div class="rate rate-hero">
-            <p class="rate-name">Sprint pack</p>
-            <p class="rate-qty">100</p>
-            <p class="rate-unit">full reviews, for a validation sprint</p>
-            <p class="rate-price is-soon">Price at launch</p>
-            <span class="rate-cta is-soon">Coming soon</span>
+          <div
+            v-for="(plan, i) in PLANS"
+            :key="plan.key"
+            class="rate"
+            :class="{ 'rate-hero': plan.hero }"
+            :style="{ gridColumn: i + 2 }"
+          >
+            <p class="rate-name">{{ plan.name }}</p>
+            <p class="rate-qty">{{ plan.qty }}</p>
+            <p class="rate-unit">{{ plan.unit }}</p>
+            <p class="rate-price">
+              {{ plan.price }}
+              <span v-if="plan.perReview" class="rate-per">{{ plan.perReview }} per review</span>
+            </p>
+            <p v-if="plan.regular" class="rate-launch">Launch price for the first {{ LAUNCH_BUYERS }} buyers. {{ plan.regular }} after that, save {{ plan.save }}.</p>
+            <router-link v-if="plan.cta" :to="plan.cta" class="rate-cta">Start a free review</router-link>
+            <span v-else class="rate-cta is-soon">Coming soon</span>
           </div>
 
           <table class="rate-table">
             <caption class="sr-only">What each plan includes</caption>
             <thead>
-              <tr><th scope="col">Included</th><th scope="col">Free</th><th scope="col">Starter</th><th scope="col">Sprint</th></tr>
+              <tr><th scope="col">Included</th><th v-for="plan in PLANS" :key="plan.key" scope="col">{{ plan.short }}</th></tr>
             </thead>
             <tbody>
               <tr v-for="row in RATE_ROWS" :key="row.label">
                 <th scope="row">{{ row.label }}</th>
-                <td v-for="(v, i) in row.cells" :key="i" :class="{ 'is-hero': i === 2 }">
+                <td v-for="(v, i) in row.cells" :key="i" :class="{ 'is-hero': PLANS[i].hero }">
                   <svg v-if="v === true" class="tick" viewBox="0 0 16 16" aria-label="Included" role="img"><path d="M3 8.5l3 3 7-7" /></svg>
                   <span v-else-if="v === false" class="dash" aria-label="Not included">&ndash;</span>
                   <span v-else>{{ v }}</span>
@@ -189,14 +186,26 @@ const router = useRouter()
 const draft = ref('')
 const archive = data.roasts
 
-// Planned plan contents. true = included, false = not, string = the value.
+// Plans shown on the rate card. Pack prices are launch prices: `regular` is the
+// price they move to after launch (state it only if you will actually charge it).
+// Launch prices hold for this many paying buyers; enforce at checkout (count purchases).
+const LAUNCH_BUYERS = 100
+
+const PLANS = [
+  { key: 'free', name: 'Free', short: 'Free', qty: 'Unlimited', unit: 'small reviews', price: '$0', cta: '/new' },
+  { key: 'try', name: 'Try pack', short: 'Try', qty: '5', unit: 'full reviews', price: '$5', perReview: '$1.00' },
+  { key: 'starter', name: 'Starter pack', short: 'Starter', qty: '20', unit: 'full reviews', price: '$15', perReview: '$0.75', regular: '$25', save: '40%' },
+  { key: 'sprint', name: 'Sprint pack', short: 'Sprint', qty: '100', unit: 'full reviews, for a validation sprint', price: '$49', perReview: '$0.49', regular: '$82', save: '40%', hero: true },
+]
+
+// What each plan includes, one cell per plan above. true = included, false = not.
 const RATE_ROWS = [
-  { label: 'Panel size', cells: ['20 reviewers', 'Up to 500', 'Up to 500'] },
-  { label: 'Full decision memo', cells: [true, true, true] },
-  { label: 'Validate reviews', cells: [true, true, true] },
-  { label: 'Investor reviews and deck upload', cells: [false, true, true] },
-  { label: 'Launch reviews', cells: [false, true, true] },
-  { label: 'PDF export and share card', cells: [false, true, true] },
+  { label: 'Panel size', cells: ['20 reviewers', 'Up to 500', 'Up to 500', 'Up to 500'] },
+  { label: 'Full decision memo', cells: [true, true, true, true] },
+  { label: 'Validate reviews', cells: [true, true, true, true] },
+  { label: 'Investor reviews and deck upload', cells: [false, true, true, true] },
+  { label: 'Launch reviews', cells: [false, true, true, true] },
+  { label: 'PDF export and share card', cells: [false, true, true, true] },
 ]
 
 // Hand the hero draft to the submission form (which owns consent + validation).
@@ -325,22 +334,22 @@ function startDraft() {
 .rate-card {
   margin-top: var(--space-7);
   display: grid;
-  grid-template-columns: minmax(180px, 1.1fr) repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(170px, 1fr) repeat(4, minmax(0, 1fr));
   border: 1px solid var(--rule-2);
   background: var(--paper);
   box-shadow: 0 30px 60px -44px oklch(20% 0.02 250 / 0.5);
 }
 .rate { grid-row: 1; padding: var(--space-6) var(--space-5); display: flex; flex-direction: column; border-left: 1px solid var(--rule); }
-.rate-free { grid-column: 2; }
-.rate:nth-of-type(2) { grid-column: 3; }
-.rate-hero { grid-column: 4; background: var(--ink); color: var(--paper); border-left-color: var(--ink); }
+.rate-hero { background: var(--ink); color: var(--paper); border-left-color: var(--ink); }
 .rate-name { margin: 0; font-size: var(--text-sm); font-weight: 700; }
 .rate-qty { margin: var(--space-4) 0 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(44px, 4.4vw, 64px); line-height: 0.95; letter-spacing: -0.03em; font-variant-numeric: lining-nums; }
 .rate-unit { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--ink-3); min-height: 2.6em; }
 .rate-hero .rate-unit { color: oklch(100% 0 0 / 0.68); }
 .rate-price { margin: var(--space-5) 0 0; font-size: var(--text-lg); font-weight: 700; font-variant-numeric: tabular-nums; }
-.rate-price.is-soon { font-size: var(--text-base); color: var(--ink-3); }
-.rate-hero .rate-price.is-soon { color: oklch(100% 0 0 / 0.72); }
+.rate-per { display: block; margin-top: 2px; font-size: var(--text-sm); font-weight: 500; color: var(--ink-3); }
+.rate-hero .rate-per { color: oklch(100% 0 0 / 0.68); }
+.rate-launch { margin: var(--space-2) 0 0; font-size: var(--text-sm); line-height: 1.45; color: var(--ink); font-weight: 600; }
+.rate-hero .rate-launch { color: var(--paper); }
 .rate-cta {
   margin-top: var(--space-5);
   align-self: stretch;
@@ -360,7 +369,7 @@ a.rate-cta:hover { background: var(--ink-2); }
 .rate-table { grid-column: 1 / -1; grid-row: 2; width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 .rate-table thead { display: none; }
 .rate-table th, .rate-table td { padding: var(--space-3) var(--space-5); border-top: 1px solid var(--rule); text-align: left; vertical-align: middle; }
-.rate-table tbody th { font-weight: 600; color: var(--ink); width: calc(1.1 / 4.1 * 100%); }
+.rate-table tbody th { font-weight: 600; color: var(--ink); width: 20%; }
 .rate-table td { border-left: 1px solid var(--rule); color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .rate-table td.is-hero { background: oklch(20% 0.008 250 / 0.04); font-weight: 600; color: var(--ink); }
 .tick { width: 16px; height: 16px; fill: none; stroke: var(--live); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -3px; }
@@ -378,8 +387,8 @@ a.rate-cta:hover { background: var(--ink-2); }
   .strip-row > * { flex: 0 0 82%; scroll-snap-align: start; }
   .pricing-head { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
   .rate-card { grid-template-columns: minmax(0, 1fr); }
-  .rate, .rate-free, .rate:nth-of-type(2), .rate-hero { grid-column: 1; grid-row: auto; border-left: 0; border-top: 1px solid var(--rule); }
-  .rate-free { border-top: 0; }
+  .rate { grid-column: 1 !important; grid-row: auto; border-left: 0; border-top: 1px solid var(--rule); }
+  .rate-intro + .rate { border-top: 0; }
   .rate-table { grid-row: auto; }
   .rate-table thead { display: table-header-group; }
   .rate-table thead th { font-size: var(--text-xs); color: var(--ink-3); font-weight: 600; }
