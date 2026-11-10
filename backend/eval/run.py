@@ -253,6 +253,7 @@ def run_synth_case(case: dict, verbose: bool = True) -> dict[str, Any]:
         "score": score,
         "passed": passed,
         "elapsed": elapsed,
+        "report": report_dict,
         "report_summary": {
             "verdict": report.verdict,
             "pmf_score": report.pmf_score,
@@ -364,6 +365,7 @@ def run_full_case(case: dict, verbose: bool = True) -> dict[str, Any]:
         "score": score,
         "passed": passed,
         "elapsed": elapsed,
+        "report": report_dict,
         "report_summary": {
             "verdict": report.verdict,
             "pmf_score": report.pmf_score,
@@ -413,43 +415,100 @@ def run_consistency(case: dict, n_runs: int = 3, mode: str = "synth",
 # LLM-as-judge (optional)
 # ---------------------------------------------------------------------------
 
-_JUDGE_RUBRIC_SYSTEM = """You are a quality evaluator for LLM-generated startup validation reports.
-Given a report and the original pitch, score each dimension 1-5 (5=best):
-  clarity      — is the narrative clear, jargon-free, easy to act on?
-  specificity  — does it cite specific aspects of THIS pitch, not generic advice?
-  actionability — does the next_action give one concrete, specific step?
+JUDGE_DIMENSIONS = (
+    "specificity", "insight", "calibration", "constructiveness", "actionability", "grounding",
+)
+
+_JUDGE_RUBRIC_SYSTEM = """You are a demanding evaluator of startup validation reports. A founder will
+make real decisions from this report, so judge it as a top early-stage advisor would.
+
+You get the pitch, the swarm EVIDENCE the report was built from (objections with
+counts, why people scrolled past, sentiment), the REPORT itself, and a human
+annotator's expectation for this pitch.
+
+Score each dimension 1-5 (5 = best). Be strict: 5 is rare, 3 is "adequate".
+  specificity      — Tied to THIS pitch's details, or advice that fits any startup?
+  insight          — Surfaces at least one non-obvious risk or opportunity the founder
+                     likely hasn't considered (e.g. buyer != user, usage frequency,
+                     distribution, regulation, cold start)? Restating the obvious = 2.
+  calibration      — Is the verdict and its severity justified by the evidence and
+                     consistent with the annotator expectation? Flattering a weak idea
+                     or condemning a solid one both score 1-2.
+  constructiveness — Honest about problems AND leaves the founder a realistic way
+                     forward (what to keep, what to test, what would change the
+                     verdict)? Harsh with no path = 1-2. Vague cheerleading = 1-2.
+  actionability    — Is next_action one concrete step doable in about a week, with a
+                     clear success signal?
+  grounding        — Are claims supported by the evidence or pitch? Invented market
+                     sizes, statistics, competitors or quotes = 1-2.
 
 Return strict JSON:
-{"clarity": <int>, "specificity": <int>, "actionability": <int>, "rationale": "<1-2 sentences>"}
+{"specificity": <int>, "insight": <int>, "calibration": <int>, "constructiveness": <int>,
+ "actionability": <int>, "grounding": <int>, "rationale": "<2-3 sentences: the biggest weakness>"}
 JSON only."""
+
+_REPORT_FIELDS = (
+    "headline", "verdict", "verdict_reason", "confidence", "confidence_reason",
+    "next_action", "narrative", "messaging_gaps", "what_working", "hidden_risks",
+    "path_forward",
+)
+
+
+def _judge_payload(case: dict, report: dict) -> dict[str, Any]:
+    """Everything the judge needs: pitch, the evidence, the report, the annotation."""
+    return {
+        "pitch": case["pitch_text"],
+        "annotator_expectation": {
+            "acceptable_verdicts": sorted(case.get("expected_verdicts", [])),
+            "notes": case.get("notes", ""),
+        },
+        "evidence": {
+            "sentiment_split_pct": report.get("sentiment_split"),
+            "silent_share_pct": report.get("silent_share_pct"),
+            "top_objections": [
+                {k: o.get(k) for k in ("category", "count", "example_quote")}
+                for o in report.get("top_objections", [])
+            ],
+            "why_they_scrolled_past": [
+                {k: r.get(k) for k in ("label", "share_pct", "example")}
+                for r in report.get("ignore_reasons", [])
+            ],
+        },
+        "report": {
+            **{k: report[k] for k in _REPORT_FIELDS if report.get(k)},
+            "objection_guidance": [
+                {k: o.get(k) for k in ("category", "real_test", "kill_criteria", "suggested_fix")}
+                for o in report.get("top_objections", [])
+            ],
+        },
+    }
 
 
 def run_judge(case: dict, report_dict: dict) -> dict[str, Any]:
     """Run LLM-as-judge rubric. Returns score dict or error."""
     if not _has_api_key():
         return {"skipped": True, "reason": "no API key configured"}
+    if not report_dict:
+        return {"error": "no report to judge"}
 
     try:
         from app.utils.llm import LLM
         llm = LLM(tier="synth")
-        payload = {
-            "pitch_excerpt": case["pitch_text"][:600],
-            "headline": report_dict.get("headline", ""),
-            "verdict": report_dict.get("verdict", ""),
-            "next_action": report_dict.get("next_action", ""),
-            "narrative": str(report_dict.get("narrative", ""))[:400],
-        }
         messages = [
             {"role": "system", "content": _JUDGE_RUBRIC_SYSTEM},
-            {"role": "user", "content": f"REPORT DATA:\n{json.dumps(payload, indent=2)}\n\nReturn JSON only."},
+            {"role": "user", "content": json.dumps(_judge_payload(case, report_dict), indent=2, default=str)},
         ]
-        data = llm.chat_json(messages, temperature=0.2, max_tokens=300)
-        scores = {k: int(data.get(k, 0)) for k in ("clarity", "specificity", "actionability")}
+        data = llm.chat_json(messages, temperature=0.0, max_tokens=600)
+        scores = {k: int(data.get(k, 0)) for k in JUDGE_DIMENSIONS}
         scores["rationale"] = str(data.get("rationale", ""))
-        scores["avg"] = round(sum(scores[k] for k in ("clarity", "specificity", "actionability")) / 3, 2)
+        scores["avg"] = round(sum(scores[k] for k in JUDGE_DIMENSIONS) / len(JUDGE_DIMENSIONS), 2)
         return scores
     except Exception as exc:
         return {"error": str(exc)}
+
+
+def _format_judge(jr: dict) -> str:
+    return "  ".join(f"{k[:6]}={jr.get(k, '?')}" for k in JUDGE_DIMENSIONS) + f"  avg={jr.get('avg', '?')}"
 
 
 # ---------------------------------------------------------------------------
@@ -500,10 +559,12 @@ def print_scorecard(results: list[dict], consistency_results: dict | None = None
             elif "error" in jr:
                 print(f"  {case_id:<28} ERROR: {jr['error']}")
             else:
-                print(f"  {case_id:<28} clarity={jr.get('clarity','?')}  "
-                      f"specific={jr.get('specificity','?')}  "
-                      f"action={jr.get('actionability','?')}  "
-                      f"avg={jr.get('avg','?')}")
+                print(f"  {case_id:<28} {_format_judge(jr)}")
+        scored = [jr for jr in judge_results.values() if "avg" in jr]
+        if scored:
+            means = {k: sum(jr[k] for jr in scored) / len(scored) for k in JUDGE_DIMENSIONS}
+            print(f"  {'MEAN':<28} " + "  ".join(f"{k[:6]}={v:.2f}" for k, v in means.items())
+                  + f"  avg={sum(means.values()) / len(means):.2f}")
 
     print()
     overall = n_passed == total
@@ -543,6 +604,15 @@ def main() -> int:
     else:
         cases = GOLDEN_CASES
 
+    if args.mode == "synth":
+        skipped = [c["id"] for c in cases if c.get("full_only")]
+        cases = [c for c in cases if not c.get("full_only")]
+        if skipped:
+            print(f"(synth: skipping full-mode-only cases: {', '.join(skipped)})")
+        if not cases:
+            print("ERROR: no synth-capable cases selected")
+            return 2
+
     # Mode check
     if args.mode == "full" and not _has_api_key():
         print("ERROR: --mode full requires LLM_API_KEY or OPENAI_API_KEY in env.")
@@ -573,23 +643,10 @@ def main() -> int:
 
         # Judge
         if args.judge:
-            report_dict = {}
-            if "report_summary" in result:
-                # For judge we need the full report dict — only available if we stored it
-                # In synth mode we store a summary; for judge we re-run briefly
-                if args.mode == "synth":
-                    # Re-run synth silently to get full dict
-                    jr_case_result = run_synth_case(case, verbose=False)
-                    # We don't have full dict here; use summary as approximation
-                    report_dict = jr_case_result.get("report_summary", {})
-                else:
-                    report_dict = result.get("report_summary", {})
-            jr = run_judge(case, report_dict)
+            jr = run_judge(case, result.get("report", {}))
             judge_results[case_id] = jr
             if not jr.get("skipped"):
-                print(f"  judge: clarity={jr.get('clarity','?')} "
-                      f"specificity={jr.get('specificity','?')} "
-                      f"actionability={jr.get('actionability','?')}")
+                print(f"  judge: {_format_judge(jr)}")
         elif not _has_api_key():
             # Silently skip judge if no key
             pass

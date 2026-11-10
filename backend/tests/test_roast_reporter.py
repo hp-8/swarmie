@@ -472,3 +472,53 @@ class TestIgnoreReasons:
         assert "ignore_reasons" in d and isinstance(d["ignore_reasons"], list)
         assert "silent_share_pct" in d and isinstance(d["silent_share_pct"], float)
         assert d["ignore_reasons"][0]["category"] == "price_or_effort"
+
+
+class TestAdvisorFields:
+    """what_working / hidden_risks / path_forward: parsed defensively from LLM output."""
+
+    def _report(self, extra: dict | None = None, raise_exc: bool = False) -> dict:
+        from app.services.swarm.roast_reporter import RoastReporter
+
+        reporter = RoastReporter.__new__(RoastReporter)
+        reporter.llm = _make_llm_stub({**_full_llm_response(["price"]), **(extra or {})})
+        if raise_exc:
+            reporter.llm.chat_json.side_effect = RuntimeError("LLM unavailable")
+        reactions = _make_reactions(20, action="comment", sentiment=0.4, objections=["price"])
+        return reporter.report(_Pitch(), reactions).to_dict()
+
+    def test_well_formed_fields_pass_through(self):
+        d = self._report({
+            "what_working": ["Pain is real for agencies"],
+            "hidden_risks": [{"risk": "Buyer != user", "why_non_obvious": "all comments from users",
+                              "cheap_test": "ask 5 ops leads who signs"}],
+            "path_forward": {"this_week": "interview 5 ops leads", "if_confirmed": "rewrite landing",
+                             "if_not": "per-seat designer tool"},
+        })
+        assert d["what_working"] == ["Pain is real for agencies"]
+        assert d["hidden_risks"][0]["risk"] == "Buyer != user"
+        assert d["path_forward"]["if_not"] == "per-seat designer tool"
+
+    def test_malformed_shapes_degrade_to_empty(self):
+        d = self._report({
+            "what_working": "not a list",
+            "hidden_risks": ["string instead of object", {"why_non_obvious": "no risk key"}],
+            "path_forward": ["wrong", "type"],
+        })
+        assert d["what_working"] == []
+        assert d["hidden_risks"] == []
+        # path_forward falls back to next_action so the founder always gets a step
+        assert d["path_forward"] == {"this_week": d["next_action"]}
+
+    def test_lists_are_capped_at_three(self):
+        d = self._report({
+            "what_working": [f"s{i}" for i in range(6)],
+            "hidden_risks": [{"risk": f"r{i}"} for i in range(6)],
+        })
+        assert len(d["what_working"]) == 3
+        assert len(d["hidden_risks"]) == 3
+
+    def test_llm_failure_keeps_fields_present_and_empty(self):
+        d = self._report(raise_exc=True)
+        assert d["what_working"] == [] and d["hidden_risks"] == []
+        assert isinstance(d["path_forward"], dict)

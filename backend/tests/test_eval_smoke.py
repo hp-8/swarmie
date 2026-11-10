@@ -28,8 +28,20 @@ if _BACKEND not in sys.path:
 
 @pytest.fixture(scope="session")
 def all_golden_cases():
+    """Synth-capable cases (full_only traps have no canned reactions by design)."""
     from eval.golden_set import GOLDEN_CASES
-    return GOLDEN_CASES
+    return [c for c in GOLDEN_CASES if not c.get("full_only")]
+
+
+def test_full_only_cases_are_well_formed():
+    from eval.golden_set import GOLDEN_CASES
+    traps = [c for c in GOLDEN_CASES if c.get("full_only")]
+    assert traps
+    for c in traps:
+        assert c["expected_verdicts"] and c["notes"] and c["pitch_text"]
+        for kw in c.get("hidden_risk_keywords", []):
+            assert kw.lower() not in c["pitch_text"].lower(), (
+                f"{c['id']}: hidden-risk keyword '{kw}' echoes the pitch")
 
 
 @pytest.fixture(scope="session")

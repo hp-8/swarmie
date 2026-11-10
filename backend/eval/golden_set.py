@@ -12,6 +12,10 @@ Each case defines:
   - pmf_direction: "positive" (>= 5.0), "neutral" (2.0–7.9), or "negative" (< 5.0)
   - confidence_ceiling: maximum acceptable confidence
   - notes: human annotation
+  - hidden_risk_keywords (optional): planted non-obvious risk; any keyword must
+      appear in the report's founder-facing prose (eval.checks.check_hidden_risk).
+      Never use words that merely echo the pitch.
+  - full_only (optional): no canned reactions; skipped in synth mode
 
 Keep assertions tolerant — these are LLM outputs.
 """
@@ -221,6 +225,159 @@ GOLDEN_CASES: list[dict[str, Any]] = [
         "pmf_direction": "negative",  # audience mismatch kills PMF
         "confidence_ceiling": "high",
         "notes": "Consumer memory product pitched to enterprise decision-makers — clear mismatch.",
+    },
+    # ==================================================================
+    # Value traps (full mode only). Each tests a failure that makes the
+    # product useless: flattery, needless harshness, or missing the real,
+    # non-obvious problem a good advisor would spot.
+    # ==================================================================
+    {
+        "id": "trap_flattery_hype",
+        "swarm_type": "validate",
+        "full_only": True,
+        "pitch_text": (
+            "PROBLEM: Pet owners love their pets and want to share them.\n\n"
+            "PRODUCT: PawPal is a revolutionary AI-powered social network exclusively for pets. "
+            "Every pet gets an AI personality that posts on its behalf. This is the future of "
+            "social media and will disrupt Instagram.\n\n"
+            "AUDIENCE: Everyone who owns a pet (over 1 billion pets worldwide).\n\n"
+            "PRICING: $49/month premium for advanced AI personalities.\n\n"
+            "COMPETITORS: None. Nobody is doing AI for pets."
+        ),
+        "expected_verdicts": {"kill", "wrong_audience", "sharpen_positioning"},
+        "required_objection_themes": [
+            ["price", "$49", "expensive", "cost"],
+            ["instagram", "existing", "already", "competitor", "alternative"],
+        ],
+        "pmf_direction": "negative",
+        "confidence_ceiling": "high",
+        "hidden_risk_keywords": ["too broad", "no specific", "who exactly",
+                                 "niche", "narrow"],
+        "notes": "Hype words, 'no competitors', 'everyone' as ICP, consumer price far above "
+                 "norms. Must NOT get ship_it. A good report still names what could work "
+                 "(e.g. a narrow segment like pet influencer accounts).",
+    },
+    {
+        "id": "trap_harshness_boring_b2b",
+        "swarm_type": "validate",
+        "full_only": True,
+        "pitch_text": (
+            "PROBLEM: Independent dental clinics lose 10-15% of booked hours to no-shows. "
+            "Front-desk staff call patients manually the day before, which takes ~1 hour a day.\n\n"
+            "PRODUCT: RemindDent sends SMS + WhatsApp confirmations with one-tap reschedule, "
+            "syncs with Dentrix and Open Dental, and backfills cancelled slots from a waitlist.\n\n"
+            "AUDIENCE: Independent dental clinics with 1-4 chairs in the US.\n\n"
+            "TRACTION: 14 paying clinics after a 3-month pilot; no-shows down from 12% to 5% on "
+            "average; 0 churn so far. Two clinics referred others.\n\n"
+            "PRICING: $149/month per clinic.\n\n"
+            "COMPETITORS: Weave, Lighthouse 360, built-in PMS reminders. We are cheaper than Weave "
+            "and include waitlist backfill, which the built-in reminders lack."
+        ),
+        "expected_verdicts": {"ship_it", "sharpen_positioning"},
+        "required_objection_themes": [
+            ["weave", "competitor", "existing", "built-in", "already"],
+        ],
+        "pmf_direction": "positive",
+        "confidence_ceiling": "high",
+        "notes": "Unsexy but real: measured outcome, paying customers, referrals. Must NOT get "
+                 "kill. Swarm skeptics will say 'Weave exists'; a calibrated report weighs the "
+                 "traction evidence above that.",
+    },
+    {
+        "id": "hidden_buyer_not_user",
+        "swarm_type": "validate",
+        "full_only": True,
+        "pitch_text": (
+            "PROBLEM: K-12 teachers spend 5+ hours a week grading short-answer homework.\n\n"
+            "PRODUCT: GradeLoop is an AI grader that reads handwritten worksheets from a phone "
+            "photo, suggests a grade and feedback, and lets the teacher approve in one tap.\n\n"
+            "AUDIENCE: Public school teachers in grades 6-12 in the US.\n\n"
+            "PRICING: $12/month per teacher.\n\n"
+            "COMPETITORS: Gradescope, manual grading."
+        ),
+        "expected_verdicts": {"sharpen_positioning", "wrong_audience", "ship_it"},
+        "required_objection_themes": [
+            ["accura", "trust", "wrong", "mistake", "error"],
+        ],
+        "pmf_direction": "neutral",
+        "confidence_ceiling": "high",
+        "hidden_risk_keywords": ["district", "school budget", "procurement", "administrator",
+                                 "who pays", "buyer", "out of pocket", "own pocket", "ferpa",
+                                 "student data"],
+        "notes": "Teachers love it but rarely pay personally; districts buy, with long "
+                 "procurement and student-data (FERPA) review. A strong report spots buyer != user.",
+    },
+    {
+        "id": "hidden_low_frequency",
+        "swarm_type": "validate",
+        "full_only": True,
+        "pitch_text": (
+            "PROBLEM: Freelancers in the US dread filing their annual taxes and miss deductions.\n\n"
+            "PRODUCT: TaxBuddy connects to your bank, auto-categorizes deductible expenses, and "
+            "prepares a filing-ready Schedule C package for your accountant or for self-filing.\n\n"
+            "AUDIENCE: US freelancers and 1099 contractors.\n\n"
+            "PRICING: $19/month subscription.\n\n"
+            "COMPETITORS: TurboTax Self-Employed, Keeper, QuickBooks Self-Employed."
+        ),
+        "expected_verdicts": {"sharpen_positioning", "ship_it", "wrong_audience"},
+        "required_objection_themes": [
+            ["turbotax", "keeper", "quickbooks", "competitor", "existing"],
+        ],
+        "pmf_direction": "neutral",
+        "confidence_ceiling": "high",
+        "hidden_risk_keywords": ["once a year", "seasonal", "tax season", "churn",
+                                 "frequency", "rest of the year", "monthly pricing"],
+        "notes": "Core pain happens once a year but pricing is monthly: expect churn after "
+                 "April unless there's year-round value (quarterly estimates). Non-obvious.",
+    },
+    {
+        "id": "hidden_regulatory",
+        "swarm_type": "validate",
+        "full_only": True,
+        "pitch_text": (
+            "PROBLEM: Therapy is expensive and waitlists are months long.\n\n"
+            "PRODUCT: MindMate is an AI therapist chatbot that provides CBT sessions 24/7, "
+            "detects mood from messages, and can recommend when to adjust medication.\n\n"
+            "AUDIENCE: Adults with anxiety or depression who can't afford therapy.\n\n"
+            "PRICING: $15/month.\n\n"
+            "COMPETITORS: Woebot, Wysa, BetterHelp."
+        ),
+        "expected_verdicts": {"sharpen_positioning", "kill", "wrong_audience"},
+        "required_objection_themes": [
+            ["trust", "safe", "human", "ai", "replace"],
+        ],
+        "pmf_direction": "neutral",
+        "confidence_ceiling": "high",
+        "hidden_risk_keywords": ["regulat", "fda", "liabil", "license", "medical advice",
+                                 "hipaa", "crisis", "suicid", "clinical"],
+        "notes": "Recommending medication changes is practicing medicine: regulatory and "
+                 "liability exposure, plus crisis/safety handling. Should be flagged clearly, "
+                 "with a path (drop med advice, position as wellness, clinician-in-loop).",
+    },
+    {
+        "id": "hidden_marketplace_cold_start",
+        "swarm_type": "validate",
+        "full_only": True,
+        "pitch_text": (
+            "PROBLEM: Homeowners can't find reliable local handymen for small jobs, and "
+            "handymen waste time on low-quality leads.\n\n"
+            "PRODUCT: FixNear is a two-sided marketplace matching homeowners with vetted "
+            "handymen for jobs under $500, with instant booking and escrowed payment.\n\n"
+            "AUDIENCE: Homeowners and independent handymen, launching nationwide in the US.\n\n"
+            "PRICING: 15% take rate on each job.\n\n"
+            "COMPETITORS: Thumbtack, TaskRabbit, Angi, Nextdoor."
+        ),
+        "expected_verdicts": {"sharpen_positioning", "wrong_audience", "kill"},
+        "required_objection_themes": [
+            ["thumbtack", "taskrabbit", "angi", "competitor", "existing"],
+        ],
+        "pmf_direction": "neutral",
+        "confidence_ceiling": "high",
+        "hidden_risk_keywords": ["cold start", "chicken", "liquidity", "supply", "both sides",
+                                 "one city", "single city", "local density",
+                                 "disintermediat", "off-platform", "leakage"],
+        "notes": "Nationwide launch of a local two-sided marketplace = no density anywhere; "
+                 "plus repeat jobs leak off-platform. Good report: start in one city/one job type.",
     },
 ]
 

@@ -173,6 +173,24 @@ def check_narrative_non_empty(report: dict, **_) -> tuple[bool, str]:
     return True, f"headline ({len(headline)} chars), narrative ({len(narrative)} chars)"
 
 
+def _report_text(report: dict) -> str:
+    """All founder-facing prose in the report, lowercased, for keyword checks."""
+    import json
+    keys = ("headline", "verdict_reason", "next_action", "narrative", "messaging_gaps",
+            "top_objections", "what_working", "hidden_risks", "path_forward")
+    return json.dumps({k: report.get(k) for k in keys}, default=str).lower()
+
+
+def check_hidden_risk(report: dict, case: dict) -> tuple[bool, str]:
+    """Did the report surface the case's planted non-obvious risk anywhere?"""
+    keywords = case["hidden_risk_keywords"]
+    text = _report_text(report)
+    hits = [k for k in keywords if k.lower() in text]
+    if hits:
+        return True, f"surfaced via {hits}"
+    return False, f"none of {keywords} found in report prose"
+
+
 def run_all_checks(report: dict, case: dict) -> list[dict[str, Any]]:
     """Run every deterministic check. Returns list of result dicts."""
     swarm_type = case.get("swarm_type", "validate")
@@ -188,6 +206,8 @@ def run_all_checks(report: dict, case: dict) -> list[dict[str, Any]]:
         ("action_split_non_negative", lambda: check_action_split_non_negative(report)),
         ("narrative_non_empty", lambda: check_narrative_non_empty(report)),
     ]
+    if case.get("hidden_risk_keywords"):
+        checks.append(("hidden_risk", lambda: check_hidden_risk(report, case)))
 
     for name, fn in checks:
         try:

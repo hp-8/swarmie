@@ -49,6 +49,12 @@ class RoastReport:
     launch_brief: dict[str, Any] | None = None  # None on non-launch runs
     # --- PMF Readiness Index (calibrated composite; None if weights absent) ---
     pmf_index: dict[str, Any] | None = None  # {value, band, index_version, calibration_status}
+    # --- advisor brief (additive; empty on old results / LLM failure) ---
+    what_working: list[str] = field(default_factory=list)  # real strengths to keep
+    hidden_risks: list[dict[str, str]] = field(default_factory=list)
+    # [{risk, why_non_obvious, cheap_test}]
+    path_forward: dict[str, str] = field(default_factory=dict)
+    # {this_week, if_confirmed, if_not}
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -70,12 +76,23 @@ class SynthesisResult:
     confidence: str
     confidence_reason: str
     objections: list[dict[str, Any]]  # top_objections merged with enrichment
+    what_working: list[str] = field(default_factory=list)
+    hidden_risks: list[dict[str, str]] = field(default_factory=list)
+    path_forward: dict[str, str] = field(default_factory=dict)
+
+    def advisor_fields(self) -> dict[str, Any]:
+        """The advisor-brief fields, for spreading into RoastReport(...)."""
+        return {
+            "what_working": self.what_working,
+            "hidden_risks": self.hidden_risks,
+            "path_forward": self.path_forward,
+        }
 
 
 _NARRATIVE_SYSTEM = """You are a startup advisor. Synthesize the swarm of agent reactions into a sharp 2-3 paragraph narrative for the founder, and produce a decision brief.
 
 Be direct. Lead with the strongest signal — positive or negative. Cite specific
-objection patterns and ICP fit. Do not pad. Do not soften.
+objection patterns and ICP fit. Do not pad.
 
 Silence is signal. `silent_share_pct` is the share who scrolled past, and
 `why_they_scrolled_past` clusters why. A high silent share or one dominant
@@ -104,6 +121,36 @@ Decision brief rules:
   * real_test: exact question to ask 5 real users, under 160 chars
   * kill_criteria: "if N/5 say X, this positioning is dead", under 160 chars
   * suggested_fix: concrete messaging/positioning fix, under 160 chars"""
+
+
+def _parse_str_list(value: Any, limit: int) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(v).strip() for v in value if str(v).strip()][:limit]
+
+
+def _parse_hidden_risks(value: Any, limit: int = 3) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        return []
+    risks = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        risk = str(item.get("risk", "")).strip()
+        if risk:
+            risks.append({
+                "risk": risk,
+                "why_non_obvious": str(item.get("why_non_obvious", "")).strip(),
+                "cheap_test": str(item.get("cheap_test", "")).strip(),
+            })
+    return risks[:limit]
+
+
+def _parse_path_forward(value: Any) -> dict[str, str]:
+    if not isinstance(value, dict):
+        return {}
+    keys = ("this_week", "if_confirmed", "if_not")
+    return {k: str(value[k]).strip() for k in keys if str(value.get(k, "")).strip()}
 
 
 def _compute_sentiment_split(reactions: list[AgentReaction]) -> dict[str, float]:
@@ -443,6 +490,7 @@ class RoastReporter:
             next_action=synth.next_action,
             confidence=synth.confidence,
             confidence_reason=synth.confidence_reason,
+            **synth.advisor_fields(),
             ignore_reasons=ignore_reasons,
             silent_share_pct=silent_share_pct,
         )
@@ -484,6 +532,10 @@ class RoastReporter:
             "pitch_problem": pitch.problem,
             "pitch_solution": pitch.solution,
             "target_icp": pitch.target_icp,
+            "pitch_pricing": getattr(pitch, "pricing", ""),
+            "pitch_competitors": getattr(pitch, "competitors", []),
+            "pitch_channels": getattr(pitch, "channels", []),
+            "pitch_traction": getattr(pitch, "traction", ""),
             "pmf_score": pmf_score,
             "sentiment_split_pct": sentiment_split,
             "action_split_counts": action_split,
@@ -522,12 +574,38 @@ class RoastReporter:
                     "    kill_criteria (string, <160 chars, e.g. 'if 3/5 say X, this positioning is dead'),\n"
                     "    suggested_fix (string, <160 chars, concrete messaging/positioning fix)\n"
                     "  )\n"
+                    "  what_working      (array of 1-3 strings, <140 chars each — real strengths backed by\n"
+                    "                     the DATA that the founder should keep. Never invent praise; if the\n"
+                    "                     signal is weak, name the smallest genuine asset (e.g. a pain point\n"
+                    "                     one segment did respond to).)\n"
+                    "  hidden_risks      (array of 1-3 objects — problems the founder probably has NOT\n"
+                    "                     considered, which the swarm may not have voiced directly. Look for:\n"
+                    "                     buyer != user, how often the pain occurs vs. how it is priced,\n"
+                    "                     distribution / cold start, regulation or liability, switching cost,\n"
+                    "                     dependency on a platform. Do NOT repeat top objections. Keys:\n"
+                    "    risk (string, <140 chars),\n"
+                    "    why_non_obvious (string, <160 chars — why it is easy to miss from this pitch/data),\n"
+                    "    cheap_test (string, <160 chars — how to check it in days, without building)\n"
+                    "  )\n"
+                    "  path_forward      (object — a realistic plan, with keys:\n"
+                    "    this_week (string, <160 chars — the concrete first step, usually the next_action),\n"
+                    "    if_confirmed (string, <160 chars — what to do if the test comes back positive),\n"
+                    "    if_not (string, <160 chars — the adjacent direction worth trying, keeping what works)\n"
+                    "  )\n"
+                    "\n"
+                    "Tone: you are a respected advisor the founder trusts because you are honest.\n"
+                    "Name problems plainly, scaled to the evidence — never inflate a weak signal into\n"
+                    "praise, never catastrophize a fixable one. Every problem you raise must come with a\n"
+                    "way to test or fix it. Even a 'kill' verdict means the current framing fails; say\n"
+                    "what to keep and where to point it next. Ground every claim in the DATA or pitch;\n"
+                    "do not invent statistics, market sizes or competitors.\n"
                     "JSON only."
                 ),
             },
         ]
         try:
-            data = self.llm.chat_json(messages, temperature=0.4, max_tokens=1800)
+            # 3000: the brief grew (advisor fields); 1800 risks truncating the larger JSON (same failure as pitch-parser fix 2b9d756).
+            data = self.llm.chat_json(messages, temperature=0.4, max_tokens=3000)
         except Exception as exc:
             logger.warning(f"narrative synthesis failed: {exc}; using deterministic fallback")
             data = {}
@@ -613,6 +691,10 @@ class RoastReporter:
                 "suggested_fix": enrichment.get("suggested_fix", ""),
             })
 
+        path_forward = _parse_path_forward(data.get("path_forward"))
+        if next_action and not path_forward.get("this_week"):
+            path_forward["this_week"] = next_action
+
         return SynthesisResult(
             headline=headline,
             narrative=narrative,
@@ -623,6 +705,9 @@ class RoastReporter:
             confidence=confidence,
             confidence_reason=confidence_reason,
             objections=merged_objections,
+            what_working=_parse_str_list(data.get("what_working"), limit=3),
+            hidden_risks=_parse_hidden_risks(data.get("hidden_risks")),
+            path_forward=path_forward,
         )
 
     @staticmethod
@@ -664,7 +749,7 @@ _INVESTOR_NARRATIVE_SYSTEM = """You are a seasoned early-stage investor and ex-f
 
 Be direct. This is decision stress-testing against patterns from real investor
 behavior — NOT a prediction of whether you'll raise. Lead with the strongest
-signal. Cite the specific objections and the pass reasons. Do not soften.
+signal. Cite the specific objections and the pass reasons.
 
 `silent_share_pct` is the share of investors who passed without engaging, and
 `why_they_scrolled_past` clusters why they passed. A high pass rate or one
@@ -747,7 +832,7 @@ _LAUNCH_NARRATIVE_SYSTEM = """You are a launch strategist and startup advisor. S
 Be direct. This is launch decision stress-testing — surface what communities will say,
 ask, misunderstand, and debate when this product goes live. NOT a prediction. Lead
 with the strongest signal. Cite the specific objections, confusions, and community
-dynamics. Do not soften.
+dynamics.
 
 `silent_share_pct` is the share who scrolled past without engaging, and
 `why_they_scrolled_past` clusters why. High scroll-past or one dominant ignore
@@ -894,6 +979,7 @@ class LaunchReporter(RoastReporter):
             next_action=synth.next_action,
             confidence=synth.confidence,
             confidence_reason=synth.confidence_reason,
+            **synth.advisor_fields(),
             ignore_reasons=ignore_reasons,
             silent_share_pct=silent_share_pct,
             launch_brief=launch_brief,
