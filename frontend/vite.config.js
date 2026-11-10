@@ -2,8 +2,19 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 // https://vite.dev/config/
+// Search engine verification tags, only emitted when the token env var is set.
+const verifyTags = {
+  name: 'verify-tags',
+  transformIndexHtml() {
+    return [
+      ['google-site-verification', process.env.VITE_GSC_TOKEN || 'vEFqzcjXGmJZVqRD9RlkauTQ65YSH96JvpeH9AckYc8'],
+      ['msvalidate.01', process.env.VITE_BING_TOKEN],
+    ].filter(([, v]) => v).map(([name, content]) => ({ tag: 'meta', attrs: { name, content }, injectTo: 'head' }))
+  },
+}
+
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), verifyTags],
   server: {
     port: 3000,
     open: true,
@@ -46,6 +57,7 @@ export default defineConfig({
           if (
             id.includes('@fingerprintjs') ||
             id.includes('@vercel/analytics') ||
+            id.includes('@vercel/speed-insights') ||
             id.includes('node_modules/axios')
           ) {
             return 'tracking'

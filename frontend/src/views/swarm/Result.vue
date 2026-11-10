@@ -575,6 +575,7 @@ import { verdictMeta } from '../../lib/verdict'
 import { buildShareCardBlob, downloadBlob } from '../../lib/shareCard'
 import { generateRoastPDF } from '../../lib/pdf/template'
 import { trackRoastComplete, trackParsedPitch, trackReport, trackReactions, trackPdfDownload } from '../../lib/analytics'
+import { track } from '../../lib/thirdParty'
 
 const route = useRoute()
 const jobId = route.params.jobId
@@ -779,6 +780,7 @@ function formatTokens(n) {
 
 async function copyShareUrl() {
   await navigator.clipboard.writeText(window.location.href)
+  track('share', { method: 'copy_link', content_type: 'roast' })
   copied.value = true
   setTimeout(() => (copied.value = false), 1500)
 }
@@ -805,6 +807,7 @@ async function shareCard() {
   sharingCard.value = true
   try {
     const { blob } = await buildShareCardBlob(shareCardData())
+    track('share', { method: 'card', content_type: 'roast' })
     const filename = `swarmie-roast-${jobShort.value || 'card'}.png`
     const file = new File([blob], filename, { type: 'image/png' })
     // Web Share API with files (mobile) is the primary path; download is the fallback.
@@ -843,6 +846,7 @@ async function downloadPdf() {
       jobId,
     })
     trackPdfDownload(jobId).catch(() => {})
+    track('file_download', { source: 'roast_pdf' })
   } catch (e) {
     console.error('PDF gen failed', e)
   } finally {

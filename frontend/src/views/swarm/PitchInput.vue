@@ -46,7 +46,7 @@
                 <span class="field-meta">{{ pitchText.length.toLocaleString() }} / 20,000</span>
               </div>
             </div>
-            <textarea
+            <textarea data-clarity-mask="true"
               v-model="pitchText"
               class="textarea"
               :placeholder="activeSwarm.placeholder"
@@ -145,6 +145,7 @@ import { roastApi } from '../../api/roast'
 import AiDisclosure from '../../components/AiDisclosure.vue'
 import DeckDropzone from '../../components/swarm/DeckDropzone.vue'
 import { trackRoastStart } from '../../lib/analytics'
+import { track } from '../../lib/thirdParty'
 import { hasAcceptedRunTerms, acceptRunTerms } from '../../lib/consent'
 import { SWARMS } from '../../lib/swarms'
 
@@ -223,6 +224,7 @@ async function onSubmit() {
       swarmType: swarmType.value,
       source: isDeck ? 'deck' : 'text',
     }).catch(() => {})
+    track('roast_start', { swarm_type: swarmType.value, source: isDeck ? 'deck' : 'text', n_agents: agentCount.value })
     await new Promise(r => setTimeout(r, 800))
     router.push({ name: 'Watching', params: { jobId } })
   } catch (e) {

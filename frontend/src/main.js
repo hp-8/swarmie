@@ -5,6 +5,8 @@ import router from './router'
 import reveal from './lib/reveal'
 import './styles/tokens.css'
 import { registerDevice } from './lib/analytics'
+import { loadThirdParty } from './lib/thirdParty'
+import { injectSpeedInsights } from '@vercel/speed-insights'
 import { hasAnalyticsConsent, onConsentChange } from './lib/consent'
 
 const app = createApp(App)
@@ -19,7 +21,11 @@ let _analyticsOn = false
 function enableAnalytics() {
   if (_analyticsOn || !hasAnalyticsConsent()) return
   _analyticsOn = true
-  if (import.meta.env.PROD) injectAnalytics()
+  if (import.meta.env.PROD) {
+    injectAnalytics()
+    injectSpeedInsights()
+    loadThirdParty()
+  }
   registerDevice().catch(() => {})
 }
 
