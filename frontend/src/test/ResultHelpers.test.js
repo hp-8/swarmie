@@ -12,7 +12,7 @@ const VERDICT_META = {
   ship_it: { label: 'ship it', cls: 'is-ship' },
   sharpen_positioning: { label: 'sharpen', cls: 'is-sharpen' },
   wrong_audience: { label: 'wrong audience', cls: 'is-wrong' },
-  kill: { label: 'kill', cls: 'is-kill' },
+  kill: { label: 'rethink the core', cls: 'is-kill' },
   fundable: { label: 'fundable', cls: 'is-ship' },
   sharpen_story: { label: 'sharpen story', cls: 'is-sharpen' },
   wrong_stage: { label: 'wrong stage', cls: 'is-wrong' },
@@ -60,7 +60,7 @@ describe('verdictMeta', () => {
   })
 
   it('returns correct label and cls for kill', () => {
-    expect(verdictMeta('kill')).toEqual({ label: 'kill', cls: 'is-kill' })
+    expect(verdictMeta('kill')).toEqual({ label: 'rethink the core', cls: 'is-kill' })
   })
 
   it('returns correct label and cls for fundable (investor)', () => {

@@ -1,22 +1,30 @@
 <template>
-  <ol v-if="objections?.length" class="obj-list scroll-zone">
-    <li v-for="(obj, i) in objections" :key="obj.category" class="obj-row">
-      <span class="obj-rank">{{ String(i + 1).padStart(2, '0') }}</span>
+  <ol v-if="objections?.length" class="obj-list">
+    <li v-for="(obj, i) in objections" :id="`objection-${i + 1}`" :key="obj.category" class="obj-row">
+      <span class="obj-rank">{{ i + 1 }}</span>
       <div class="obj-body">
         <div class="obj-head-row">
           <span class="obj-cat">{{ obj.category }}</span>
           <span class="obj-count">{{ obj.count }}×</span>
         </div>
         <p v-if="obj.example_quote" class="obj-quote">"{{ obj.example_quote }}"</p>
-        <div v-if="obj.real_test" class="obj-test">
-          <button class="obj-test-q" @click="copyTest(obj)" title="Copy this question">
-            <span class="obj-tag">{{ copy.askTag }}</span>
-            <span class="obj-test-text">{{ obj.real_test }}</span>
-            <span class="obj-copy">{{ copiedTest === obj.category ? '✓' : '⧉' }}</span>
-          </button>
-        </div>
-        <p v-if="obj.kill_criteria" class="obj-kill"><span class="obj-tag warn">{{ copy.killTag }}</span>{{ obj.kill_criteria }}</p>
-        <p v-if="obj.suggested_fix" class="obj-fix"><span class="obj-tag accent">fix</span>{{ obj.suggested_fix }}</p>
+        <dl class="obj-guide">
+          <div v-if="obj.real_test" class="obj-test">
+            <dt class="obj-tag">{{ copy.askTag }}</dt>
+            <dd>
+              <span class="obj-test-text">{{ obj.real_test }}</span>
+              <button class="obj-test-q" type="button" @click="copyTest(obj)">
+                {{ copiedTest === obj.category ? 'Copied' : 'Copy question' }}
+              </button>
+            </dd>
+          </div>
+          <div v-if="obj.kill_criteria" class="obj-kill">
+            <dt class="obj-tag warn">{{ copy.killTag }}</dt><dd>{{ obj.kill_criteria }}</dd>
+          </div>
+          <div v-if="obj.suggested_fix" class="obj-fix">
+            <dt class="obj-tag accent">fix</dt><dd>{{ obj.suggested_fix }}</dd>
+          </div>
+        </dl>
         <ObjectionVote :job-id="jobId" :objection-category="obj.category" />
       </div>
     </li>
@@ -43,84 +51,52 @@ async function copyTest(obj) {
 </script>
 
 <style scoped>
-.obj-list {
-  list-style: none; margin: 0; padding: 2px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
-  gap: var(--space-3);
-  align-content: start;
-}
+.obj-list { list-style: none; margin: 0; padding: 0; display: grid; }
 .obj-row {
-  display: grid; grid-template-columns: 30px 1fr; gap: var(--space-3);
-  align-items: start;
-  background: var(--paper-3);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  box-shadow: inset 0 1px 0 color-mix(in oklch, white 4%, transparent);
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-5) 0;
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: var(--space-9);
 }
-.obj-rank {
-  font-family: var(--font-display); font-style: normal; font-weight: 600;
-  font-size: var(--text-2xl); color: var(--accent-bright); line-height: 0.9;
-}
-.obj-head-row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); margin-bottom: var(--space-1); }
-.obj-cat { font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
-.obj-count { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); flex-shrink: 0; }
+.obj-rank { font-weight: 700; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.obj-head-row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-4); }
+.obj-cat { font-size: var(--text-md); font-weight: 600; color: var(--ink); }
+.obj-cat::first-letter { text-transform: uppercase; }
+.obj-count { font-size: var(--text-sm); color: var(--ink-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .obj-quote {
-  font-family: var(--font-display); font-style: normal; font-weight: 500;
-  font-variation-settings: 'opsz' 96, 'wght' 500;
-  font-size: var(--text-sm); line-height: 1.4; color: var(--ink-2); margin: 0;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.obj-tag { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin-right: var(--space-2); padding: 1px 5px; border: 1px solid var(--rule); border-radius: 4px; white-space: nowrap; }
-.obj-tag.warn { color: var(--warn); border-color: color-mix(in oklch, var(--warn) 35%, transparent); }
-.obj-tag.accent { color: var(--accent-bright); border-color: color-mix(in oklch, var(--accent) 35%, transparent); }
-.obj-test { margin-top: var(--space-3); }
-.obj-test-q {
-  display: flex; align-items: center; gap: var(--space-3);
-  width: 100%; text-align: left;
-  background: color-mix(in oklch, var(--accent) 7%, var(--paper));
-  border: 1px solid color-mix(in oklch, var(--accent) 22%, transparent);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease-out),
-              background var(--dur-fast) var(--ease-out);
-}
-.obj-test-q:hover {
-  border-color: color-mix(in oklch, var(--accent) 50%, transparent);
-  background: color-mix(in oklch, var(--accent) 11%, var(--paper));
-}
-.obj-test-q:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-/* "GET PROOF" tag — filled coral micro-pill, not the outlined gray default */
-.obj-test-q .obj-tag {
-  align-self: flex-start;
-  margin-right: 0;
-  color: var(--accent-bright);
-  border-color: transparent;
-  background: var(--accent-soft);
-}
-.obj-test-text {
-  flex: 1; min-width: 0; font-size: var(--text-sm); color: var(--ink); line-height: 1.4;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.obj-copy {
-  flex-shrink: 0;
-  width: 28px; height: 28px;
-  display: grid; place-items: center;
-  border-radius: 50%;
-  background: color-mix(in oklch, var(--ink) 8%, transparent);
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  line-height: 1.5;
   color: var(--ink-2);
-  font-size: 13px; line-height: 1;
-  transition: background var(--dur-fast) var(--ease-out),
-              color var(--dur-fast) var(--ease-out),
-              transform var(--dur-fast) var(--ease-out);
+  max-width: 66ch;
 }
-.obj-test-q:hover .obj-copy { background: var(--accent-soft); color: var(--accent-bright); transform: translateY(-1px); }
-.obj-kill, .obj-fix {
-  margin: var(--space-2) 0 0; font-size: var(--text-xs); color: var(--ink-3); line-height: 1.45;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+.obj-guide { margin: var(--space-4) 0 0; display: grid; gap: var(--space-2); }
+.obj-guide > div { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: var(--space-4); align-items: baseline; }
+.obj-guide dd { margin: 0; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
+.obj-tag { font-size: var(--text-sm); font-weight: 600; color: var(--ink-3); }
+.obj-tag::first-letter { text-transform: uppercase; }
+.obj-tag.warn { color: var(--warn); }
+.obj-test-text { color: var(--ink); }
+.obj-test-q {
+  margin-left: var(--space-3);
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--ink-3);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
-.muted { color: var(--ink-3); font-size: var(--text-sm); margin: 0; }
+.obj-test-q:hover { color: var(--ink); }
+.muted { color: var(--ink-3); }
+
+@media (max-width: 767px) {
+  .obj-row { grid-template-columns: 24px minmax(0, 1fr); gap: var(--space-3); }
+  .obj-guide > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}
 </style>

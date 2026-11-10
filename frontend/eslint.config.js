@@ -12,10 +12,6 @@ export default [
       'node_modules/**',
       'coverage/**',
       '.lighthouseci/**',
-      // HeroSwarm.vue is the only <script lang="ts"> SFC. Linting it correctly
-      // needs typescript-eslint + a tsconfig; out of scope until the app adopts
-      // TS more broadly. Tracked in tech_debt.md (P2).
-      'src/components/HeroSwarm.vue',
     ],
   },
   js.configs.recommended,

@@ -1,40 +1,42 @@
-/* Hallmark · system: Swarmie · genre: atmospheric · theme: Midnight+coral
- * paper: deep noir oklch(13% .02 270) · accent: warm coral oklch(72% .18 50)
- * display: Fraunces roman · body: Inter · mono: JetBrains Mono
+/* Swarmie · world: investment committee memo (2026-11-10)
+ * paper: white bond · ink: near-black · slate secondary · red reserved for risk
+ * display: Source Serif 4 · body: Public Sans · mono: JetBrains Mono (data only)
+ * Token NAMES are kept from the retired midnight theme so every surface reskins
+ * from here; --accent is now ink (actions), not a color.
  */
 
 :root {
   /* paper / surface */
-  --paper:    oklch(13% 0.018 270);
-  --paper-2:  oklch(17% 0.018 270);
-  --paper-3:  oklch(22% 0.020 270);
-  --paper-4:  oklch(26% 0.022 270);
-  --rule:     oklch(28% 0.020 270);
-  --rule-2:   oklch(36% 0.024 270);
+  --paper:    oklch(100% 0 0);
+  --paper-2:  oklch(97.6% 0.003 250);
+  --paper-3:  oklch(95.8% 0.004 250);
+  --paper-4:  oklch(92.6% 0.006 250);
+  --rule:     oklch(90.8% 0.006 250);
+  --rule-2:   oklch(82% 0.010 250);
 
-  /* ink — brightened for legibility on deep noir paper */
-  --ink:      oklch(98% 0.004 270);
-  --ink-2:    oklch(88% 0.010 270);
-  --ink-3:    oklch(72% 0.012 270);
-  --ink-4:    oklch(56% 0.014 270);
+  /* ink */
+  --ink:      oklch(20% 0.008 250);
+  --ink-2:    oklch(34% 0.012 250);
+  --ink-3:    oklch(48% 0.016 250);   /* slate, >=4.5:1 on paper */
+  --ink-4:    oklch(55% 0.016 250);
 
-  /* accents */
-  --accent:        oklch(74% 0.180 50);   /* warm coral — primary heat */
-  --accent-bright: oklch(82% 0.170 55);
-  --accent-soft:   oklch(74% 0.180 50 / 0.12);
+  /* actions: ink, not a hue */
+  --accent:        oklch(20% 0.008 250);
+  --accent-bright: oklch(20% 0.008 250);
+  --accent-soft:   oklch(20% 0.008 250 / 0.06);
 
-  --live:     oklch(78% 0.200 145);       /* phosphor green — positive */
-  --live-soft:oklch(78% 0.200 145 / 0.12);
+  --live:     oklch(52% 0.120 155);       /* positive: ledger green */
+  --live-soft:oklch(52% 0.120 155 / 0.10);
 
-  --warn:     oklch(72% 0.215 25);        /* red — negative */
-  --warn-soft:oklch(72% 0.215 25 / 0.12);
+  --warn:     oklch(51% 0.190 25);        /* risk red: flags only */
+  --warn-soft:oklch(51% 0.190 25 / 0.07);
 
-  --info:     oklch(76% 0.150 240);       /* cool blue — info */
-  --info-soft:oklch(76% 0.150 240 / 0.12);
+  --info:     oklch(50% 0.110 250);       /* slate blue */
+  --info-soft:oklch(50% 0.110 250 / 0.08);
 
   /* fonts */
-  --font-display: 'Fraunces', 'Times New Roman', Georgia, serif;
-  --font-body:    'Inter', -apple-system, system-ui, sans-serif;
+  --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-body:    'Public Sans', -apple-system, system-ui, sans-serif;
   --font-mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
   /* type scale */
@@ -79,7 +81,7 @@
   --dur-slow: 480ms;
 
   /* focus ring (≥3:1 contrast against paper) */
-  --focus: var(--accent-bright);
+  --focus: oklch(50% 0.110 250);
 
   /* page constraints */
   --max-content: 1180px;
@@ -100,7 +102,7 @@ html {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  color-scheme: dark;
+  color-scheme: light;
 }
 body {
   margin: 0;
@@ -112,9 +114,10 @@ body {
   box-sizing: border-box;
 }
 ::selection {
-  background: var(--accent);
-  color: var(--paper);
+  background: oklch(88% 0.06 250);
+  color: var(--ink);
 }
+::placeholder { color: var(--ink-4); }
 :focus {
   outline: none;
 }
@@ -130,7 +133,6 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--font-display);
   font-style: normal;
   font-weight: 500;
-  font-variation-settings: 'opsz' 144;
   letter-spacing: -0.02em;
   line-height: 0.98;
   color: var(--ink);
@@ -138,12 +140,12 @@ a { color: inherit; text-decoration: none; }
 /* Fraunces roman, not italic — emphasis inside headings stays upright. */
 .h-display em { font-style: normal; }
 .h-eyebrow {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
   color: var(--ink-3);
 }
+.h-eyebrow::first-letter { text-transform: uppercase; }
 .h-rule {
   height: 1px;
   background: var(--rule);
@@ -220,21 +222,6 @@ a { color: inherit; text-decoration: none; }
 .scroll-zone::-webkit-scrollbar { width: 8px; }
 .scroll-zone::-webkit-scrollbar-track { background: transparent; }
 .scroll-zone::-webkit-scrollbar-thumb { background: var(--paper-4); border-radius: 999px; }
-
-/* Scroll-reveal (v-reveal directive). Hidden state -> in-view state.
-   The directive only adds .reveal when motion is allowed, so the global
-   reduced-motion block below never has anything to suppress here. */
-.reveal {
-  opacity: 0;
-  transform: translateY(16px);
-  transition: opacity var(--dur-slow) var(--ease-out),
-              transform var(--dur-slow) var(--ease-out);
-  will-change: opacity, transform;
-}
-.reveal--in {
-  opacity: 1;
-  transform: none;
-}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

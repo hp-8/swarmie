@@ -1,26 +1,26 @@
-<!-- Hallmark · component: inline thumbs vote · genre: feedback · theme: Midnight+coral
+<!-- component: inline yes/no vote on an objection
  * states: default · voted-up · voted-down · switching
  * contrast: pass
  -->
 <template>
   <div class="ov-wrap" :class="{ 'ov-voted': voted !== null }">
-    <span class="ov-label">match your gut?</span>
+    <span class="ov-label">Does this ring true?</span>
     <button
       type="button"
       class="ov-btn"
       :class="{ active: voted === 1 }"
-      aria-label="Thumbs up — this objection is real"
+      aria-label="Yes, this objection rings true"
       :disabled="loading"
       @click="castVote(1)"
-    >👍</button>
+    >Yes</button>
     <button
       type="button"
       class="ov-btn"
       :class="{ active: voted === -1 }"
-      aria-label="Thumbs down — this objection is not real"
+      aria-label="No, this objection does not ring true"
       :disabled="loading"
       @click="castVote(-1)"
-    >👎</button>
+    >No</button>
     <transition name="ov-thanks">
       <span v-if="showThanks" class="ov-thanks" aria-live="polite">saved</span>
     </transition>
@@ -43,7 +43,8 @@ const loading = ref(false)
 const showThanks = ref(false)
 
 onMounted(() => {
-  const stored = localStorage.getItem(lsKey())
+  let stored = null
+  try { stored = localStorage.getItem(lsKey()) } catch { /* storage blocked */ }
   if (stored === '1' || stored === '-1') {
     voted.value = parseInt(stored, 10)
   }
@@ -55,7 +56,7 @@ async function castVote(v) {
   loading.value = true
   const prev = voted.value
   voted.value = v
-  localStorage.setItem(lsKey(), String(v))
+  try { localStorage.setItem(lsKey(), String(v)) } catch { /* storage blocked */ }
 
   await trackObjectionFeedback(props.jobId, props.objectionCategory, v)
   loading.value = false
@@ -74,24 +75,23 @@ async function castVote(v) {
   gap: var(--space-2, 8px);
   padding-top: var(--space-3, 12px);
   margin-top: var(--space-2, 8px);
-  border-top: 1px solid var(--rule, rgba(255, 255, 255, 0.08));
+  border-top: 0;
 }
 
 .ov-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-3, rgba(255, 255, 255, 0.4));
+  font-size: var(--text-sm);
+  color: var(--ink-3);
   user-select: none;
 }
 
 .ov-btn {
   background: transparent;
   border: 1px solid var(--rule, rgba(255, 255, 255, 0.12));
-  border-radius: var(--radius-pill, 999px);
-  padding: 2px 8px;
-  font-size: 13px;
+  border-radius: var(--radius-sm);
+  padding: 2px 10px;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
   line-height: 1.6;
   cursor: pointer;
   color: var(--ink-3, rgba(255, 255, 255, 0.5));
@@ -118,16 +118,13 @@ async function castVote(v) {
 /* active vote state */
 .ov-btn.active {
   border-color: var(--accent, #e05a2b);
-  background: color-mix(in oklch, var(--accent, #e05a2b) 15%, transparent);
-  color: var(--ink, #fff);
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .ov-thanks {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  color: var(--live, #4ade80);
-  text-transform: uppercase;
+  font-size: var(--text-sm);
+  color: var(--live);
 }
 
 /* transitions */

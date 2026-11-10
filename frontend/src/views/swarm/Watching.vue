@@ -1,79 +1,55 @@
 <template>
   <div class="page page-fixed">
     <header class="rail">
-      <router-link to="/" class="brand-mark">
-        <span class="dot" :class="{ pulse: isRunning }"></span>
-        <span class="brand-text">SWARMIE</span>
-      </router-link>
-      <span class="rail-context">/ run · {{ jobShort }}</span>
+      <router-link to="/" class="brand-mark">Swarmie</router-link>
+      <span class="rail-context">Review in progress · {{ jobShort }}</span>
       <div class="rail-right">
-        <span class="h-chip" :class="statusChipClass">{{ statusLabel }}</span>
+        <span class="status" :class="statusChipClass">{{ statusLabel }}</span>
         <AiDisclosure aria-label="About this simulation" />
       </div>
     </header>
 
     <main class="doc">
-      <!-- LEFT — anchored pitch summary + progress -->
       <aside class="anchor">
-        <div class="anchor-head">
-          <span class="h-eyebrow">running</span>
-          <h1 class="anchor-title h-display">{{ headline }}</h1>
+        <h1 class="anchor-title">{{ headline }}</h1>
+
+        <ol class="stations" aria-label="Review progress">
+          <li
+            v-for="(st, i) in STATIONS"
+            :key="st.key"
+            class="station"
+            :class="stationState(i)"
+            :aria-current="stationState(i) === 'is-current' ? 'step' : undefined"
+          >
+            <span class="st-num">{{ i + 1 }}</span>
+            <span class="st-label">{{ st.label }}</span>
+            <span v-if="stationState(i) === 'is-current'" class="st-detail">{{ stationDetail(st.key) }}</span>
+          </li>
+        </ol>
+
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-fill" :style="{ transform: `scaleX(${progressPct / 100})` }"></div>
         </div>
 
-        <div class="progress-wrap">
-          <div class="progress-track">
-            <div class="progress-fill" :style="{ width: progressPct + '%' }"></div>
-          </div>
-          <div class="progress-meta">
-            <span class="progress-pct">{{ progressPct }}%</span>
-            <span class="progress-stage">{{ stageLabel }}</span>
-          </div>
-        </div>
+        <dl v-if="parsedPitch" class="pitch-card">
+          <div><dt>Pitch</dt><dd>{{ parsedPitch.one_liner }}</dd></div>
+          <div><dt>Audience</dt><dd>{{ parsedPitch.target_icp }}</dd></div>
+          <div v-if="parsedPitch.icp_segments?.length"><dt>Segments</dt><dd>{{ parsedPitch.icp_segments.join(', ') }}</dd></div>
+        </dl>
 
-        <div v-if="parsedPitch" class="pitch-card">
-          <span class="h-eyebrow">parsed pitch</span>
-          <h3 class="pitch-line">{{ parsedPitch.one_liner }}</h3>
-          <div class="pitch-row">
-            <span class="pitch-key">target</span>
-            <span class="pitch-val">{{ parsedPitch.target_icp }}</span>
-          </div>
-          <div v-if="parsedPitch.icp_segments?.length" class="pitch-row pitch-row-segments">
-            <span class="pitch-key">segments</span>
-            <div class="seg-chips">
-              <span v-for="s in parsedPitch.icp_segments" :key="s" class="seg-chip">{{ s }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="counter">
-          <div class="counter-num">{{ reactions.length }}</div>
-          <div class="counter-label">reactions</div>
-        </div>
-
-        <div v-if="error" class="error-box">
-          <strong>Failed.</strong>
+        <div v-if="error" class="error-box" role="alert">
+          <strong>The review stopped.</strong>
           <span>{{ error }}</span>
-          <button class="h-btn is-ghost retry-btn" @click="$router.push('/new')">try again →</button>
+          <button class="retry-btn" type="button" @click="$router.push('/new')">Start a new submission</button>
         </div>
       </aside>
 
-      <!-- RIGHT — live brain / stream -->
       <section class="stream">
         <header class="stream-head">
-          <span class="h-eyebrow">
-            live · {{ view === 'brain' ? 'inside the swarm' : 'agent reactions' }}
-          </span>
-          <div class="view-toggle">
-            <button
-              class="vt-btn"
-              :class="{ active: view === 'brain' }"
-              @click="view = 'brain'"
-            >brain</button>
-            <button
-              class="vt-btn"
-              :class="{ active: view === 'list' }"
-              @click="view = 'list'"
-            >list</button>
+          <h2 class="stream-title">{{ view === 'brain' ? 'Panel map' : 'Reactions as they arrive' }}</h2>
+          <div class="view-toggle" role="tablist" aria-label="View">
+            <button class="vt-btn" role="tab" :aria-selected="view === 'list'" :class="{ active: view === 'list' }" @click="view = 'list'">Log</button>
+            <button class="vt-btn" role="tab" :aria-selected="view === 'brain'" :class="{ active: view === 'brain' }" @click="view = 'brain'">Panel map</button>
           </div>
         </header>
 
@@ -85,96 +61,67 @@
             @select-agent="onSelectAgent"
           />
           <div class="brain-stats">
-            <span><b>{{ agentMap.size }}</b> agents</span>
-            <span><b>{{ thinkingCount }}</b> thinking</span>
+            <span><b>{{ agentMap.size }}</b> reviewers</span>
+            <span><b>{{ thinkingCount }}</b> reading</span>
             <span><b>{{ reactions.length }}</b> reacted</span>
           </div>
         </div>
 
         <div v-show="view === 'list'" class="list-host">
-          <div v-if="visibleReactions.length === 0" class="stream-empty">
-            <div class="empty-dot pulse"></div>
-            <span>Waiting for the first reaction…</span>
-          </div>
+          <p v-if="visibleReactions.length === 0" class="stream-empty">
+            {{ isRunning ? 'The first reactions appear here as reviewers finish reading.' : 'No reactions recorded.' }}
+          </p>
           <transition-group name="slide" tag="ol" class="stream-list scroll-zone">
             <li
               v-for="r in visibleReactions"
               :key="r.agent_id"
               class="reaction"
               :class="['tone-' + r.tone, 'action-' + r.action]"
-              @click="onSelectAgent(r.agent_id)"
             >
-              <div class="r-meta">
-                <span class="r-handle">@{{ r.name }}</span>
-                <span class="r-action">{{ actionGlyph(r.action) }} {{ r.action }}</span>
-                <span class="r-seg">{{ r.segment }}</span>
-              </div>
-              <div v-if="r.text" class="r-text">{{ r.text }}</div>
-              <div v-if="r.objections?.length" class="r-objections">
-                <span v-for="o in r.objections" :key="o" class="r-obj">{{ o }}</span>
-              </div>
+              <button type="button" class="r-open" @click="onSelectAgent(r.agent_id)">
+                <span class="r-meta">
+                  <span class="r-handle">{{ r.name }}</span>
+                  <span class="r-action">{{ actionLabel(r.action) }}</span>
+                  <span class="r-seg">{{ r.segment }}</span>
+                </span>
+                <span v-if="r.text" class="r-text">{{ r.text }}</span>
+                <span v-if="r.objections?.length" class="r-objections">Raised: {{ r.objections.join(', ') }}</span>
+              </button>
             </li>
           </transition-group>
         </div>
       </section>
     </main>
 
-    <!-- Neuron drawer -->
     <transition name="drawer">
-      <aside v-if="selected" class="neuron-drawer" @click.self="selected = null">
-        <div class="nd-card">
-          <button class="nd-close" @click="selected = null" aria-label="Close">×</button>
+      <aside v-if="selected" class="neuron-drawer" @click.self="selectedId = null">
+        <div class="nd-card" role="dialog" :aria-label="`Reviewer ${selected.name}`">
+          <button class="nd-close" type="button" aria-label="Close" @click="selectedId = null">Close</button>
           <div class="nd-head">
-            <span class="h-eyebrow">inside the neuron</span>
-            <h2 class="nd-name">@{{ selected.name }}</h2>
-            <div class="nd-meta">
-              <span class="nd-chip">{{ selected.segment }}</span>
-              <span class="nd-chip">tone · {{ selected.tone }}</span>
-              <span class="nd-chip">{{ selected.action || 'pending' }}</span>
-            </div>
+            <h2 class="nd-name">{{ selected.name }}</h2>
+            <p class="nd-meta">{{ [selected.segment, selected.tone, selected.action || 'pending'].filter(Boolean).join(' · ') }}</p>
           </div>
 
           <div class="nd-block">
-            <span class="h-eyebrow">persona</span>
-            <p class="nd-persona">{{ selectedArchetype?.persona || 'loading…' }}</p>
-            <div v-if="selectedArchetype?.objection_bias?.length" class="nd-bias">
-              <span class="h-eyebrow tiny">biases</span>
-              <div class="nd-bias-row">
-                <span v-for="b in selectedArchetype.objection_bias" :key="b" class="nd-bias-chip">{{ b }}</span>
-              </div>
-            </div>
+            <h3 class="nd-label">Persona</h3>
+            <p class="nd-persona">{{ selectedArchetype?.persona || 'Loading…' }}</p>
+            <p v-if="selectedArchetype?.objection_bias?.length" class="nd-sub">Leans toward: {{ selectedArchetype.objection_bias.join(', ') }}</p>
           </div>
 
           <div v-if="selected.state === 'reacted'" class="nd-block">
-            <span class="h-eyebrow">reaction</span>
+            <h3 class="nd-label">Reaction</h3>
             <p v-if="selected.text" class="nd-text">"{{ selected.text }}"</p>
-            <p v-else class="nd-text muted">silent · {{ selected.action }}</p>
-            <div class="nd-sent">
-              <span class="h-eyebrow tiny">sentiment</span>
-              <div class="sent-bar">
-                <div
-                  class="sent-fill"
-                  :class="{ pos: (selected.sentiment ?? 0) >= 0, neg: (selected.sentiment ?? 0) < 0 }"
-                  :style="{ width: Math.abs(selected.sentiment ?? 0) * 50 + '%', marginLeft: (selected.sentiment ?? 0) < 0 ? (50 - Math.abs(selected.sentiment) * 50) + '%' : '50%' }"
-                ></div>
-              </div>
-              <span class="sent-val">{{ (selected.sentiment ?? 0).toFixed(2) }}</span>
-            </div>
-            <div v-if="selected.objections?.length" class="nd-objs">
-              <span class="h-eyebrow tiny">objections fired</span>
-              <div class="nd-bias-row">
-                <span v-for="o in selected.objections" :key="o" class="r-obj">{{ o }}</span>
-              </div>
-            </div>
+            <p v-else class="nd-text muted">No comment · {{ selected.action }}</p>
+            <p class="nd-sub">Sentiment {{ (selected.sentiment ?? 0).toFixed(2) }} (from -1 to 1)</p>
+            <p v-if="selected.objections?.length" class="nd-sub">Raised: {{ selected.objections.join(', ') }}</p>
           </div>
-
           <div v-else-if="selected.state === 'thinking'" class="nd-block">
-            <span class="h-eyebrow">status</span>
-            <p class="nd-text"><span class="pulse-dot"></span> LLM call in flight…</p>
+            <h3 class="nd-label">Status</h3>
+            <p class="nd-text">Reading the pitch now.</p>
           </div>
           <div v-else class="nd-block">
-            <span class="h-eyebrow">status</span>
-            <p class="nd-text muted">idle · waiting for activation</p>
+            <h3 class="nd-label">Status</h3>
+            <p class="nd-text muted">Waiting to read the pitch.</p>
           </div>
           <AgentChatPanel
             v-if="status === 'completed' && selected.state === 'reacted'"
@@ -182,9 +129,7 @@
             :agent-id="selectedId"
             :agent-name="selected.name"
           />
-          <p v-else-if="selected.state === 'reacted'" class="nd-text muted">
-            chat unlocks once roast completes.
-          </p>
+          <p v-else-if="selected.state === 'reacted'" class="nd-sub">You can question this reviewer once the memo is ready.</p>
         </div>
       </aside>
     </transition>
@@ -192,7 +137,7 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, triggerRef, computed, onMounted, onBeforeUnmount } from 'vue'
+import { watch, ref, shallowRef, triggerRef, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { roastApi } from '../../api/roast'
 import BrainGraph from './BrainGraph.vue'
@@ -209,7 +154,7 @@ const parsedPitch = ref(null)
 const reactions = ref([])
 const archetypes = ref([])
 const agentMap = shallowRef(new Map()) // agent_id -> {archetype_id, segment, name, tone, state, action, sentiment, text, objections}
-const view = ref('brain')
+const view = ref('list')
 const selectedId = ref(null)
 const brainRef = ref(null)
 const error = ref('')
@@ -221,11 +166,11 @@ const progressPct = computed(() => Math.round(progress.value * 100))
 
 const STATUS_MAP = {
   pending: 'Queued',
-  parsing: 'Parsing pitch',
-  generating_archetypes: 'Designing agents',
-  running_swarm: 'Agents reacting',
-  reporting: 'Synthesizing',
-  completed: 'Done',
+  parsing: 'Reading pitch',
+  generating_archetypes: 'Assembling panel',
+  running_swarm: 'Panel reacting',
+  reporting: 'Writing memo',
+  completed: 'Memo ready',
   failed: 'Failed',
   cancelled: 'Cancelled',
 }
@@ -239,19 +184,41 @@ const statusChipClass = computed(() => {
   return 'is-accent'
 })
 
-const stageLabel = computed(() => {
-  if (status.value === 'running_swarm') return `${reactions.value.length} reactions in`
-  return statusLabel.value
+// The run as fixed, numbered stations; the current one carries live detail.
+const STATIONS = [
+  { key: 'parsing', label: 'Reading your pitch' },
+  { key: 'generating_archetypes', label: 'Assembling the panel' },
+  { key: 'running_swarm', label: 'Panel reacting' },
+  { key: 'reporting', label: 'Writing the memo' },
+]
+const lastStation = ref(0)
+const stationIndex = computed(() => {
+  if (status.value === 'completed') return STATIONS.length
+  const i = STATIONS.findIndex((st) => st.key === status.value)
+  return i === -1 ? lastStation.value : i
 })
+watch(stationIndex, (i) => { if (i < STATIONS.length) lastStation.value = i })
+function stationState(i) {
+  const failed = ['failed', 'cancelled'].includes(status.value)
+  if (i < stationIndex.value) return 'is-done'
+  if (i === stationIndex.value) return failed ? 'is-failed' : 'is-current'
+  return 'is-pending'
+}
+function stationDetail(key) {
+  if (key === 'running_swarm') return `${reactions.value.length} reactions in`
+  if (key === 'generating_archetypes') return archetypes.value.length ? `${archetypes.value.length} reviewer types` : 'Choosing reviewer types'
+  if (key === 'reporting') return 'Findings, risks and the next step'
+  return 'Finding the problem, audience and price'
+}
 
 const headline = computed(() => {
-  if (status.value === 'completed') return 'Roast complete.'
-  if (status.value === 'failed') return 'Something broke.'
-  if (status.value === 'running_swarm') return 'The swarm is talking.'
-  if (status.value === 'reporting') return 'Reading the room.'
-  if (status.value === 'generating_archetypes') return 'Casting the crowd.'
-  if (status.value === 'parsing') return 'Reading the pitch.'
-  return 'Warming up…'
+  if (status.value === 'completed') return 'Memo ready.'
+  if (['failed', 'cancelled'].includes(status.value)) return 'The review stopped.'
+  if (status.value === 'running_swarm') return 'The panel is reacting.'
+  if (status.value === 'reporting') return 'Writing the memo.'
+  if (status.value === 'generating_archetypes') return 'Assembling the panel.'
+  if (status.value === 'parsing') return 'Reading your pitch.'
+  return 'Getting ready.'
 })
 
 const visibleReactions = computed(() => {
@@ -261,8 +228,8 @@ const visibleReactions = computed(() => {
     .reverse()
 })
 
-function actionGlyph(action) {
-  return { post: '◆', comment: '✎', upvote: '↑', ignore: '·' }[action] || '·'
+function actionLabel(action) {
+  return { post: 'Posted', comment: 'Commented', upvote: 'Upvoted', ignore: 'Scrolled past' }[action] || action
 }
 
 const thinkingCount = computed(() => {
@@ -363,434 +330,123 @@ function startPolling() {
   }, 2000)
 }
 
-onMounted(startStream)
+function onKey(e) { if (e.key === 'Escape') selectedId.value = null }
+onMounted(() => {
+  startStream()
+  window.addEventListener('keydown', onKey)
+})
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKey)
   if (evtSource) evtSource.close()
   if (pollTimer) clearInterval(pollTimer)
 })
 </script>
 
 <style scoped>
-/* Hallmark · page: Watching · macrostructure: Live Document (split)
- * archetypes: N-rail-tight · S-anchored-left · F-stream-right · Ft-none
- * theme: Midnight+coral (atmospheric)
- */
+.page { color: var(--ink); background: var(--paper); display: flex; flex-direction: column; }
 
-.page { color: var(--ink); background: var(--paper); }
+.rail { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) var(--space-6); border-bottom: 1px solid var(--rule); flex-shrink: 0; }
+.brand-mark { font-size: var(--text-md); font-weight: 700; letter-spacing: -0.01em; }
+.rail-context { font-size: var(--text-sm); color: var(--ink-3); }
+.rail-right { margin-left: auto; display: flex; align-items: center; gap: var(--space-3); }
+.status { font-size: var(--text-sm); font-weight: 600; color: var(--ink-2); }
+.status.is-live { color: var(--live); }
+.status.is-warn { color: var(--warn); }
 
-/* Rail */
-.rail {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-3) var(--space-6);
-  border-bottom: 1px solid var(--rule);
-  flex-shrink: 0;
-  background: var(--paper);
-  z-index: 20;
-}
-.brand-mark {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.22em;
-}
-.brand-mark .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 14px var(--accent);
-}
-.brand-mark .dot.pulse {
-  animation: pulse-dot 1.4s var(--ease-in-out) infinite;
-}
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; box-shadow: 0 0 14px var(--accent); }
-  50% { opacity: 0.55; box-shadow: 0 0 28px var(--accent); }
-}
+.doc { flex: 1; min-height: 0; display: grid; grid-template-columns: 380px minmax(0, 1fr); }
 
-.rail-context {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.08em;
-  color: var(--ink-3);
-}
-.rail-right { margin-left: auto; }
+/* Left: the deliberation record */
+.anchor { padding: var(--space-7) var(--space-6); border-right: 1px solid var(--rule); background: var(--paper-2); overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-6); }
+.anchor-title { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(30px, 3vw, 40px); line-height: 1.1; letter-spacing: -0.015em; text-wrap: balance; }
 
-/* Document layout */
-.doc {
-  flex: 1;
+.stations { list-style: none; margin: 0; padding: 0; display: grid; }
+.station {
   display: grid;
-  grid-template-columns: 360px 1fr;
-  gap: var(--space-6);
-  max-width: var(--max-content);
-  width: 100%;
-  margin: 0 auto;
-  padding: var(--space-5) var(--space-6);
-  align-items: stretch;
-  min-height: 0;
-  overflow: hidden;
-}
-@media (max-width: 920px) { .doc { grid-template-columns: 1fr; gap: var(--space-3); padding: var(--space-4); } }
-
-/* Anchor */
-.anchor {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  overflow: hidden;
-  min-height: 0;
-}
-
-.anchor-head { margin-bottom: 0; }
-.anchor-title {
-  font-size: var(--text-3xl);
-  font-weight: 500;
-  font-variation-settings: 'opsz' 144, 'wght' 500;
-  margin: var(--space-3) 0 0;
-  color: var(--ink);
-}
-
-.progress-wrap { display: flex; flex-direction: column; gap: var(--space-3); }
-.progress-track {
-  height: 4px;
-  background: var(--paper-3);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-}
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent-bright));
-  transition: width 400ms var(--ease-out);
-}
-.progress-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.05em;
-}
-.progress-pct { color: var(--accent-bright); font-size: var(--text-sm); }
-.progress-stage { color: var(--ink-3); }
-
-.pitch-card {
-  padding: var(--space-5);
-  background: var(--paper-2);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-.pitch-line {
-  font-family: var(--font-display);
-  font-style: normal;
-  font-weight: 500;
-  font-variation-settings: 'opsz' 96, 'wght' 500;
-  font-size: var(--text-xl);
-  line-height: 1.25;
-  margin: 0;
-  color: var(--ink);
-}
-.pitch-row {
-  display: flex;
-  gap: var(--space-3);
-  align-items: baseline;
-  font-size: var(--text-sm);
-}
-.pitch-row-segments { align-items: flex-start; flex-direction: column; gap: var(--space-2); }
-.pitch-key {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  min-width: 70px;
-}
-.pitch-val { color: var(--ink-2); }
-.seg-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.seg-chip {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  padding: 3px 9px;
-  background: var(--accent-soft);
-  color: var(--accent-bright);
-  border-radius: var(--radius-pill);
-}
-
-.counter {
-  padding: var(--space-5);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-lg);
-  background: var(--paper-2);
-}
-.counter-num {
-  font-family: var(--font-display);
-  font-style: normal;
-  font-size: var(--text-3xl);
-  line-height: 1;
-  color: var(--accent-bright);
-}
-.counter-label {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin-top: var(--space-2);
-}
-
-/* Stream — fills remaining space, list scrolls */
-.stream {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-}
-.stream-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: var(--space-3);
+  grid-template-columns: 28px minmax(0, 1fr);
+  column-gap: var(--space-3);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--rule);
-  margin-bottom: var(--space-3);
-  flex-shrink: 0;
+  color: var(--ink-4);
+  transition: color var(--dur-base) var(--ease-out);
 }
-.stream-count {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--ink-3);
-}
-.stream-empty {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-7);
-  color: var(--ink-3);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-}
-.empty-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-.empty-dot.pulse { animation: pulse-dot 1.4s var(--ease-in-out) infinite; }
+.st-num { font-weight: 700; font-variant-numeric: tabular-nums; }
+.st-label { font-weight: 600; }
+.st-detail { grid-column: 2; font-size: var(--text-sm); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.station.is-done { color: var(--ink-3); }
+.station.is-done .st-label { text-decoration: line-through; text-decoration-color: var(--rule-2); }
+.station.is-current { color: var(--ink); }
+.station.is-current .st-num { color: var(--info); }
+.station.is-failed { color: var(--warn); }
 
-.stream-list {
-  list-style: none;
-  margin: 0;
-  padding: 0 var(--space-3) var(--space-3) 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  flex: 1;
-  min-height: 0;
-}
+.progress-track { height: 2px; background: var(--rule); overflow: hidden; }
+.progress-fill { height: 100%; width: 100%; background: var(--ink); transform-origin: left; transition: transform var(--dur-slow) var(--ease-out); }
 
-.reaction {
-  padding: var(--space-4) var(--space-5);
-  background: var(--paper-2);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-md);
-  border-left: 2px solid var(--ink-4);
-}
-.reaction.tone-skeptical, .reaction.tone-aggressive { border-left-color: var(--warn); }
-.reaction.tone-enthusiastic { border-left-color: var(--live); }
-.reaction.tone-curious { border-left-color: var(--info); }
-.reaction.tone-indifferent { border-left-color: var(--ink-4); opacity: 0.7; }
+.pitch-card { margin: 0; display: grid; gap: var(--space-3); }
+.pitch-card > div { display: grid; gap: 2px; }
+.pitch-card dt { font-size: var(--text-sm); color: var(--ink-3); }
+.pitch-card dd { margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
 
-.r-meta {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
-  margin-bottom: var(--space-2);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.04em;
-}
-.r-handle { color: var(--ink); font-weight: 500; }
-.r-action {
-  color: var(--ink-3);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-.r-seg { color: var(--ink-4); margin-left: auto; }
+.error-box { display: grid; gap: var(--space-2); padding: var(--space-4); background: var(--warn-soft); color: var(--ink); border-radius: var(--radius-sm); }
+.error-box strong { color: var(--warn); }
+.retry-btn { justify-self: start; font: inherit; font-weight: 600; padding: 8px 14px; border: 0; border-radius: var(--radius-sm); background: var(--ink); color: var(--paper); cursor: pointer; }
+.retry-btn:hover { background: var(--ink-2); }
 
-.r-text {
-  font-family: var(--font-body);
-  font-size: var(--text-md);
-  line-height: 1.6;
-  color: var(--ink);
-  margin-bottom: var(--space-3);
-}
-.r-objections { display: flex; flex-wrap: wrap; gap: 6px; }
-.r-obj {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  padding: 2px 8px;
-  background: var(--warn-soft);
-  color: var(--warn);
-  border-radius: var(--radius-sm);
-  text-transform: lowercase;
-  letter-spacing: 0.04em;
-}
+/* Right: reactions */
+.stream { min-height: 0; display: flex; flex-direction: column; }
+.stream-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) var(--space-6) var(--space-3); border-bottom: 1px solid var(--rule); }
+.stream-title { margin: 0; font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.01em; }
+.view-toggle { display: inline-flex; border: 1px solid var(--rule-2); border-radius: var(--radius-sm); padding: 2px; gap: 2px; }
+.vt-btn { font: inherit; font-size: var(--text-sm); font-weight: 600; padding: 4px 12px; border: 0; border-radius: 3px; background: transparent; color: var(--ink-2); cursor: pointer; }
+.vt-btn:hover:not(.active) { background: var(--paper-3); }
+.vt-btn.active { background: var(--ink); color: var(--paper); }
 
-.error-box {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-5);
-  background: var(--warn-soft);
-  border: 1px solid color-mix(in oklch, var(--warn) 60%, transparent);
-  border-radius: var(--radius-lg);
-  color: var(--warn);
-}
-.error-box strong { color: var(--ink); font-family: var(--font-display); font-style: normal; font-size: var(--text-lg); }
-.retry-btn { align-self: flex-start; }
+.list-host, .brain-host { flex: 1; min-height: 0; position: relative; }
+.stream-empty { margin: 0; padding: var(--space-7) var(--space-6); color: var(--ink-3); max-width: 52ch; }
+.stream-list { list-style: none; margin: 0; padding: 0 var(--space-6); height: 100%; overflow-y: auto; }
+.reaction { border-bottom: 1px solid var(--rule); }
+.r-open { display: grid; gap: var(--space-1); width: 100%; text-align: left; font: inherit; color: inherit; background: none; border: 0; padding: var(--space-4) 0; cursor: pointer; }
+.r-open:hover .r-handle { text-decoration: underline; text-underline-offset: 3px; }
+.r-meta { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); font-size: var(--text-sm); color: var(--ink-3); }
+.r-handle { font-weight: 600; color: var(--ink); }
+.r-text { font-family: var(--font-display); font-size: var(--text-md); line-height: 1.5; color: var(--ink-2); max-width: 70ch; }
+.r-objections { font-size: var(--text-sm); color: var(--warn); }
+.tone-enthusiastic .r-action { color: var(--live); }
+.tone-skeptical .r-action, .tone-aggressive .r-action { color: var(--warn); }
 
-/* slide-in for new reactions */
-.slide-enter-active { transition: transform var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out); }
-.slide-enter-from { opacity: 0; transform: translateX(8px); }
+.slide-enter-active { transition: opacity 320ms var(--ease-out), transform 320ms var(--ease-out); }
+.slide-enter-from { opacity: 0; transform: translateY(-6px); }
 
-/* view toggle */
-.view-toggle {
-  display: inline-flex;
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  padding: 2px;
-  gap: 2px;
-}
-.vt-btn {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--ink-soft, rgba(255,255,255,0.55));
-  border: 0;
-  cursor: pointer;
-  transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
-}
-.vt-btn.active {
-  background: var(--accent);
-  color: var(--paper);
-}
+.brain-stats { position: absolute; right: var(--space-6); bottom: var(--space-4); display: flex; gap: var(--space-5); font-size: var(--text-sm); color: var(--ink-3); background: oklch(100% 0 0 / 0.9); padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); }
+.brain-stats b { color: var(--ink); font-variant-numeric: tabular-nums; }
 
-/* brain host */
-.brain-host {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-.brain-host > :first-child { flex: 1; min-height: 0; }
-.brain-stats {
-  display: flex;
-  gap: var(--space-5);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--ink-soft, rgba(255,255,255,0.55));
-  letter-spacing: 0.08em;
-  padding: 0 var(--space-2);
-}
-.brain-stats b { color: var(--ink); font-weight: 700; margin-right: 4px; }
-.list-host { height: 100%; min-height: 0; display: flex; flex-direction: column; }
-
-/* neuron drawer */
-.neuron-drawer {
-  position: fixed;
-  inset: 0;
-  background: rgba(7, 7, 15, 0.55);
-  backdrop-filter: blur(4px);
-  z-index: 80;
-  display: flex;
-  justify-content: flex-end;
-}
-.nd-card {
-  width: min(440px, 92vw);
-  height: 100%;
-  background: var(--paper);
-  border-left: 1px solid var(--rule);
-  padding: var(--space-6);
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  position: relative;
-}
-.nd-close {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-4);
-  background: transparent;
-  border: 0;
-  font-size: 28px;
-  line-height: 1;
-  color: var(--ink-soft, rgba(255,255,255,0.55));
-  cursor: pointer;
-}
-.nd-close:hover { color: var(--ink); }
-.nd-head { display: flex; flex-direction: column; gap: var(--space-2); }
-.nd-name { font-family: var(--font-display); font-style: normal; font-size: var(--text-2xl); margin: 0; }
-.nd-meta { display: flex; gap: 6px; flex-wrap: wrap; }
-.nd-chip {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--rule);
-  color: var(--ink-soft, rgba(255,255,255,0.6));
-}
-.nd-block { display: flex; flex-direction: column; gap: var(--space-2); }
-.h-eyebrow.tiny { font-size: 9px; }
-.nd-persona { font-size: var(--text-sm); color: var(--ink); line-height: 1.5; margin: 0; }
-.nd-text { font-size: var(--text-sm); color: var(--ink); line-height: 1.5; margin: 0; }
-.nd-text.muted { color: var(--ink-soft, rgba(255,255,255,0.5)); font-style: italic; }
-.nd-bias-row { display: flex; flex-wrap: wrap; gap: 4px; }
-.nd-bias-chip {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: color-mix(in oklch, var(--accent) 12%, transparent);
-  color: var(--accent);
-}
-.nd-sent { display: flex; flex-direction: column; gap: 4px; }
-.sent-bar { height: 6px; background: rgba(255,255,255,0.06); border-radius: 999px; position: relative; overflow: hidden; }
-.sent-fill { height: 100%; border-radius: 999px; }
-.sent-fill.pos { background: #3ddc97; }
-.sent-fill.neg { background: #ff5470; }
-.sent-val { font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft, rgba(255,255,255,0.55)); }
-.pulse-dot {
-  display: inline-block;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #ffd166;
-  margin-right: 6px;
-  box-shadow: 0 0 8px #ffd166;
-  animation: pulse 1s ease-in-out infinite;
-}
-@keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
-
-.drawer-enter-active, .drawer-leave-active { transition: opacity var(--dur-base) var(--ease-out); }
-.drawer-enter-active .nd-card, .drawer-leave-active .nd-card { transition: transform var(--dur-base) var(--ease-out); }
+/* Reviewer drawer */
+.neuron-drawer { position: fixed; inset: 0; z-index: 40; background: oklch(20% 0.01 250 / 0.25); display: flex; justify-content: flex-end; }
+.nd-card { width: min(440px, 100%); height: 100%; overflow-y: auto; background: var(--paper); border-left: 1px solid var(--rule); box-shadow: -18px 0 48px -32px oklch(20% 0.02 250 / 0.5); padding: var(--space-6); display: grid; align-content: start; gap: var(--space-5); position: relative; }
+.nd-close { justify-self: end; font: inherit; font-size: var(--text-sm); color: var(--ink-2); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.nd-name { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: var(--text-2xl); overflow-wrap: anywhere; }
+.nd-meta { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--ink-3); }
+.nd-block { display: grid; gap: var(--space-2); padding-top: var(--space-4); border-top: 1px solid var(--rule); }
+.nd-label { margin: 0; font-size: var(--text-sm); font-weight: 700; }
+.nd-persona, .nd-text { margin: 0; line-height: 1.55; color: var(--ink-2); }
+.nd-text { font-family: var(--font-display); font-size: var(--text-md); }
+.nd-sub { margin: 0; font-size: var(--text-sm); color: var(--ink-3); }
+.muted { color: var(--ink-3); }
+.drawer-enter-active, .drawer-leave-active { transition: opacity 220ms var(--ease-out); }
+.drawer-enter-active .nd-card, .drawer-leave-active .nd-card { transition: transform 260ms var(--ease-out); }
 .drawer-enter-from, .drawer-leave-to { opacity: 0; }
-.drawer-enter-from .nd-card, .drawer-leave-to .nd-card { transform: translateX(100%); }
+.drawer-enter-from .nd-card, .drawer-leave-to .nd-card { transform: translateX(24px); }
 
-/* reaction list clickable */
-.reaction { cursor: pointer; }
-.reaction:hover { background: color-mix(in oklch, var(--ink) 4%, transparent); }
+@media (max-width: 1024px) {
+  .doc { grid-template-columns: 300px minmax(0, 1fr); }
+}
+@media (max-width: 767px) {
+  .page.page-fixed { height: auto; min-height: 100vh; overflow: auto; }
+  .rail { padding: var(--space-3) var(--space-4); flex-wrap: wrap; }
+  .rail-context { display: none; }
+  .doc { grid-template-columns: minmax(0, 1fr); }
+  .anchor { border-right: 0; border-bottom: 1px solid var(--rule); padding: var(--space-6) var(--space-4); overflow: visible; }
+  .stream-head { padding: var(--space-4); }
+  .stream-list { padding: 0 var(--space-4); height: auto; overflow: visible; }
+  .brain-host { min-height: 420px; }
+}
 </style>

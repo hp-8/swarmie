@@ -16,7 +16,7 @@ export const VERDICT_META = {
   ship_it: { label: 'ship it', cls: 'is-ship' },
   sharpen_positioning: { label: 'sharpen', cls: 'is-sharpen' },
   wrong_audience: { label: 'wrong audience', cls: 'is-wrong' },
-  kill: { label: 'kill', cls: 'is-kill' },
+  kill: { label: 'rethink the core', cls: 'is-kill' },  // key stays 'kill' (API/PMF/eval)
   // investor swarm
   fundable: { label: 'fundable', cls: 'is-ship' },
   sharpen_story: { label: 'sharpen story', cls: 'is-sharpen' },
@@ -26,6 +26,27 @@ export const VERDICT_META = {
   go: { label: 'go', cls: 'is-ship' },
   sharpen: { label: 'sharpen', cls: 'is-sharpen' },
   hold: { label: 'hold', cls: 'is-wrong' },
+}
+
+// Memo phrasing for a recommendation line (sentence, with full stop).
+const REC_PHRASE = {
+  ship_it: 'Ship it.',
+  sharpen_positioning: 'Sharpen the positioning.',
+  wrong_audience: 'Wrong audience.',
+  kill: 'Rethink the core.',
+  fundable: 'Fundable.',
+  sharpen_story: 'Sharpen the story.',
+  wrong_stage: 'Wrong stage.',
+  not_fundable: 'Not fundable yet.',
+  go: 'Go.',
+  sharpen: 'Sharpen before launch.',
+  hold: 'Hold the launch.',
+}
+export function recPhrase(v) {
+  if (!v) return ''
+  if (REC_PHRASE[v]) return REC_PHRASE[v]
+  const label = verdictMeta(v).label
+  return label.charAt(0).toUpperCase() + label.slice(1) + '.'
 }
 
 export function verdictMeta(v) {

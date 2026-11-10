@@ -6,23 +6,29 @@ register: brand   <!-- marketing surfaces (Home) = brand; app screens (PitchInpu
 Pre-launch founders, indie hackers, and PMs validating positioning before they spend on user interviews. Technical enough to read a cost estimate; impatient with hype. They arrive skeptical ("isn't this just asking ChatGPT?") and convert when they see the *decision* the tool hands back, not a vanity score.
 
 ## Product purpose
-Paste a pitch → a swarm of 100–500 AI personas react like a Reddit/HN/PH thread → the founder gets a **decision brief**: a verdict (ship / sharpen / wrong-audience / kill), the top objections each with an exact interview question + kill-criteria + fix, why the silent majority scrolled past, and per-segment fit. A pre-interview filter — kill bad positionings before they cost a real conversation.
+Paste a pitch → a panel of 100–500 synthetic reviewers reacts like a Reddit/HN/PH thread → the founder gets a **decision memo**: a recommendation (ship it / sharpen positioning / wrong audience / rethink the core) with confidence, what's working, hidden risks the founder likely hasn't considered (each with why it's easy to miss and a cheap test), the objections each with an exact interview question + kill criteria + fix, a path forward, why the silent majority scrolled past, and per-segment fit. A pre-interview filter: find the problems you can't see before they cost real conversations or code.
 
 ## Brand / tone
-Blunt, honest, anti-hype. "Doesn't lie nicely." Technical but warm. The honesty is the brand: it openly discloses the agents are synthetic, not real users. Atmospheric, late-night, tactile — a tool you run at 1am to find the objection you're avoiding.
+**Honest advisor.** The voice of a trusted partner writing the memo before the Monday meeting: plain, exact, anti-hype. Names problems in proportion to the evidence, never flatters a weak idea, never catastrophizes a fixable one, and always leaves a realistic next step. Founders use it for real decisions, not a dopamine hit, so it must never demotivate for effect. The honesty is the brand: it openly discloses the reviewers are synthetic, not real users.
+
+Copy: "convene the panel", "decision memo", "recommendation", "finding". Avoid "roast", "kill", "brutal" in the interface; the product name and URLs may keep legacy wording.
 
 ## Anti-references (do NOT look like these)
 - Generic SaaS-cream landing with icon-card triples
 - Purple/blue "AI" gradients, neon-on-black crypto, navy-and-gold fintech
 - Hype copy: unleash, revolutionize, next-gen, seamless, transformative
 - The hero-metric template (big number + small label + gradient)
-- Note: the editorial-magazine lane (display-italic + mono labels + ruled separators) is saturated in 2026 — BUT Swarmie's midnight+coral atmospheric identity is already committed; preserve it, push it toward atmosphere, don't swap lanes.
+- The previous midnight+coral glow look (near-black, one warm accent, italic display serif, tracked mono labels): retired 2026-11-10 as a generic AI-tool default.
+- Editorial-magazine cliche (display-italic + tracked mono eyebrows + ruled separators) and paperwork for its own sake.
 
 ## Strategic principles
 - **Honesty over hype.** Always disclose synthetic agents. Trust is the moat.
-- **Conversion = "run a roast."** Every marketing surface drives one action: paste a pitch and run it. Show the aha (the decision brief) as proof before asking.
+- **Conversion = "convene the panel."** Every marketing surface drives one action: submit a pitch and run it. Show the aha (a real sample memo) as proof before asking.
 - **Cost-aware.** $0 on local Ollama, capped on hosted — say so, it's real.
-- **The swarm is the unfair asset.** The living brain-graph visual is unique; lead with it, don't bury it.
+- **The decision is the product; the swarm is the evidence.** Lead with the memo's findings. The crowd (all reactions, traceable) backs them up as exhibits.
+
+## Visual direction (2026-11-10)
+**Investment committee memo**, built as a precision instrument: white bond-paper ground, near-black ink, slate secondary, red reserved for risk flags. Numbered findings, exhibits, margin flags. Density of real findings and exact numbers, not formality. Craft bar: Co-Star (stark, blunt), Boardy (calm, human), Monday.com (scannable clarity).
 
 ## Positioning (anti-wrapper)
 Never sell prediction; it can't simulate a real market and would just be a wrapper.

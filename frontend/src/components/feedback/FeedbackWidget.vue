@@ -44,14 +44,14 @@
               :class="{ active: helpful === true }"
               aria-label="Yes, it helped"
               @click="selectHelpful(true)"
-            >👍</button>
+            >Yes</button>
             <button
               type="button"
               class="fw-vote-btn"
               :class="{ active: helpful === false }"
               aria-label="No, it didn't help"
               @click="selectHelpful(false)"
-            >👎</button>
+            >No</button>
           </div>
 
           <!-- step 2: optional detail — expands after vote -->
@@ -210,10 +210,8 @@ onUnmounted(() => { cleanup() })
   border: 1px solid var(--rule, rgba(255, 255, 255, 0.12));
   border-radius: var(--radius-pill, 999px);
   padding: 6px 14px 6px 10px;
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-3, rgba(255, 255, 255, 0.5));
   cursor: pointer;
   backdrop-filter: blur(8px);
@@ -357,10 +355,8 @@ onUnmounted(() => { cleanup() })
   border: 0;
   border-radius: var(--radius-pill, 999px);
   padding: 6px 18px;
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: #fff;
   cursor: pointer;
   transition: opacity 140ms ease-out;

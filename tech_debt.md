@@ -1,6 +1,6 @@
-# Tech Debt Register — MiroFish / Swarmie
+# Tech Debt Register — Swarmie
 
-_Last evaluated: 2026-06-02. Owner: eng. Scored P0 (product/safety risk) → P2 (hygiene)._
+_Last evaluated: 2026-11-10. Owner: eng. Scored P0 (product/safety risk) → P2 (hygiene)._
 
 Swarmie is the live product: a slim async-LLM swarm for founder validation
 (`backend/app/api/roast.py` + `services/swarm/*`, Vue/Vite SPA frontend). The
@@ -8,100 +8,86 @@ legacy MiroFish OASIS/Zep deep-sim engine has been fully removed.
 
 ---
 
-## Resolved (refactor pass, 2026-06-02)
+## Open debt
 
-- **Legacy deep-sim removed** — frontend ~16k LOC (bundle 903→696 kB) + backend
-  ~20k LOC + OASIS/Zep/camel deps. Commits `64bf85e`, `3e823dd`, `9303765`.
-- **Result.vue** reaction-cell dedup (objections/quotes 3→1; fixed deck glyph bug). `4db412c`
-- **PitchInput.vue** SWARMS catalogue → `lib/swarms.js`; DeckDropzone extracted. `9832968`, `5e1f1c2`
+### P0 — launch blockers
+_None open._
+
+### P1 — quality / reliability
+1. **No error tracking / tracing** — only logging. No Sentry-equivalent, no request IDs.
+2. **Untested core/API complexity hotspots** (radon): `roast.create_roast` C(20),
+   `swarm_runner.run` C(18), `roast.chat_agent` C(17), `roast._run_pipeline` C(16).
+   Need characterization tests BEFORE any refactor.
+3. **`llm._call_with_retry` C(12) / `_acall_with_retry` C(11)** — sync/async retry
+   duplication; dedupe behind shared core (untested → test first).
+4. **Backend coverage gate stale** — gate 40%, actual 62%. Ratchet to ~60.
+
+5a. **No load test.** Capacity numbers (4 roasts, 32 threads) are reasoned, not measured.
+   Run Locust against a staging deploy (gunicorn doesn't run on Windows).
+5b. **Render free plan sleeps/restarts** → cold starts; deploys kill in-flight roasts.
+   Accepted for now (2026-11-10).
+
+5c. **Advisor brief not yet measured live.** Prompt rework (what_working / hidden_risks /
+   path_forward, calibrated tone) is in; baseline-vs-new eval run pending an LLM key.
+   Judge uses the same model tier it grades (self-preference bias) — use a different
+   model for the judge when possible. Golden set 12 cases; grow to ~20.
+5d. **PDF export omits the advisor brief** (`lib/pdf/template.js`). Share card fine.
+
+### P2 — hygiene / scale-later
+5. **Rate limiter is in-memory** — correct only while Render runs 1 gunicorn worker.
+   Scaling out → switch `storage_uri` to `REDIS_URL`.
+6. **Mixed-language comments** (Chinese) linger in some live files (e.g. config).
+7. **`requirements.txt` vs `requirements-prod.txt`** near-identical post-legacy.
+   Collapse to one source (check `render.yaml` build cmd first).
+8. **No TS linting** — `HeroSwarm.vue` (`<script lang="ts">`) excluded from ESLint;
+   needs typescript-eslint + tsconfig. Revisit only if the app adopts TS more broadly.
+9. **Dev-only audit lows/moderates** (lhci/uuid) — fix downgrades lhci (breaking). Skipped.
+
+### Product-design decisions (not bugs)
+- `_compute_sentiment_split` excludes upvotes — metric is "sentiment of those who
+  spoke"; PMF credits upvotes via engagement. Changing = redefining metric + UI.
+- Confidence ceiling (<15 → low) — deliberate guardrail (`test_roast_reporter.py`).
 
 ---
 
-## Open debt
-
-### P0 — product risk / no safety net
-1. **No LLM output-quality eval.** The core product (roast verdict/objection
-   quality) is unmeasured. Prompt changes can silently regress. No golden set,
-   no consistency check, no LLM-as-judge. → build eval harness (seed:
-   `test-pitches.local.txt`). _Highest priority — can't claim the product is good without it._
-2. **Frontend: zero automated tests.** UI just refactored (3 new components +
-   Result/PitchInput) with no net. → Vitest + Vue Testing Library.
-3. **CORS = `*`** on `/api/*` (`backend/app/__init__.py`). Lock to the prod
-   origin before any public launch. + no rate limiting on `/api/roast`.
-
-### P1 — quality / performance
-4. ~~**Frontend bundle is one 696 kB chunk.**~~ ✅ DONE 2026-06-02 — lazy routes +
-   `manualChunks` + dynamic `import('jspdf')` on PDF click. Entry chunk 696 → **21.9 kB**
-   (gzip 8.2 kB); PDF (589 kB) now loads only on download.
-5. ~~**No CI quality gates.**~~ ✅ DONE 2026-06-04 — `ci.yml` now **blocks** on ruff
-   (backend), eslint (frontend), and prod-dep `npm audit` (high+), in addition to
-   pytest/vitest/build. radon stays informational. Added concurrency-cancel + uv
-   cache. Branch protection ON (both jobs required, strict; admin-bypass so
-   direct-to-main still works). Still open: coverage gate.
-13. **`roast_reporter` — eval-surfaced findings, triaged:**
-    - ✅ FIXED (`_compute_pmf_score`): segment_fit was size-blind (1-agent segment =
-      20-agent). Now size-weighted by agent count.
-    - NOT A BUG (`_compute_sentiment_split` excludes upvotes): the metric is labeled
-      "sentiment of those who spoke" in the UI — upvoters didn't speak. PMF credits
-      upvotes separately via engagement. Honest scope; changing it = redefining the
-      metric + UI. Revisit only as a product-design choice.
-    - NOT A BUG (confidence ceiling <15 → low): deliberate, tested guardrail
-      (`test_roast_reporter.py:257`). Conservative-on-thin-data is correct for a
-      validation tool; loosening overstates certainty. Leave.
-6. **Backend complexity hotspots** (radon, 2026-06-02; MI all A so localized, not rot):
-   - `roast_reporter._synthesize` — **CC D(24)**, returns a positional 9-tuple
-     (unpack footgun). TESTED → extract `SynthesisResult` dataclass. _Safe, do next._
-   - `roast.create_roast` C(20), `swarm_runner.run` C(18), `roast.chat_agent`
-     C(17), `roast._run_pipeline` C(16) — untested core/API; need
-     characterization tests BEFORE any refactor.
-   - `llm._call_with_retry` C(12) / `_acall_with_retry` C(11) — sync/async retry
-     duplication; dedupe behind shared core (untested → test first).
-7. ~~**No coverage gate.**~~ ✅ DONE 2026-06-04. Backend: `pytest-cov` + ratchet
-   `--cov-fail-under=40` (currently 43%, drag = untested API/llm/swarm_runner).
-   Frontend: vitest v8 thresholds (stmts 65 / lines 68 / branches 55 / funcs 50)
-   over the unit-tested surface (Result.vue excluded — unmountable, helpers
-   mirror-tested; currently ~73-77%). Both wired into CI + ci-local.
-
-### P2 — hygiene
-8. **Mixed-language comments** (Chinese) linger in some live files (e.g. config).
-   Inconsistent for an English-first codebase.
-9. **`requirements.txt` vs `requirements-prod.txt`** now near-identical post-legacy.
-   Collapse to one source (check `render.yaml` build cmd first).
-10. ~~`utils/retry.py` appears unused.~~ FALSE ALARM — it's imported by `utils/llm.py`
-    (earlier grep was mangled). Not dead; keep.
-11. **No error tracking / tracing** — only logging. No Sentry-equivalent, no request IDs.
-12. **Frontend ESLint** added (flat config, vue/essential + error-prevention).
-    Blocking in CI. One gap: `HeroSwarm.vue` (`<script lang="ts">`) is excluded —
-    proper TS linting needs typescript-eslint + tsconfig; revisit if the app
-    adopts TS more broadly. Frontend is still plain JS, no type checking.
-14. ~~**Dependency vulnerabilities.**~~ ✅ `npm audit fix` cleared the Vite highs;
-    prod-dep audit is now 0 high and gated in CI. Remaining lows/moderates are
-    dev-tool only (lhci/uuid) — fixing them downgrades lhci (breaking), skipped.
+## Resolved
+- **2026-06-02** Legacy deep-sim removed — frontend ~16k LOC + backend ~20k LOC +
+  OASIS/Zep/camel deps (`64bf85e`, `3e823dd`, `9303765`).
+- **2026-06-02** Result.vue reaction-cell dedup (`4db412c`); PitchInput SWARMS →
+  `lib/swarms.js`, DeckDropzone extracted (`9832968`, `5e1f1c2`).
+- **2026-06-02** LLM eval harness — `backend/eval/`, 6 golden cases, synth/full/judge modes.
+- **2026-06-02** Frontend Vitest (86 tests).
+- **2026-06-02** Bundle code-split — entry 696 → 21.9 kB (gzip 8.2); jsPDF lazy on click.
+- **2026-06-02** `_synthesize` → `SynthesisResult` dataclass + `_parse_synthesis`;
+  D(24)→C(11), killed positional 9-tuple.
+- **2026-06-02** `_compute_pmf_score` segment_fit now size-weighted by agent count.
+- **2026-06-04** CI gates blocking: ruff, eslint, prod-dep `npm audit` (high+),
+  pytest, vitest, build. Branch protection on. radon informational.
+- **2026-06-04** Coverage gates — backend `--cov-fail-under=40`; frontend vitest v8
+  thresholds (stmts 65 / lines 68 / branches 55 / funcs 50, Result.vue excluded).
+- **2026-06-04** Vite high-severity vulns cleared (`npm audit fix`).
+- CORS allowlist (`CORS_ORIGINS`) + per-IP limits on roast create (5/h) and chat (30/h) — `a7113b3`.
+- **2026-11-10** `ProxyFix` (`TRUSTED_PROXY_HOPS`, default 1): limiter previously keyed on
+  Render's proxy IP → all users shared one 5/h bucket.
+- **2026-11-10** Global roast cap (`MAX_CONCURRENT_ROASTS`, default 4) → 503 + body
+  `retry_after_seconds` when full, not counted against the per-IP quota. gunicorn
+  threads 8 → 32 (each live SSE stream pins a thread; 8 viewers used to stall the app).
 
 ---
 
 ## Local pre-push check
-Run `./ci-local.sh` from repo root before every push — mirrors `ci.yml`
-(hard gates: backend pytest, frontend vitest + build; informational:
-ruff/radon/npm-audit). Only push when it prints the pass line.
+Run `./ci-local.sh` from repo root before every push — should mirror `ci.yml`
+(blocking: ruff, eslint, prod `npm audit`, pytest + coverage, vitest + coverage,
+build; informational: radon). Only push when it prints the pass line.
 
 ---
 
-## Baseline metrics (updated 2026-06-02, post-tooling)
+## Baseline metrics (backend 2026-11-10; frontend/Lighthouse 2026-06-04)
 | | Before | Now |
 |---|---|---|
-| Backend tests | 32 | **63** (+31 eval smoke) |
-| Frontend tests | 0 | **86** (Vitest) |
-| Frontend entry chunk | 696 kB | **21.9 kB** (gzip 8.2) |
+| Backend tests | 32 | 242 passed, 10 skipped |
+| Backend coverage | — | 62% (gate 40) |
+| Frontend tests | 0 | 86 (Vitest) |
+| Frontend entry chunk | 696 kB | 21.9 kB (gzip 8.2) |
 | Lighthouse (Home) | — | Perf 81 · A11y/BP/SEO 100 |
-| Backend LOC (app) | ~4.2k, MI all A (27–39) | — |
-| Worst CC | `_synthesize` D(24) | — (unchanged) |
-
-## In-flight (this session)
-- [x] P0-1 LLM eval harness — `backend/eval/`, 6 golden cases, synth/full/judge modes
-- [x] P0-2 frontend Vitest — 86 tests
-- [x] P1-4 Lighthouse + bundle code-split
-- [x] P1-5 CI quality gates — `.github/workflows/ci.yml` (backend pytest + frontend vitest/build hard-gated; ruff/radon/audit/lighthouse informational)
-- [x] P1-6 `_synthesize` → `SynthesisResult` dataclass + `_parse_synthesis` extract.
-      D(24)→C(11); killed the positional 9-tuple return (2 call sites).
-- [ ] P1-13 fix the 3 roast_reporter logic bugs (eval surfaced them; verify w/ harness)
+| Worst CC | `_synthesize` D(24) | `create_roast` C(20) |

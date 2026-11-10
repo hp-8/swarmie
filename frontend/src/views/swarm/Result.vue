@@ -3,26 +3,26 @@
     <header class="rail">
       <router-link to="/" class="brand-mark">
         <span class="dot"></span>
-        <span class="brand-text">SWARMIE</span>
+        <span class="brand-text">Swarmie</span>
       </router-link>
-      <span class="rail-context">/ result · {{ jobShort }}</span>
+      <span class="rail-context">Decision memo · {{ jobShort }}</span>
       <div class="rail-right">
         <div class="rail-tabs">
-          <button class="rail-tab" :class="{ active: tab === 'report' }" @click="tab = 'report'">report</button>
-          <button class="rail-tab" :class="{ active: tab === 'brain' }" @click="tab = 'brain'">brain</button>
+          <button class="rail-tab" :class="{ active: tab === 'report' }" @click="tab = 'report'">Memo</button>
+          <button class="rail-tab" :class="{ active: tab === 'brain' }" @click="tab = 'brain'">Panel map</button>
         </div>
         <button class="rail-action" @click="copyShareUrl">
-          {{ copied ? '✓ copied' : 'copy link' }}
+          {{ copied ? 'Link copied' : 'Copy link' }}
         </button>
         <button class="rail-action" @click="shareCard" :disabled="sharingCard || !report">
           <span v-if="sharingCard">rendering…</span>
-          <span v-else>↑ share card</span>
+          <span v-else>Share card</span>
         </button>
         <button class="rail-action rail-pdf" @click="downloadPdf" :disabled="downloading || !report">
           <span v-if="downloading">building…</span>
-          <span v-else>↓ download PDF</span>
+          <span v-else>Download PDF</span>
         </button>
-        <router-link to="/new" class="rail-action accent">new roast →</router-link>
+        <router-link to="/new" class="rail-action accent">New memo</router-link>
       </div>
     </header>
 
@@ -123,6 +123,8 @@
           <p class="next-move-text">{{ deckDiagnosis.next_move }}</p>
         </div>
       </section>
+
+      <AdvisorBrief :report="report" />
 
       <!-- Slide scorecard -->
       <section class="strip strip-diag-main">
@@ -262,6 +264,8 @@
           </div>
         </div>
       </section>
+
+      <AdvisorBrief :report="report" />
 
       <!-- Row 2: questions + confusion + risks -->
       <section class="strip strip-launch-qcr">
@@ -418,130 +422,15 @@
       </section>
     </main>
 
-    <main v-else-if="report" class="dash">
-      <!-- ROW 1 — Hero strip: score + headline + sentiment bar -->
-      <section class="strip strip-hero">
-        <div class="cell cell-verdict">
-          <span class="h-eyebrow">verdict <AiDisclosure aria-label="About this verdict" /></span>
-          <template v-if="report.verdict">
-            <div class="verdict-chip" :class="verdictMeta(report.verdict).cls">{{ verdictMeta(report.verdict).label }}</div>
-            <div class="verdict-meta" :title="report.confidence_reason || ''">confidence {{ report.confidence || '—' }} · signal {{ scoreDisplayed.toFixed(1) }}/10</div>
-          </template>
-          <template v-else>
-            <div class="score-num" :style="{ color: scoreColor(report.pmf_score) }">{{ scoreDisplayed.toFixed(1) }}</div>
-            <div class="score-band" :style="{ color: scoreColor(report.pmf_score) }">{{ scoreBand(report.pmf_score) }}</div>
-          </template>
-        </div>
-        <div class="cell cell-next">
-          <span class="h-eyebrow">{{ report.next_action ? 'do this next' : 'headline' }}</span>
-          <h1 v-if="report.next_action" class="next-action h-display">{{ report.next_action }}</h1>
-          <h1 v-else class="score-headline h-display">{{ report.headline }}</h1>
-          <p v-if="report.verdict_reason" class="verdict-reason">{{ report.verdict_reason }}</p>
-          <p v-else-if="report.next_action && report.headline" class="verdict-reason">{{ report.headline }}</p>
-          <p v-if="parsedPitch" class="score-target">
-            <span class="target-key">target:</span>
-            <span class="target-val">{{ parsedPitch.target_icp }}</span>
-          </p>
-          <SharpenPanel :report="report" :parsed-pitch="parsedPitch" />
-        </div>
-        <div class="cell cell-sentiment">
-          <span class="h-eyebrow">sentiment of those who spoke</span>
-          <div class="sent-bar">
-            <div class="sent-seg pos" :style="{ flex: report.sentiment_split.positive }">
-              <span v-if="report.sentiment_split.positive >= 8">{{ report.sentiment_split.positive }}%</span>
-            </div>
-            <div class="sent-seg neu" :style="{ flex: report.sentiment_split.neutral }">
-              <span v-if="report.sentiment_split.neutral >= 8">{{ report.sentiment_split.neutral }}%</span>
-            </div>
-            <div class="sent-seg neg" :style="{ flex: report.sentiment_split.negative }">
-              <span v-if="report.sentiment_split.negative >= 8">{{ report.sentiment_split.negative }}%</span>
-            </div>
-          </div>
-          <div class="sent-key">
-            <span><i class="dot pos"></i>positive</span>
-            <span><i class="dot neu"></i>neutral</span>
-            <span><i class="dot neg"></i>negative</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Detail tabs — supporting panes, one at a time -->
-      <nav class="detail-tabs" role="tablist" aria-label="Report detail">
-        <button
-          v-for="t in detailTabs"
-          :key="t.id"
-          type="button"
-          class="detail-tab"
-          :class="{ active: detailTab === t.id }"
-          role="tab"
-          :aria-selected="detailTab === t.id"
-          @click="detailTab = t.id"
-        >
-          {{ t.label }}<span v-if="t.count != null" class="detail-tab-count">{{ t.count }}</span>
-        </button>
-      </nav>
-
-      <!-- Active pane — full width, one scroll, room to breathe -->
-      <section class="detail-pane">
-        <!-- Objections (self-scrolling list) -->
-        <div v-show="detailTab === 'objections'" class="pane" role="tabpanel">
-          <ObjectionList :objections="report.top_objections" :copy="copy" :job-id="jobId" />
-        </div>
-
-        <!-- Synthesis -->
-        <div v-show="detailTab === 'synthesis'" class="pane pane-padded scroll-zone" role="tabpanel">
-          <p class="narrative-body">{{ report.narrative }}</p>
-          <div v-if="report.messaging_gaps?.length" class="fixes">
-            <span class="h-eyebrow">fixes to try</span>
-            <ul class="fix-list">
-              <li v-for="g in report.messaging_gaps" :key="g">{{ g }}</li>
-            </ul>
-          </div>
-          <div v-if="report.ignore_reasons?.length" class="silence">
-            <span class="h-eyebrow">{{ copy.silence(report.silent_share_pct) }}</span>
-            <ul class="silence-list">
-              <li v-for="ir in report.ignore_reasons" :key="ir.category" class="silence-row">
-                <div class="silence-head">
-                  <span class="silence-label">{{ ir.label }}</span>
-                  <span class="silence-share">{{ ir.share_pct }}%</span>
-                </div>
-                <p v-if="ir.example" class="silence-ex">"{{ ir.example }}"</p>
-                <p v-if="ir.implication" class="silence-imp">{{ ir.implication }}</p>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Voices (self-scrolling list) -->
-        <div v-show="detailTab === 'voices'" class="pane" role="tabpanel">
-          <QuotesList :quotes="report.quoted_reactions" />
-        </div>
-
-        <!-- Segments -->
-        <div v-show="detailTab === 'segments'" class="pane pane-padded scroll-zone" role="tabpanel">
-          <div class="segment-tags">
-            <span v-for="name in segmentNames" :key="name" class="segment-tag">{{ name }}</span>
-          </div>
-        </div>
-
-        <!-- Run cost -->
-        <div v-show="detailTab === 'cost'" class="pane pane-padded scroll-zone" role="tabpanel">
-          <div v-if="usage" class="usage-row">
-            <div class="usage-stat">
-              <div class="usage-num">${{ costDisplay.value }}</div>
-              <div class="usage-label">total</div>
-            </div>
-            <div class="usage-stat">
-              <div class="usage-num">{{ formatTokens(usage.total_tokens) }}</div>
-              <div class="usage-label">tokens</div>
-            </div>
-            <div class="usage-stat">
-              <div class="usage-num">{{ usage.total_calls }}</div>
-              <div class="usage-label">calls</div>
-            </div>
-          </div>
-        </div>
-      </section>
+    <main v-else-if="report" class="memo-main scroll-zone">
+      <DecisionMemo
+        :report="report"
+        :parsed-pitch="parsedPitch"
+        :usage="usage"
+        :copy="copy"
+        :job-id="jobId"
+        :reaction-count="reactions.length"
+      />
     </main>
 
     <footer v-if="report" class="foot-strip">
@@ -555,7 +444,7 @@
       <span class="foot-sep">·</span>
       <a href="#" class="foot-cta" @click.prevent="openConsentSettings">Cookie settings</a>
       <span class="foot-sep">·</span>
-      <router-link to="/new" class="foot-cta">run another →</router-link>
+      <router-link to="/new" class="foot-cta">New memo</router-link>
     </footer>
 
     <FeedbackWidget v-if="report && tab === 'report'" :job-id="jobId" />
@@ -570,6 +459,8 @@ import AiDisclosure from '../../components/AiDisclosure.vue'
 import ObjectionList from '../../components/swarm/ObjectionList.vue'
 import QuotesList from '../../components/swarm/QuotesList.vue'
 import SharpenPanel from '../../components/swarm/SharpenPanel.vue'
+import AdvisorBrief from '../../components/swarm/AdvisorBrief.vue'
+import DecisionMemo from '../../components/swarm/DecisionMemo.vue'
 import FeedbackWidget from '../../components/feedback/FeedbackWidget.vue'
 import { useRoute } from 'vue-router'
 import { roastApi } from '../../api/roast'
@@ -605,12 +496,6 @@ function onSelectAgent(id) { selectedId.value = id }
 // Animated score count-up
 const scoreDisplayed = ref(0)
 
-// Equivalent cost: when real run cost is sub-cent (e.g. local Ollama) we still
-// show what the same workload would have cost on a known commercial model.
-// Reference: gpt-4o-mini blended pricing — input $0.15 / output $0.60 per 1M.
-// Use 0.7×input + 0.3×output as a rough mix.
-const REFERENCE_PRICE_PER_MTOK = (0.7 * 0.15) + (0.3 * 0.60) // = $0.285 / 1M
-
 // Plain list of segment names — display only. No sorting, no ranking.
 const segmentNames = computed(() => {
   const icp = report.value?.icp_fit
@@ -618,32 +503,14 @@ const segmentNames = computed(() => {
   return Object.keys(icp)
 })
 
+// Real cost only: sub-tenth-of-a-cent runs (local models) say so rather than
+// showing an invented "reference" figure.
 const costDisplay = computed(() => {
-  if (!usage.value) return { value: '0.0000' }
-  const real = Number(usage.value.total_cost_usd || 0)
-  if (real >= 0.001) return { value: real.toFixed(4) }
-  // Derive a realistic figure from real token count when real cost is sub-cent.
-  const tokens = Number(usage.value.total_tokens || 0)
-  const derived = Math.max(0.0012, (tokens / 1_000_000) * REFERENCE_PRICE_PER_MTOK)
-  return { value: derived.toFixed(4) }
+  const real = Number(usage.value?.total_cost_usd || 0)
+  return { value: real >= 0.001 ? real.toFixed(4) : '<0.001' }
 })
 
 const jobShort = computed(() => (jobId || '').replace('roast_', '').slice(0, 8))
-
-// Decongested detail view: the verdict hero stays pinned; everything else lives
-// behind tabs so only one pane reads at a time. Tabs with no content are hidden.
-const detailTab = ref('objections')
-const detailTabs = computed(() => {
-  const r = report.value
-  const tabs = [
-    { id: 'objections', label: copy.value.objections, count: r?.top_objections?.length || 0 },
-    { id: 'synthesis', label: 'synthesis', count: null },
-    { id: 'voices', label: copy.value.voices, count: r?.quoted_reactions?.length || 0 },
-  ]
-  if (segmentNames.value.length) tabs.push({ id: 'segments', label: copy.value.segments, count: segmentNames.value.length })
-  if (usage.value) tabs.push({ id: 'cost', label: 'run cost', count: null })
-  return tabs
-})
 
 async function load() {
   try {
@@ -706,7 +573,7 @@ const COPY = {
     agents: 'agents',
     silence: (pct) => `why ${pct}% scrolled past`,
     askTag: 'ask 5 users',
-    killTag: 'kill signal',
+    killTag: 'drop it if',
   },
   investor: {
     objections: 'questions & objections',
@@ -715,7 +582,7 @@ const COPY = {
     agents: 'investors',
     silence: (pct) => `why ${pct}% passed`,
     askTag: 'get proof',
-    killTag: 'stall signal',
+    killTag: 'stalls if',
   },
   launch: {
     objections: 'objections & questions',
@@ -724,7 +591,7 @@ const COPY = {
     agents: 'commenters',
     silence: (pct) => `why ${pct}% scrolled past`,
     askTag: 'test this',
-    killTag: 'risk signal',
+    killTag: 'risk if',
   },
 }
 const swarmType = ref('validate')
@@ -766,14 +633,6 @@ function scoreColor(s) {
   if (s >= 5) return 'var(--accent-bright)'
   return 'var(--warn)'
 }
-function scoreBand(s) {
-  if (s >= 8) return 'strong signal'
-  if (s >= 6.5) return 'positive lean'
-  if (s >= 5) return 'mixed'
-  if (s >= 3.5) return 'rough seas'
-  return 'flat line'
-}
-
 function formatTokens(n) {
   const v = Number(n || 0)
   if (v < 1000) return v.toLocaleString()
@@ -900,19 +759,21 @@ onMounted(() => {
   border-bottom: 1px solid var(--rule);
   flex-shrink: 0;
 }
-.brand-mark { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.22em; }
-.brand-mark .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); }
-.rail-context { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.08em; color: var(--ink-2); }
+.brand-mark { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-md); font-weight: 700; letter-spacing: -0.01em; }
+.brand-mark .dot { display: none; }
+.brand-text { text-transform: capitalize; }
+.rail-context { font-size: var(--text-sm); color: var(--ink-3); }
 .rail-right { margin-left: auto; display: flex; gap: var(--space-2); }
 .rail-action {
-  font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.06em;
-  padding: 7px 13px; background: transparent;
-  border: 1px solid var(--rule-2); color: var(--ink-2);
-  border-radius: var(--radius-pill); cursor: pointer;
+  font: inherit; font-size: var(--text-sm); font-weight: 500;
+  padding: 7px 12px; background: transparent;
+  border: 1px solid transparent; color: var(--ink-2);
+  border-radius: var(--radius-sm); cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
 }
-.rail-action:hover { color: var(--ink); border-color: var(--ink-2); }
-.rail-action.accent { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+.rail-action:hover { color: var(--ink); background: var(--paper-3); }
+.rail-action.accent { background: var(--ink); border-color: var(--ink); color: var(--paper); font-weight: 600; }
+.rail-action.accent:hover { background: var(--ink-2); }
 .rail-action:active { transform: scale(0.96); }
 .rail-action:disabled { opacity: 0.5; cursor: not-allowed; }
 .rail-action:disabled:hover { color: var(--ink-2); border-color: var(--rule-2); background: transparent; }
@@ -1189,14 +1050,13 @@ onMounted(() => {
   flex-shrink: 0;
   padding: var(--space-2) var(--space-6);
   border-top: 1px solid var(--rule);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   color: var(--ink-3);
   text-align: center;
 }
-.foot-strip em { color: var(--ink); font-style: italic; }
+.foot-strip em { color: var(--ink); font-style: normal; font-weight: 600; }
 .foot-sep { margin: 0 var(--space-2); color: var(--rule-2); }
-.foot-cta { color: var(--accent-bright); }
+.foot-cta { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
 .foot-cta:hover { color: var(--ink); }
 
 .muted { color: var(--ink-3); font-size: var(--text-sm); margin: 0; }
@@ -1205,25 +1065,24 @@ onMounted(() => {
 .rail-tabs {
   display: inline-flex;
   border: 1px solid var(--rule);
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   padding: 2px;
   gap: 2px;
   margin-right: var(--space-3);
 }
 .rail-tab {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
   padding: 4px 12px;
-  border-radius: 999px;
+  border-radius: 3px;
   background: transparent;
   color: var(--ink-3);
   border: 0;
   cursor: pointer;
   transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
 }
-.rail-tab.active { background: var(--accent); color: var(--paper); }
+.rail-tab.active { background: var(--ink); color: var(--paper); }
 
 /* brain main */
 .brain-main {
@@ -1660,6 +1519,10 @@ onMounted(() => {
 }
 
 @media (max-width: 760px) {
+  .rail { flex-wrap: wrap; row-gap: var(--space-2); padding: var(--space-3) var(--space-4); }
+  .rail-context { display: none; }
+  .rail-right { margin-left: 0; width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .rail-action, .rail-tab { white-space: nowrap; }
   .dash { grid-template-rows: auto auto auto; overflow: visible; }
   .dash .scroll-zone { overflow: visible; }
   .page.page-fixed { height: auto; overflow: auto; }

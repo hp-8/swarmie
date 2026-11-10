@@ -1,6 +1,6 @@
 <template>
   <div class="dropzone-wrap">
-    <div class="dropzone-or"><span class="h-eyebrow">or drop a PDF deck</span></div>
+    <div class="dropzone-or"><span class="h-eyebrow">or upload a PDF deck</span></div>
     <div
       class="dropzone"
       :class="{
@@ -40,7 +40,7 @@
       <template v-else>
         <div class="dz-prompt">
           <span class="dz-icon" aria-hidden="true">&#8593;</span>
-          <span class="dz-label">drop PDF or click to browse</span>
+          <span class="dz-label">Drop a PDF here, or click to browse</span>
           <span class="dz-hint">PDF only &middot; max 25 MB</span>
         </div>
       </template>
@@ -131,7 +131,7 @@ function clearDeck() {
   padding: var(--space-3) var(--space-4);
   background: var(--paper-2);
   border: 1px dashed var(--rule-2);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition:
     border-color var(--dur-base) var(--ease-out),
@@ -147,7 +147,7 @@ function clearDeck() {
 .dropzone:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-sm);
 }
 .dropzone:active:not(.dz-disabled) {
   background: var(--paper-3);
@@ -180,16 +180,13 @@ function clearDeck() {
   display: none;
 }
 .dz-label {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--text-xs);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
   color: var(--ink-3);
 }
 .dz-hint {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: 10px;
-  letter-spacing: 0.06em;
   color: var(--ink-4);
 }
 
@@ -200,32 +197,28 @@ function clearDeck() {
   min-width: 0;
 }
 .dz-filename {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--text-xs);
-  letter-spacing: 0.06em;
   color: var(--live);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .dz-size {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: 10px;
-  letter-spacing: 0.08em;
   color: var(--ink-4);
 }
 
 .dz-clear {
   flex-shrink: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
   padding: 4px 10px;
   background: transparent;
   border: 1px solid color-mix(in oklch, var(--live) 40%, transparent);
   color: var(--live);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
@@ -233,9 +226,8 @@ function clearDeck() {
 .dz-clear:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .dz-error-msg {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--text-xs);
-  letter-spacing: 0.04em;
   color: var(--warn);
   margin: 0;
 }

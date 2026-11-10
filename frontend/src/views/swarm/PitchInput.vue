@@ -1,138 +1,126 @@
 <template>
-  <div class="page page-fixed">
+  <div class="page">
     <header class="rail">
-      <router-link to="/" class="brand-mark">
-        <span class="dot"></span>
-        <span class="brand-text">SWARMIE</span>
-      </router-link>
-      <span class="rail-context">/ new roast</span>
-      <a href="https://github.com/hp-8/swarmie" target="_blank" class="rail-far">github ↗</a>
+      <router-link to="/" class="brand-mark">Swarmie</router-link>
+      <span class="rail-context">New submission</span>
+      <a href="https://github.com/hp-8/swarmie" target="_blank" rel="noopener" class="rail-far">GitHub</a>
     </header>
 
-    <main class="workbench">
-      <form class="form" @submit.prevent="onSubmit">
-        <!-- TOP ROW — heading + tab switch beside it -->
-        <div class="head-row">
-          <header class="canvas-head">
-            <h1 class="canvas-title h-display">{{ activeSwarm.title }}</h1>
-            <p class="canvas-sub" v-html="activeSwarm.sub"></p>
-          </header>
-          <div class="swarm-picker" role="tablist" aria-label="Choose a swarm">
-            <button
-              v-for="s in SWARMS"
-              :key="s.key"
-              type="button"
-              role="tab"
-              class="swarm-tab"
-              :class="{ active: s.key === swarmType, locked: !s.enabled }"
-              :aria-selected="s.key === swarmType"
-              :disabled="!s.enabled || submitting"
-              @click="selectSwarm(s)"
-            >
-              <span class="swarm-tab-label">{{ s.label }}</span>
-              <span v-if="!s.enabled" class="swarm-tab-soon">soon</span>
-            </button>
-          </div>
-        </div>
+    <main class="desk">
+      <form class="sheet" @submit.prevent="onSubmit">
+        <section class="sub-main">
+          <h1 class="sub-title">{{ activeSwarm.title }}</h1>
+          <p class="sub-lede">{{ activeSwarm.sub }}</p>
 
-        <!-- I (deck) + II (controls) — one aligned group -->
-        <div class="split">
-          <div class="col-input">
-            <label class="field-wrap field-pitch">
+          <div class="field-wrap field-pitch">
             <div class="field-head">
-              <span class="h-eyebrow">i · {{ swarmType === 'investor' ? 'the deck' : 'the pitch' }}</span>
+              <label for="pitch" class="field-label">{{ swarmType === 'investor' ? 'Deck or pitch' : 'Pitch' }}</label>
               <div class="field-head-right">
-                <button v-if="!pitchText.trim() && !deckFile" type="button" class="template-btn" @click="fillTemplate">use template</button>
+                <button v-if="!pitchText.trim() && !deckFile" type="button" class="template-btn" @click="fillTemplate">Use the template</button>
                 <span class="field-meta">{{ pitchText.length.toLocaleString() }} / 20,000</span>
               </div>
             </div>
-            <textarea data-clarity-mask="true"
+            <textarea
+              id="pitch"
               v-model="pitchText"
+              data-clarity-mask="true"
               class="textarea"
               :placeholder="activeSwarm.placeholder"
               :disabled="submitting || !!deckFile"
               maxlength="20000"
             />
 
-            <!-- PDF dropzone — investor swarm only -->
             <DeckDropzone v-if="swarmType === 'investor'" v-model:file="deckFile" :disabled="submitting" />
 
-            <div class="pitch-checklist" v-if="!deckFile">
-              <span
+            <ul v-if="!deckFile" class="pitch-checklist" aria-label="Sections the panel looks for">
+              <li
                 v-for="c in activeSwarm.checks"
                 :key="c.key"
                 class="check-item"
                 :class="{ done: hasSection(c) }"
-              >{{ c.label }}</span>
-            </div>
-          </label>
-        </div>
+              >{{ c.label.charAt(0).toUpperCase() + c.label.slice(1) }}<span class="sr-only">{{ hasSection(c) ? ' covered' : ' missing' }}</span></li>
+            </ul>
+          </div>
+        </section>
 
-        <!-- RIGHT 20% — controls -->
-        <aside class="col-controls">
-          <div class="field-wrap field-size">
-            <div class="field-head">
-              <span class="h-eyebrow">ii · swarm size</span>
-              <span class="field-meta">{{ agentCount }} agents · est. ${{ costEst }}</span>
+        <aside class="sub-side">
+          <fieldset class="side-block">
+            <legend class="field-label">Review type</legend>
+            <div class="swarm-picker" role="tablist" aria-label="Choose a review type">
+              <button
+                v-for="s in SWARMS"
+                :key="s.key"
+                type="button"
+                role="tab"
+                class="swarm-tab"
+                :class="{ active: s.key === swarmType, locked: !s.enabled }"
+                :aria-selected="s.key === swarmType"
+                :disabled="!s.enabled || submitting"
+                @click="selectSwarm(s)"
+              >
+                {{ s.label }}<span v-if="!s.enabled" class="swarm-tab-soon"> (soon)</span><span v-else-if="isLocked(s)" class="swarm-tab-pack">Pack</span>
+              </button>
             </div>
-            <div class="size-row">
-              <input
-                v-model.number="agentCount"
-                class="size-slider"
-                type="range"
-                min="20"
-                max="500"
-                step="10"
-                :disabled="submitting"
-              />
-              <div class="size-presets">
-                <button type="button" @click="agentCount = 20" :class="{ active: agentCount === 20 }">20</button>
-                <button type="button" @click="agentCount = 100" :class="{ active: agentCount === 100 }">100</button>
-                <button type="button" @click="agentCount = 250" :class="{ active: agentCount === 250 }">250</button>
-                <button type="button" @click="agentCount = 500" :class="{ active: agentCount === 500 }">500</button>
-              </div>
+          </fieldset>
+
+          <div class="side-block field-wrap field-size">
+            <div class="field-head">
+              <label for="size" class="field-label">Panel size</label>
+              <span class="field-meta">{{ agentCount }} reviewers · est. ${{ costEst }}</span>
+            </div>
+            <input
+              id="size"
+              v-model.number="agentCount"
+              class="size-slider"
+              type="range"
+              min="20"
+              max="500"
+              step="10"
+              :disabled="submitting"
+            />
+            <div class="size-presets">
+              <button v-for="n in [20, 100, 250, 500]" :key="n" type="button" :class="{ active: agentCount === n }" @click="agentCount = n">{{ n }}</button>
             </div>
           </div>
 
-          <div v-if="error" class="error">{{ error }}</div>
+          <div v-if="locked" class="pack-note">
+            <p class="pack-title">{{ activeSwarm.label }} reviews come with review packs.</p>
+            <p class="pack-copy">The free tier covers Validate reviews. Investor and Launch reviews, larger panels and PDF export are part of packs, launching soon.</p>
+            <router-link :to="{ path: '/', hash: '#pricing' }" class="pack-link">See planned pricing</router-link>
+          </div>
+
+          <div v-if="error" class="error" role="alert">{{ error }}</div>
 
           <label v-if="showRunConsent" class="run-consent">
-            <input type="checkbox" v-model="runConsent" :disabled="submitting" />
+            <input v-model="runConsent" type="checkbox" :disabled="submitting" />
             <span>
               I agree to share my pitch under Swarmie's
               <router-link to="/terms" class="rc-link">Terms</router-link>
-              &amp;
+              and
               <router-link to="/privacy" class="rc-link">Privacy Policy</router-link>.
             </span>
           </label>
 
           <div class="actions">
-            <button class="h-btn is-accent run-btn" type="submit" :disabled="!canSubmit || submitting">
-              <span v-if="submitting">Starting…</span>
-              <span v-else>iii · run the swarm →</span>
+            <button class="run-btn" type="submit" :disabled="!canSubmit || submitting">
+              {{ submitting ? 'Convening…' : 'Convene the panel' }}
             </button>
             <span class="actions-hint">{{ runHint }}</span>
           </div>
 
           <p class="ai-note">
-            Reactions are produced by AI agents — <em>not real users</em>.
-            <AiDisclosure variant="text" label="how this was generated" />
+            Reviewers are AI agents, not real users.
+            <AiDisclosure variant="text" label="How this was generated" />
           </p>
         </aside>
-        </div>
       </form>
     </main>
 
-    <!-- Launch overlay -->
     <transition name="launch">
-      <div v-if="launching" class="launch-overlay">
-        <div class="launch-content">
-          <div class="launch-ring"></div>
-          <div class="launch-text">
-            <span class="launch-label">Assembling the swarm</span>
-            <span class="launch-sub">{{ agentCount }} {{ activeSwarm.agentNoun }} · {{ deckFile ? 'reading your deck' : 'parsing your pitch' }}</span>
-          </div>
-        </div>
+      <div v-if="launching" class="launch-overlay" role="status">
+        <p class="launch-label">Convening the panel</p>
+        <p class="launch-sub">{{ agentCount }} {{ activeSwarm.agentNoun }} · {{ deckFile ? 'reading your deck' : 'reading your pitch' }}</p>
+        <div class="launch-bar" aria-hidden="true"><span></span></div>
       </div>
     </transition>
   </div>
@@ -147,11 +135,20 @@ import DeckDropzone from '../../components/swarm/DeckDropzone.vue'
 import { trackRoastStart } from '../../lib/analytics'
 import { track } from '../../lib/thirdParty'
 import { hasAcceptedRunTerms, acceptRunTerms } from '../../lib/consent'
-import { SWARMS } from '../../lib/swarms'
+import { SWARMS, isLocked } from '../../lib/swarms'
 
 const router = useRouter()
 const swarmType = ref('validate')
-const pitchText = ref('')
+const pitchText = ref(takeDraft())
+
+// A draft typed into the Home hero arrives via sessionStorage, once.
+function takeDraft() {
+  try {
+    const d = sessionStorage.getItem('swarmie:draft') || ''
+    sessionStorage.removeItem('swarmie:draft')
+    return d
+  } catch { return '' }
+}
 const agentCount = ref(100)
 const submitting = ref(false)
 const launching = ref(false)
@@ -175,7 +172,10 @@ const runConsent = ref(_tosAccepted)
 const hasContent = computed(() => pitchText.value.trim().length > 0 || !!deckFile.value)
 const showRunConsent = computed(() => !_tosAccepted && hasContent.value)
 
+const locked = computed(() => isLocked(activeSwarm.value))
+
 const canSubmit = computed(() => {
+  if (locked.value) return false
   if (!runConsent.value) return false
   if (swarmType.value === 'investor' && deckFile.value) return true
   return pitchText.value.trim().length >= 40
@@ -198,6 +198,7 @@ const costEst = computed(() => {
 
 const runHint = computed(() => {
   if (submitting.value) return 'sending…'
+  if (locked.value) return 'switch to Validate for a free review'
   if (!runConsent.value) return 'agree to the terms first'
   if (!canSubmit.value) return deckFile.value ? 'PDF ready' : 'fill the pitch first'
   if (deckFile.value) return `${agentCount.value} ${activeSwarm.value.agentNoun} · deck mode · ~90s`
@@ -228,7 +229,7 @@ async function onSubmit() {
     await new Promise(r => setTimeout(r, 800))
     router.push({ name: 'Watching', params: { jobId } })
   } catch (e) {
-    error.value = e?.response?.data?.error || e?.message || 'Failed to start roast'
+    error.value = e?.response?.data?.error || e?.message || 'Could not start the review. Try again in a moment.'
     launching.value = false
   } finally {
     submitting.value = false
@@ -237,354 +238,164 @@ async function onSubmit() {
 </script>
 
 <style scoped>
-/* Hallmark · page: PitchInput · macrostructure: Workbench (fixed-viewport)
- * theme: Midnight+coral (atmospheric)
- */
+.page { min-height: 100vh; color: var(--ink); background: var(--paper-2); display: flex; flex-direction: column; }
 
-.page { color: var(--ink); background: var(--paper); }
+.rail { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) var(--space-6); background: var(--paper); border-bottom: 1px solid var(--rule); }
+.brand-mark { font-size: var(--text-md); font-weight: 700; letter-spacing: -0.01em; }
+.rail-context { font-size: var(--text-sm); color: var(--ink-3); }
+.rail-far { margin-left: auto; font-size: var(--text-sm); color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
 
-.rail {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-3) var(--space-6);
-  border-bottom: 1px solid var(--rule);
-  flex-shrink: 0;
-}
-.brand-mark {
-  display: inline-flex; align-items: center; gap: var(--space-2);
-  font-family: var(--font-mono); font-size: var(--text-xs);
-  font-weight: 600; letter-spacing: 0.22em;
-}
-.brand-mark .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); }
-.rail-context { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.08em; color: var(--ink-2); }
-.rail-far { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-2); }
-.rail-far:hover { color: var(--ink); }
-
-/* page-fixed stays no-scroll (global 100vh); phone re-enables scroll below. */
-
-.workbench {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  max-width: 1140px;
-  width: 100%;
+.desk { flex: 1; padding: var(--space-7) var(--space-6) var(--space-9); }
+.sheet {
+  max-width: 1120px;
   margin: 0 auto;
-  padding: var(--space-5) var(--space-6);
-  min-height: 0;
-  overflow: hidden;
-}
-
-.canvas {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: visible;
-}
-/* Swarm picker — compact segmented control. One swarm = one founder decision.
- * Label-only: the active swarm's purpose is carried by the canvas title + sub. */
-.swarm-picker {
-  display: inline-flex;
-  gap: 3px;
-  margin-bottom: var(--space-4);
-  padding: 3px;
-  background: var(--paper-2);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-pill);
-  flex-shrink: 0;
-  align-self: start;
-}
-.swarm-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 7px 16px;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-pill);
-  color: var(--ink-2);
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-out),
-              color var(--dur-fast) var(--ease-out),
-              transform var(--dur-fast) var(--ease-out);
-}
-.swarm-tab:hover:not(:disabled) { color: var(--ink); }
-.swarm-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.swarm-tab:active:not(:disabled) { transform: translateY(1px); }
-.swarm-tab.active {
-  background: var(--accent);
-  color: var(--paper);
-}
-.swarm-tab.locked { opacity: 0.4; cursor: not-allowed; }
-.swarm-tab-label {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-weight: 600;
-}
-.swarm-tab-soon {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-4);
-}
-
-.canvas-head { margin-bottom: var(--space-4); max-width: 640px; flex-shrink: 0; }
-.canvas-title {
-  font-size: clamp(28px, 4.5vw, 44px);
-  font-weight: 500; font-variation-settings: 'opsz' 144, 'wght' 500;
-  margin: 0 0 var(--space-2); color: var(--ink);
-}
-.canvas-sub {
-  font-family: var(--font-body);
-  color: var(--ink-2); font-size: var(--text-sm); line-height: 1.5; margin: 0;
-}
-.canvas-sub em { color: var(--accent-bright); font-style: italic; }
-
-/* 80/20 split: input left, controls (size + run) right. */
-.form {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  min-height: 0;
-}
-/* Top row: heading left, tab switch beside it (top-right). */
-.head-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-5);
-  flex-shrink: 0;
-}
-.head-row .canvas-head { margin: 0; flex: 1; min-width: 0; }
-.head-row .swarm-picker { margin: 0; flex-shrink: 0; }
-/* The I (deck) + II (controls) pair — the 80/20 split, fills remaining height. */
-.split {
-  flex: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 240px;
-  gap: var(--space-7);
-  align-items: stretch;
-  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  box-shadow: 0 18px 48px -32px oklch(20% 0.02 250 / 0.35);
 }
-.col-input {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  min-width: 0;
-  min-height: 0;          /* let the textarea flex-fill without overflow */
-}
-.col-controls {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  align-self: start;
-}
-.col-controls .actions { flex-direction: column; align-items: stretch; gap: var(--space-2); }
-.col-controls .run-btn { width: 100%; }
-.col-controls .field-size .field-head { flex-direction: column; align-items: flex-start; gap: 2px; }
-.col-controls .size-row { flex-direction: column; align-items: stretch; }
-.col-controls .size-presets { width: 100%; justify-content: space-between; }
-.col-controls .size-presets button { flex: 1; text-align: center; }
-.col-controls .ai-note { margin-top: 0; }
 
-.field-wrap { display: flex; flex-direction: column; gap: var(--space-2); }
-.field-pitch { flex: 1; min-height: 0; }
-
-.field-head {
-  display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3);
+.sub-main { padding: var(--space-7) var(--space-7) var(--space-6); border-right: 1px solid var(--rule); min-width: 0; }
+.sub-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
 }
-.field-head-right { display: flex; align-items: baseline; gap: var(--space-3); }
-.field-meta { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); }
+.sub-lede { margin: var(--space-3) 0 var(--space-6); max-width: 62ch; color: var(--ink-2); line-height: 1.55; }
 
+.field-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); margin-bottom: var(--space-2); }
+.field-head-right { display: flex; align-items: baseline; gap: var(--space-4); }
+.field-label { font-size: var(--text-sm); font-weight: 700; color: var(--ink); padding: 0; }
+.field-meta { font-size: var(--text-sm); color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .template-btn {
-  font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.06em;
-  padding: 4px 10px; background: transparent;
-  border: 1px solid var(--rule-2); color: var(--accent-bright);
-  border-radius: var(--radius-pill); cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-out);
+  font: inherit; font-size: var(--text-sm); color: var(--ink-2);
+  background: none; border: 0; padding: 0; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
 }
-.template-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
-
-.pitch-checklist {
-  display: flex; gap: var(--space-2); flex-wrap: wrap; padding-top: var(--space-1);
-}
-.check-item {
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
-  text-transform: uppercase; padding: 3px 8px;
-  border-radius: var(--radius-pill); border: 1px solid var(--rule);
-  color: var(--ink-4); transition: all var(--dur-base) var(--ease-out);
-}
-.check-item.done {
-  color: var(--live); border-color: color-mix(in oklch, var(--live) 40%, transparent);
-  background: color-mix(in oklch, var(--live) 8%, transparent);
-}
+.template-btn:hover { color: var(--ink); }
 
 .textarea {
+  display: block;
   width: 100%;
-  flex: 1;                 /* fill the left column height — no page scroll */
-  background: var(--paper-2);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4) var(--space-5);
+  min-height: 340px;
+  resize: vertical;
+  padding: var(--space-4);
+  font: inherit;
+  font-size: var(--text-base);
+  line-height: 1.6;
   color: var(--ink);
-  font: 14px/1.6 var(--font-mono);
-  resize: none;
-  min-height: 120px;
-  transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
-}
-.textarea::placeholder { color: var(--ink-4); }
-.textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-  background: color-mix(in oklch, var(--paper-2) 92%, var(--accent-soft));
-}
-.textarea:disabled { opacity: 0.5; }
-
-.size-row { display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap; }
-.size-slider {
-  flex: 1; min-width: 200px;
-  appearance: none; height: 4px;
-  background: var(--paper-3); border-radius: var(--radius-pill); outline: none;
-}
-.size-slider::-webkit-slider-thumb {
-  appearance: none; width: 18px; height: 18px; border-radius: 50%;
-  background: var(--accent); border: 2px solid var(--paper);
-  cursor: pointer; box-shadow: 0 0 0 1px var(--accent);
-  transition: transform var(--dur-fast) var(--ease-out);
-}
-.size-slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
-.size-slider::-moz-range-thumb {
-  width: 18px; height: 18px; border-radius: 50%;
-  background: var(--accent); border: 2px solid var(--paper); cursor: pointer;
-}
-
-.size-presets {
-  display: flex; gap: 4px;
-  background: var(--paper-2); border: 1px solid var(--rule);
-  border-radius: var(--radius-pill); padding: 3px;
-}
-.size-presets button {
-  font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.05em;
-  padding: 5px 11px; border: none; background: transparent; color: var(--ink-2);
-  border-radius: var(--radius-pill); cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-out);
-}
-.size-presets button:hover { color: var(--ink); }
-.size-presets button.active { background: var(--accent); color: var(--paper); }
-
-.error {
-  font-family: var(--font-mono); font-size: var(--text-sm);
-  padding: var(--space-3) var(--space-4); color: var(--warn);
-  background: var(--warn-soft);
-  border: 1px solid color-mix(in oklch, var(--warn) 50%, transparent);
-  border-radius: var(--radius-md);
-}
-
-.actions {
-  display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap;
-}
-.run-btn { padding: 14px 24px; font-size: var(--text-base); }
-.actions-hint {
-  font-family: var(--font-mono); font-size: var(--text-xs);
-  letter-spacing: 0.06em; color: var(--ink-3);
-}
-.run-consent {
-  display: flex; gap: var(--space-2); align-items: flex-start;
-  font-family: var(--font-body); font-size: var(--text-xs);
-  line-height: 1.45; color: var(--ink-3); cursor: pointer;
-}
-.run-consent input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
-.run-consent .rc-link { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
-.run-consent .rc-link:hover { color: var(--accent); }
-.ai-note {
-  margin: var(--space-3) 0 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.04em;
-  color: var(--ink-3);
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.ai-note em { font-style: italic; color: var(--ink); }
-
-/* Launch overlay */
-.launch-overlay {
-  position: fixed; inset: 0; z-index: 100;
   background: var(--paper);
-  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
-.launch-content {
-  display: flex; flex-direction: column; align-items: center; gap: var(--space-5);
+.textarea:hover:not(:disabled) { border-color: var(--ink-4); }
+.textarea:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px oklch(50% 0.11 250 / 0.15); }
+.textarea:disabled { background: var(--paper-2); color: var(--ink-3); }
+
+.pitch-checklist { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); }
+.check-item { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--ink-3); }
+.check-item::before {
+  content: '';
+  flex-shrink: 0;
+  width: 12px; height: 12px;
+  border: 1.5px solid var(--rule-2);
+  border-radius: 2px;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
-.launch-ring {
-  width: 56px; height: 56px; border-radius: 50%;
-  border: 2px solid var(--rule);
-  border-top-color: var(--accent);
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.launch-text { text-align: center; display: flex; flex-direction: column; gap: var(--space-1); }
-.launch-label {
-  font-family: var(--font-display); font-style: normal; font-weight: 500;
-  font-size: var(--text-xl); color: var(--ink);
-}
-.launch-sub {
-  font-family: var(--font-mono); font-size: var(--text-xs);
-  letter-spacing: 0.08em; color: var(--ink-3);
+.check-item.done { color: var(--ink); }
+.check-item.done::before {
+  background: var(--live) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2l2.2 2.2 4.8-4.8' fill='none' stroke='white' stroke-width='1.6'/%3E%3C/svg%3E") center / 10px no-repeat;
+  border-color: var(--live);
 }
 
-.launch-enter-active { animation: launch-in 300ms var(--ease-out); }
-.launch-leave-active { animation: launch-out 200ms var(--ease-out); }
-@keyframes launch-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes launch-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
+.sub-side { padding: var(--space-7) var(--space-6) var(--space-6); display: flex; flex-direction: column; gap: var(--space-6); background: var(--paper-2); }
+.side-block { margin: 0; padding: 0; border: 0; min-width: 0; }
+.side-block legend { margin-bottom: var(--space-2); }
 
-/* ============================================================
- * RESPONSIVE — placed AFTER all base rules so they actually win.
- * Equal specificity => later-in-source rule wins.
- * ============================================================ */
-
-/* Tablet/phone (<=768px): collapse the 80/20 split into a single stacked column */
-@media (max-width: 768px) {
-  /* phone can't fit no-scroll — let it scroll + stack naturally */
-  .page.page-fixed { height: auto; min-height: 100vh; overflow-y: auto; }
-  .workbench { flex: initial; overflow: visible; padding: var(--space-5) var(--space-5) var(--space-8); }
-  .form { flex: initial; gap: var(--space-6); }
-  /* heading + picker stack; picker sits above the heading */
-  .head-row { flex-direction: column; gap: var(--space-3); }
-  .head-row .swarm-picker { order: -1; }
-  .split { flex: initial; grid-template-columns: 1fr; gap: var(--space-6); align-items: start; }
-  .col-input { min-height: 0; }
-  .field-pitch { flex: initial; }
-  .textarea { flex: initial; min-height: 200px; }
+.swarm-picker { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--rule-2); border-radius: var(--radius-sm); padding: 2px; gap: 2px; background: var(--paper); }
+.swarm-tab {
+  font: inherit; font-size: var(--text-sm); font-weight: 600;
+  padding: 7px 4px; border: 0; border-radius: 3px;
+  background: transparent; color: var(--ink-2); cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
+.swarm-tab:hover:not(:disabled):not(.active) { background: var(--paper-3); color: var(--ink); }
+.swarm-tab.active { background: var(--ink); color: var(--paper); }
+.swarm-tab:disabled:not(.active) { color: var(--ink-4); cursor: not-allowed; }
+.swarm-tab-soon { font-weight: 400; }
+.swarm-tab-pack { margin-left: 6px; font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.04em; color: var(--ink-3); }
+.swarm-tab.active .swarm-tab-pack { color: oklch(100% 0 0 / 0.7); }
+.pack-note { display: grid; gap: var(--space-2); padding: var(--space-4); background: var(--paper); border: 1px solid var(--rule-2); border-radius: var(--radius-sm); }
+.pack-title { margin: 0; font-weight: 700; }
+.pack-copy { margin: 0; font-size: var(--text-sm); line-height: 1.55; color: var(--ink-2); }
+.pack-link { justify-self: start; font-size: var(--text-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 
-/* Phone (<=640px): strip secondary chrome, give the form room to breathe. */
-@media (max-width: 640px) {
-  .workbench { padding: var(--space-4) var(--space-4) var(--space-7); }
-  /* picker spans full width, even thirds — no label overflow */
-  .swarm-picker { display: flex; width: 100%; }
-  .swarm-tab { flex: 1; justify-content: center; padding: 8px 6px; }
-  .canvas-sub { display: none; }          /* verbose example — the title carries it */
-  .pitch-checklist { display: none; }     /* secondary cue; the placeholder guides */
-  .size-slider { display: none; }         /* presets are touch-friendlier than a thin slider */
-  .size-presets { width: 100%; justify-content: space-between; }
-  .size-presets button { flex: 1; padding: 11px 0; text-align: center; }
-  .form { gap: var(--space-6); }
-  .canvas-head { margin-bottom: var(--space-5); }
-  .actions { flex-direction: column; align-items: stretch; gap: var(--space-3); }
-  .run-btn { width: 100%; }
-  .actions-hint { text-align: center; }
+.size-slider { width: 100%; accent-color: var(--ink); margin: var(--space-2) 0; }
+.size-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); }
+.size-presets button {
+  font: inherit; font-size: var(--text-sm); font-variant-numeric: tabular-nums;
+  padding: 6px 0; border: 1px solid var(--rule-2); border-radius: var(--radius-sm);
+  background: var(--paper); color: var(--ink-2); cursor: pointer;
+}
+.size-presets button:hover { border-color: var(--ink-4); color: var(--ink); }
+.size-presets button.active { border-color: var(--ink); color: var(--ink); font-weight: 700; }
+
+.error { font-size: var(--text-sm); color: var(--warn); background: var(--warn-soft); padding: var(--space-3); border-radius: var(--radius-sm); }
+
+.run-consent { display: grid; grid-template-columns: auto 1fr; gap: var(--space-2); font-size: var(--text-sm); line-height: 1.5; color: var(--ink-2); }
+.run-consent input { accent-color: var(--ink); margin-top: 3px; width: 16px; height: 16px; }
+.rc-link { text-decoration: underline; text-underline-offset: 3px; color: var(--ink); }
+
+.actions { display: grid; gap: var(--space-2); }
+.run-btn {
+  font: inherit; font-size: var(--text-md); font-weight: 700;
+  padding: 14px var(--space-4);
+  border: 0; border-radius: var(--radius-sm);
+  background: var(--ink); color: var(--paper);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.run-btn:hover:not(:disabled) { background: var(--ink-2); }
+.run-btn:active:not(:disabled) { transform: translateY(1px); }
+.run-btn:disabled { background: var(--paper-4); color: var(--ink-3); cursor: not-allowed; }
+.actions-hint { font-size: var(--text-sm); color: var(--ink-3); }
+.actions-hint::first-letter { text-transform: uppercase; }
+.ai-note { margin: auto 0 0; font-size: var(--text-sm); color: var(--ink-3); line-height: 1.5; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Launch overlay: the panel convening */
+.launch-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  display: grid; place-content: center; justify-items: center; gap: var(--space-2);
+  background: oklch(100% 0 0 / 0.92);
+  backdrop-filter: blur(6px);
+}
+.launch-label { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: var(--text-3xl); }
+.launch-sub { margin: 0; color: var(--ink-3); }
+.launch-bar { margin-top: var(--space-4); width: 220px; height: 2px; background: var(--rule); overflow: hidden; }
+.launch-bar span { display: block; height: 100%; width: 40%; background: var(--ink); animation: convene 1.4s var(--ease-in-out) infinite; }
+@keyframes convene { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+.launch-enter-active { transition: opacity 260ms var(--ease-out); }
+.launch-leave-active { transition: opacity 180ms var(--ease-out); }
+.launch-enter-from, .launch-leave-to { opacity: 0; }
+
+@media (max-width: 1024px) {
+  .sheet { grid-template-columns: minmax(0, 1fr); }
+  .sub-main { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .sub-side .ai-note { margin-top: 0; }
+}
+@media (max-width: 767px) {
+  .rail { padding: var(--space-3) var(--space-4); }
+  .desk { padding: 0; }
+  .sheet { border: 0; box-shadow: none; }
+  .sub-main, .sub-side { padding: var(--space-6) var(--space-4); }
+  .textarea { min-height: 260px; }
 }
 </style>

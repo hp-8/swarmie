@@ -95,7 +95,7 @@ describe('display lines', () => {
 describe('resolveVerdictDisplay', () => {
   it('maps a verdict through the shared verdict meta', () => {
     const d = resolveVerdictDisplay({ verdict: 'kill' })
-    expect(d.label).toBe('kill')
+    expect(d.label).toBe('rethink the core')
     expect(d.color).toBe(VERDICT_HEX['is-kill'])
   })
 

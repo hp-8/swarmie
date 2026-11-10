@@ -1,400 +1,393 @@
 <template>
   <div class="page home">
-    <!-- NAV — floating pill -->
-    <header class="nav">
-      <router-link to="/" class="brand-mark">
-        <span class="dot"></span>
-        <span class="brand-text">SWARMIE</span>
-      </router-link>
-      <nav class="nav-right">
-        <a href="https://github.com/hp-8/swarmie" target="_blank" class="ghost-link">github ↗</a>
-        <router-link to="/new" class="h-btn is-accent nav-cta">Run a roast</router-link>
-      </nav>
-    </header>
+    <SiteNav />
 
     <main>
-      <!-- HERO — living swarm canvas, text overlaid low -->
       <section class="hero">
-        <HeroSwarm class="hero-swarm" />
-        <div class="hero-scrim" aria-hidden="true"></div>
-        <div class="hero-inner hero-grid">
-          <div class="hero-copy">
-            <span class="h-chip is-accent hero-chip">Open source · Alpha</span>
-            <h1 class="hero-title h-display">
-              Roast your startup<br />
-              with <em>500 AI users.</em>
-            </h1>
-            <p class="hero-lede">
-              Paste the pitch. A swarm reacts like Reddit, HN and Product Hunt all at once,
-              then hands you the three objections to kill before you burn a single user interview.
-            </p>
-            <div class="hero-actions">
-              <router-link to="/new" class="h-btn is-accent hero-cta">Run a roast →</router-link>
-              <a href="#how" class="h-btn is-ghost">See how it works</a>
-            </div>
-            <div class="hero-meta">
-              <span><strong>~60s</strong> per run</span>
-              <span class="sep">·</span>
-              <span><strong>$0</strong> on local Ollama</span>
-              <span class="sep">·</span>
-              <span><strong>AGPL-3.0</strong></span>
-            </div>
-          </div>
+        <div class="hero-copy">
+          <h1 class="hero-title">Find the problem you can't see yet.</h1>
+          <p class="hero-lede">
+            A panel of synthetic reviewers reads your pitch the way Reddit, Hacker News and
+            Product Hunt would. You get a decision memo: what's working, the risks you missed,
+            and what to test this week.
+          </p>
 
-          <figure class="hero-media">
-            <video
-              class="hero-video"
-              autoplay muted loop playsinline preload="metadata"
-              poster="/swarmie-promo-poster.jpg"
-              aria-label="Swarmie walkthrough: paste a pitch, the swarm reacts, a decision brief comes back"
-            >
-              <source src="/swarmie-promo.webm" type="video/webm" />
-              <source src="/swarmie-promo.mp4" type="video/mp4" />
-            </video>
-            <figcaption class="hero-media-cap">
-              <span>walkthrough</span><span class="sep">·</span><span>pitch → swarm → decision</span>
-            </figcaption>
-          </figure>
+          <form class="quick" @submit.prevent="startDraft">
+            <label for="quick-pitch" class="quick-label">Your pitch</label>
+            <textarea
+              id="quick-pitch"
+              v-model="draft"
+              class="quick-input"
+              rows="4"
+              data-clarity-mask="true"
+              placeholder="Problem, product, audience, pricing, competitors. A few honest sentences is enough."
+            ></textarea>
+            <div class="quick-row">
+              <button type="submit" class="btn">Convene the panel</button>
+              <span class="quick-meta">Free during the alpha · about a minute</span>
+            </div>
+          </form>
+          <p class="disclose">
+            Reviewers are AI agents, not real users.
+            <AiDisclosure variant="text" label="How this works" />
+          </p>
         </div>
+
+        <figure id="memo" class="sample" aria-label="Sample decision memo">
+          <figcaption class="sample-cap">Sample memo. Synthetic panel, illustrative pitch.</figcaption>
+          <div class="sample-sheet">
+            <dl class="s-fields">
+              <div><dt>To</dt><dd>Founder, GradeLoop</dd></div>
+              <div><dt>Re</dt><dd>AI grading for handwritten worksheets</dd></div>
+              <div><dt>Panel</dt><dd>100 reviewers · 61 spoke</dd></div>
+            </dl>
+            <p class="s-rec">Sharpen the positioning.</p>
+            <p class="s-reason">Real pull from teachers, but the panel never heard from the people who pay.</p>
+            <div class="s-finding">
+              <p class="s-title"><span class="s-flag">Risk</span>The user is not the buyer.</p>
+              <p class="s-line"><strong>Easy to miss because</strong> every positive reaction came from teachers; administrators were 4 of 100 reviewers.</p>
+            </div>
+            <p class="s-action"><strong>This week.</strong> Interview 5 school administrators: who approves a grading tool, and from which budget?</p>
+          </div>
+        </figure>
       </section>
 
-      <!-- HONESTY band -->
-      <section class="truth" v-reveal>
-        <p class="truth-line">
-          <span class="h-eyebrow">A note before we start. <AiDisclosure aria-label="How this was generated" /></span>
-          <span class="truth-text">
-            These are AI agents, <em>not real users</em>. They are wrong sometimes,
-            agreeable too often, and they don't write your TAM check. Use the signal to
-            <span class="warm">kill bad positionings before</span> they cost a real conversation,
-            not to declare PMF.
-          </span>
+      <section class="note" aria-labelledby="note-title">
+        <h2 id="note-title" class="note-title">A note on the reviewers</h2>
+        <p class="note-body">
+          They are AI agents, not real users. They are sometimes wrong and often too agreeable, and
+          they cannot tell you your market size. Use the memo to find the questions worth asking real
+          people, before those conversations and your code cost you, not to declare product-market fit.
         </p>
       </section>
 
-      <!-- LOOP — the walkthrough video is the proof, captions ride below -->
-      <section id="how" class="loop">
-        <header class="section-head" v-reveal>
-          <span class="h-eyebrow">the loop</span>
-          <h2 class="section-title h-display">Three turns. Sixty seconds.</h2>
-        </header>
-
-        <ol class="loop-steps">
-          <li v-reveal="0">
-            <span class="loop-num">i.</span>
-            <h3 class="loop-step-title">Paste a pitch.</h3>
-            <p class="loop-step-copy">Deck text, landing copy, half a tweet. We parse the ICP, problem, solution and price.</p>
+      <section class="how" aria-labelledby="how-title">
+        <h2 id="how-title" class="sec-title">How a review works</h2>
+        <ol class="steps">
+          <li>
+            <span class="step-num">1</span>
+            <h3 class="step-title">Submit the pitch</h3>
+            <p class="step-copy">Paste deck text, landing copy or a few sentences. The panel reads the problem, audience, price and competitors.</p>
           </li>
-          <li v-reveal="120">
-            <span class="loop-num">ii.</span>
-            <h3 class="loop-step-title">The swarm reacts.</h3>
-            <p class="loop-step-copy">100 to 500 personas post, comment, upvote or scroll past. Skeptics, lurkers, fans, trolls.</p>
+          <li>
+            <span class="step-num">2</span>
+            <h3 class="step-title">The panel reacts</h3>
+            <p class="step-copy">Reviewers in the style of community archetypes, from skeptics to lurkers, comment, upvote or scroll past, and say why.</p>
           </li>
-          <li v-reveal="240">
-            <span class="loop-num">iii.</span>
-            <h3 class="loop-step-title">Get a decision.</h3>
-            <p class="loop-step-copy">A verdict, the objections to test, and why the silent ones scrolled past.</p>
+          <li>
+            <span class="step-num">3</span>
+            <h3 class="step-title">Read the memo</h3>
+            <p class="step-copy">A recommendation with its confidence, the hidden risks, each objection with the question to ask five real users, and a path forward.</p>
           </li>
         </ol>
       </section>
 
-      <!-- AHA — the output, shown -->
-      <section class="aha" v-reveal>
-        <div class="aha-copy">
-          <span class="h-eyebrow">what you walk away with</span>
-          <h2 class="aha-title h-display">You don't get a grade.<br />You get a <em>decision.</em></h2>
-          <p class="aha-lede">
-            Not a vanity PMF number. A verdict, the exact question to ask five real users,
-            the signal that would kill the positioning, and the fix to try first.
+      <section class="archive-strip" aria-labelledby="archive-title">
+        <div class="strip-head">
+          <h2 id="archive-title" class="sec-title">From the memo archive</h2>
+          <p class="strip-lede">Famous pitches, as they were told, through the same panel. Unedited output.</p>
+          <router-link to="/roasts" class="strip-all">See all {{ archive.length }} memos</router-link>
+        </div>
+        <div class="strip-row">
+          <MemoArchiveCard v-for="r in archive.slice(0, 4)" :key="r.slug" :memo="r" variant="compact" />
+        </div>
+      </section>
+
+      <section id="pricing" class="pricing" aria-labelledby="pricing-title">
+        <div class="pricing-head">
+          <h2 id="pricing-title" class="pricing-title">Pay per review.<br />Never per month.</h2>
+          <p class="pricing-note">
+            Free reviews stay free. When you need a bigger panel, an investor read of your deck or a
+            launch rehearsal, buy a pack and use it when it matters. Every review is free during the alpha.
           </p>
-          <router-link to="/new" class="h-btn is-accent">Run yours →</router-link>
         </div>
-        <div class="aha-visual">
-          <DecisionBriefPreview />
-        </div>
-      </section>
 
-      <!-- FOUNDER -->
-      <section class="founder" v-reveal>
-        <div class="founder-grid">
-          <div class="founder-left">
-            <span class="h-eyebrow">who made this</span>
-            <h2 class="founder-name h-display">Harsh Patadia.</h2>
-            <p class="founder-bio">
-              I build for founders. Swarmie is the free version of how I think about early-stage
-              validation: fast, brutal, focused on the objection you actually need to hear. If you
-              want a human in the loop, to ship the MVP, sharpen the pitch or prep the raise, that's the day job.
-            </p>
-            <div class="founder-actions">
-              <a href="https://harshpatadia.space" target="_blank" class="h-btn is-accent">Work with me →</a>
-              <a href="https://harshpatadia.space" target="_blank" class="h-btn is-ghost">harshpatadia.space</a>
-            </div>
+        <div class="rate-card">
+          <div class="rate-intro">
+            <p class="intro-title">Every pack</p>
+            <p class="intro-copy">One credit runs one full review. Credits never lapse on a monthly clock.</p>
           </div>
-          <aside class="founder-right">
-            <span class="h-eyebrow">elsewhere</span>
-            <ul class="founder-links">
-              <li><a href="https://github.com/hp-8" target="_blank">github.com/hp-8</a></li>
-              <li><a href="https://x.com/harshpatadia_" target="_blank">x.com/harshpatadia_</a></li>
-              <li><a href="https://www.linkedin.com/in/harsh-patadia" target="_blank">linkedin.com/in/harsh-patadia</a></li>
-              <li><a href="https://harshpatadia.space" target="_blank">harshpatadia.space</a></li>
-            </ul>
-          </aside>
+          <div class="rate rate-free">
+            <p class="rate-name">Free</p>
+            <p class="rate-qty">Unlimited</p>
+            <p class="rate-unit">small reviews</p>
+            <p class="rate-price">$0</p>
+            <router-link to="/new" class="rate-cta">Start a free review</router-link>
+          </div>
+          <div class="rate">
+            <p class="rate-name">Starter pack</p>
+            <p class="rate-qty">20</p>
+            <p class="rate-unit">full reviews</p>
+            <p class="rate-price is-soon">Price at launch</p>
+            <span class="rate-cta is-soon">Coming soon</span>
+          </div>
+          <div class="rate rate-hero">
+            <p class="rate-name">Sprint pack</p>
+            <p class="rate-qty">100</p>
+            <p class="rate-unit">full reviews, for a validation sprint</p>
+            <p class="rate-price is-soon">Price at launch</p>
+            <span class="rate-cta is-soon">Coming soon</span>
+          </div>
+
+          <table class="rate-table">
+            <caption class="sr-only">What each plan includes</caption>
+            <thead>
+              <tr><th scope="col">Included</th><th scope="col">Free</th><th scope="col">Starter</th><th scope="col">Sprint</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in RATE_ROWS" :key="row.label">
+                <th scope="row">{{ row.label }}</th>
+                <td v-for="(v, i) in row.cells" :key="i" :class="{ 'is-hero': i === 2 }">
+                  <svg v-if="v === true" class="tick" viewBox="0 0 16 16" aria-label="Included" role="img"><path d="M3 8.5l3 3 7-7" /></svg>
+                  <span v-else-if="v === false" class="dash" aria-label="Not included">&ndash;</span>
+                  <span v-else>{{ v }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
-      <!-- CLOSING CTA -->
-      <section class="cta" v-reveal>
-        <h2 class="cta-title h-display">What would <em>500 strangers</em> say about it today?</h2>
-        <router-link to="/new" class="h-btn is-accent cta-btn">Run a roast →</router-link>
+      <section class="founder" aria-labelledby="founder-title">
+        <div class="founder-main">
+          <h2 id="founder-title" class="sec-title">Built by Harsh Patadia</h2>
+          <p class="founder-bio">
+            I build for founders. Swarmie is how I think about early-stage validation: fast, honest,
+            focused on the objection you actually need to hear. If you want a human in the loop, to ship
+            the MVP, sharpen the pitch or prep the raise, that's the day job.
+          </p>
+          <a href="https://harshpatadia.space" target="_blank" rel="noopener" class="btn btn-ghost">Work with me</a>
+        </div>
+        <ul class="founder-links" aria-label="Elsewhere">
+          <li><a href="https://github.com/hp-8" target="_blank" rel="noopener">github.com/hp-8</a></li>
+          <li><a href="https://x.com/harshpatadia_" target="_blank" rel="noopener">x.com/harshpatadia_</a></li>
+          <li><a href="https://www.linkedin.com/in/harsh-patadia" target="_blank" rel="noopener">linkedin.com/in/harsh-patadia</a></li>
+          <li><a href="https://harshpatadia.space" target="_blank" rel="noopener">harshpatadia.space</a></li>
+        </ul>
       </section>
 
-      <footer class="foot">
-        <div class="foot-row">
-          <span class="brand-mark"><span class="dot"></span><span class="brand-text">SWARMIE</span></span>
-          <span class="foot-meta">v0.1 · alpha · AGPL-3.0</span>
-        </div>
-        <div class="foot-row foot-sub">
-          <span>Built by <a href="https://github.com/hp-8" target="_blank">@hp-8</a>.</span>
-          <a href="https://github.com/hp-8/swarmie" target="_blank">github.com/hp-8/swarmie</a>
-          <router-link to="/roasts">Famous roasts</router-link>
-          <router-link to="/terms">Terms</router-link>
-          <router-link to="/privacy">Privacy</router-link>
-          <a href="#" @click.prevent="openConsentSettings">Cookie settings</a>
-        </div>
-      </footer>
+      <section class="closing">
+        <h2 class="closing-title">What would a panel find in your pitch?</h2>
+        <router-link to="/new" class="btn">Submit a pitch</router-link>
+      </section>
     </main>
+
+    <SiteFooter />
   </div>
 </template>
 
 <script setup>
-import { openConsentSettings } from '../lib/consent'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import AiDisclosure from '../components/AiDisclosure.vue'
-import HeroSwarm from '../components/HeroSwarm.vue'
-import DecisionBriefPreview from '../components/marketing/DecisionBriefPreview.vue'
+import SiteNav from '../components/marketing/SiteNav.vue'
+import SiteFooter from '../components/marketing/SiteFooter.vue'
+import MemoArchiveCard from '../components/marketing/MemoArchiveCard.vue'
+import data from '../data/famousRoasts.json'
+
+const router = useRouter()
+const draft = ref('')
+const archive = data.roasts
+
+// Planned plan contents. true = included, false = not, string = the value.
+const RATE_ROWS = [
+  { label: 'Panel size', cells: ['20 reviewers', 'Up to 500', 'Up to 500'] },
+  { label: 'Full decision memo', cells: [true, true, true] },
+  { label: 'Validate reviews', cells: [true, true, true] },
+  { label: 'Investor reviews and deck upload', cells: [false, true, true] },
+  { label: 'Launch reviews', cells: [false, true, true] },
+  { label: 'PDF export and share card', cells: [false, true, true] },
+]
+
+// Hand the hero draft to the submission form (which owns consent + validation).
+function startDraft() {
+  try { sessionStorage.setItem('swarmie:draft', draft.value) } catch { /* storage blocked */ }
+  router.push('/new')
+}
 </script>
 
 <style scoped>
-/* Hallmark · page: Home · macrostructure: Marquee Hero (atmospheric)
- * Hallmark · pre-emit critique: P5 H4 E5 S4 R5 V4
- * theme: Midnight+coral · genre: atmospheric · register: brand
- */
-
 .page { min-height: 100vh; color: var(--ink); background: var(--paper); }
 
-/* NAV — floating pill */
-.nav {
-  position: sticky; top: var(--space-4); z-index: 30;
-  display: flex; align-items: center; justify-content: space-between;
-  max-width: var(--max-content);
-  margin: var(--space-4) auto 0;
-  padding: 10px 14px 10px 18px;
-  background: color-mix(in oklch, var(--paper-2) 82%, transparent);
-  border: 1px solid var(--rule); border-radius: var(--radius-pill);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-}
-.brand-mark {
-  display: inline-flex; align-items: center; gap: var(--space-2);
-  font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.22em; color: var(--ink);
-}
-.brand-mark .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); }
-.nav-right { display: flex; align-items: center; gap: var(--space-4); }
-.ghost-link { color: var(--ink-2); font-size: var(--text-sm); font-family: var(--font-mono); letter-spacing: 0.04em; transition: color var(--dur-fast) var(--ease-out); }
-.ghost-link:hover { color: var(--ink); }
-.nav-cta { padding: 9px 16px; font-size: var(--text-sm); }
 
-/* HERO — full-bleed swarm canvas + scrim + overlaid text */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  font: inherit; font-weight: 700; font-size: var(--text-base);
+  padding: 13px 20px; border: 1px solid var(--ink); border-radius: var(--radius-sm);
+  background: var(--ink); color: var(--paper); cursor: pointer; white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.btn:hover { background: var(--ink-2); }
+.btn:active { transform: translateY(1px); }
+.btn-ghost { background: var(--paper); color: var(--ink); border-color: var(--rule-2); }
+.btn-ghost:hover { background: var(--paper-3); border-color: var(--ink-4); }
+
+/* Hero: offer + working form beside a real-shaped memo */
 .hero {
-  position: relative;
-  min-height: min(92vh, 900px);
-  margin-top: calc(var(--space-7) * -1);
-  display: flex; align-items: center;
-  overflow: hidden;
+  max-width: 1200px; margin: 0 auto;
+  padding: var(--space-9) var(--space-6) var(--space-8);
+  display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: var(--space-8);
+  align-items: start;
 }
-.hero-swarm { z-index: 0; }
-.hero-scrim {
-  position: absolute; inset: 0; z-index: 1; pointer-events: none;
-  background:
-    /* vignette — darken the edges so the headline holds the eye */
-    radial-gradient(125% 115% at 50% 38%, transparent 52%, color-mix(in oklch, var(--paper) 60%, transparent) 100%),
-    /* cool counter-glow lower-left for depth */
-    radial-gradient(70% 60% at 16% 80%, color-mix(in oklch, var(--info) 7%, transparent), transparent 60%),
-    /* bottom fade so the hero melts into the next section */
-    linear-gradient(to bottom, transparent 42%, color-mix(in oklch, var(--paper) 68%, transparent) 82%, var(--paper) 100%);
-}
-/* breathing coral dawn — the warmth behind the headline, alive but barely */
-.hero-scrim::before {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background:
-    radial-gradient(80% 62% at 72% 4%, color-mix(in oklch, var(--accent) 24%, transparent), transparent 58%),
-    radial-gradient(46% 38% at 60% 0%, color-mix(in oklch, var(--accent-bright) 16%, transparent), transparent 62%);
-  will-change: opacity, transform;
-  transform-origin: 68% 0%;
-  animation: heroBreathe 12s var(--ease-in-out) infinite alternate;
-}
-@keyframes heroBreathe {
-  from { opacity: 0.78; transform: scale(1); }
-  to   { opacity: 1;    transform: scale(1.05); }
-}
-/* fine grain for tactile depth */
-.hero-scrim::after {
-  content: ""; position: absolute; inset: 0; opacity: 0.05; mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-.hero-inner {
-  position: relative; z-index: 2;
-  max-width: var(--max-content); width: 100%;
-  margin: 0 auto; padding: var(--space-8) var(--space-5) var(--space-9);
-}
-.hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-  gap: clamp(var(--space-6), 5vw, var(--space-8));
-  align-items: center;
-}
-.hero-copy { min-width: 0; }
-.hero-media {
-  margin: 0; position: relative;
-  border-radius: var(--radius-lg); overflow: hidden;
-  border: 1px solid var(--rule); background: var(--paper-3);
-  box-shadow: 0 40px 90px -36px rgba(0,0,0,0.7), 0 12px 32px -16px rgba(0,0,0,0.5);
-  aspect-ratio: 16 / 10;
-}
-.hero-video { width: 100%; height: 100%; display: block; object-fit: cover; }
-.hero-media-cap {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  display: flex; gap: var(--space-2); align-items: center;
-  padding: var(--space-3) var(--space-4);
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--ink-2);
-  background: linear-gradient(to top, color-mix(in oklch, var(--paper) 78%, transparent), transparent);
-}
-.hero-media-cap .sep { color: var(--rule-2); }
-.hero-chip { margin-bottom: var(--space-4); }
-
-/* staggered entrance — chip → headline → lede → actions → meta, then the media */
-.hero-copy > * { opacity: 0; animation: heroRise 620ms var(--ease-out) forwards; }
-.hero-copy > *:nth-child(1) { animation-delay: 60ms; }
-.hero-copy > *:nth-child(2) { animation-delay: 130ms; }
-.hero-copy > *:nth-child(3) { animation-delay: 210ms; }
-.hero-copy > *:nth-child(4) { animation-delay: 290ms; }
-.hero-copy > *:nth-child(5) { animation-delay: 360ms; }
-.hero-media { opacity: 0; animation: heroRise 720ms var(--ease-out) 360ms forwards; }
-@keyframes heroRise {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: none; }
-}
-/* press feedback — the interface listens */
-.hero-actions .h-btn:active { transform: scale(0.97); }
 .hero-title {
-  font-size: clamp(44px, 8.5vw, 104px);
-  line-height: 0.96; letter-spacing: -0.02em; font-weight: 600;
-  font-variation-settings: 'opsz' 144, 'wght' 600;
-  margin: 0 0 var(--space-4); color: var(--ink);
-  overflow-wrap: anywhere; min-width: 0;
+  margin: 0;
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(42px, 5.4vw, 76px); line-height: 1.02; letter-spacing: -0.025em;
+  text-wrap: balance;
 }
-.hero-title em { font-style: normal; color: var(--accent-bright); }
-.hero-lede {
-  max-width: 600px; font-family: var(--font-body);
-  font-size: clamp(var(--text-base), 2.2vw, var(--text-lg));
-  line-height: 1.55; color: var(--ink-2); margin: 0 0 var(--space-5);
+.hero-lede { margin: var(--space-5) 0 0; font-size: var(--text-md); line-height: 1.6; color: var(--ink-2); max-width: 54ch; }
+
+.quick { margin-top: var(--space-6); display: grid; gap: var(--space-2); max-width: 560px; }
+.quick-label { font-size: var(--text-sm); font-weight: 700; }
+.quick-input {
+  width: 100%; resize: vertical; padding: var(--space-3) var(--space-4);
+  font: inherit; line-height: 1.55; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--rule-2); border-radius: var(--radius-sm);
 }
-.hero-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-5); }
-.hero-cta { padding: 15px 26px; font-size: var(--text-md); }
-.hero-meta {
-  display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap;
-  font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-3);
+.quick-input:hover { border-color: var(--ink-4); }
+.quick-input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px oklch(50% 0.11 250 / 0.15); }
+.quick-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-4); margin-top: var(--space-1); }
+.quick-meta { font-size: var(--text-sm); color: var(--ink-3); }
+.disclose { margin: var(--space-4) 0 0; font-size: var(--text-sm); color: var(--ink-3); }
+
+.sample { margin: 0; }
+.sample-cap { font-size: var(--text-sm); color: var(--ink-3); margin-bottom: var(--space-2); }
+.sample-sheet {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  box-shadow: 0 30px 60px -40px oklch(20% 0.02 250 / 0.45), 0 2px 6px -4px oklch(20% 0.02 250 / 0.2);
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  transform: rotate(0.6deg);
+  animation: lay 700ms var(--ease-out) both;
 }
-.hero-meta strong { color: var(--ink); font-weight: 500; }
-.hero-meta .sep { color: var(--rule-2); }
+@keyframes lay { from { opacity: 0; transform: rotate(2deg) translateY(14px); } to { opacity: 1; transform: rotate(0.6deg); } }
+.s-fields { margin: 0; display: grid; gap: var(--space-1); padding-bottom: var(--space-4); border-bottom: 2px solid var(--ink); }
+.s-fields > div { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: var(--space-3); font-size: var(--text-sm); }
+.s-fields dt { color: var(--ink-3); }
+.s-fields dd { margin: 0; font-weight: 600; }
+.s-rec { margin: var(--space-5) 0 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(28px, 2.8vw, 38px); line-height: 1.08; letter-spacing: -0.015em; }
+.s-reason { margin: var(--space-2) 0 0; font-family: var(--font-display); font-size: var(--text-md); line-height: 1.5; color: var(--ink-2); }
+.s-finding { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--rule); }
+.s-title { margin: 0; font-weight: 600; }
+.s-flag { margin-right: var(--space-2); font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--warn); vertical-align: 0.1em; }
+.s-line { margin: var(--space-1) 0 0; font-size: var(--text-sm); line-height: 1.55; color: var(--ink-2); }
+.s-action { margin: var(--space-5) 0 0; padding: var(--space-3) var(--space-4); background: var(--paper-2); border-top: 1px solid var(--rule-2); font-size: var(--text-sm); line-height: 1.55; }
 
-/* HONESTY band */
-.truth {
-  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
-  padding: var(--space-8) var(--space-5); background: var(--paper-2);
-}
-.truth-line { max-width: var(--max-narrow); margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-3); }
-.truth-text { font-family: var(--font-body); font-size: clamp(var(--text-md), 2.4vw, var(--text-lg)); line-height: 1.65; color: var(--ink); }
-.truth-em { color: var(--ink); font-style: normal; }
-.truth-text em { color: var(--ink); font-style: normal; }
-.warm { color: var(--accent-bright); font-weight: 500; }
+/* Sections */
+.note, .how, .founder, .closing { max-width: 1200px; margin: 0 auto; padding: var(--space-8) var(--space-6); border-top: 1px solid var(--rule); }
+.note { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-6); }
+.note-title, .sec-title { margin: 0; font-size: var(--text-xl); font-weight: 700; letter-spacing: -0.015em; }
+.note-body { margin: 0; font-family: var(--font-display); font-size: var(--text-lg); line-height: 1.6; color: var(--ink-2); max-width: 64ch; }
 
-/* shared section heads */
-.section-head { max-width: var(--max-content); margin: 0 auto var(--space-7); }
-.section-title { font-size: clamp(32px, 6vw, 56px); font-weight: 500; font-variation-settings: 'opsz' 144, 'wght' 500; margin: var(--space-2) 0 0; color: var(--ink); }
+.steps { list-style: none; margin: var(--space-6) 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 2px solid var(--ink); }
+.steps li { padding: var(--space-5) var(--space-5) 0 0; }
+.steps li + li { padding-left: var(--space-5); border-left: 1px solid var(--rule); }
+.step-num { font-weight: 700; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.step-title { margin: var(--space-2) 0 0; font-size: var(--text-md); font-weight: 700; }
+.step-copy { margin: var(--space-2) 0 0; line-height: 1.6; color: var(--ink-2); max-width: 40ch; }
 
-/* LOOP */
-.loop { max-width: var(--max-content); margin: 0 auto; padding: var(--space-9) var(--space-5); }
-.loop-steps {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-6);
-}
-.loop-steps li { display: flex; flex-direction: column; gap: var(--space-2); }
-.loop-num { font-family: var(--font-display); font-style: normal; font-size: var(--text-xl); color: var(--accent-bright); }
-.loop-step-title { font-family: var(--font-display); font-style: normal; font-weight: 500; font-size: var(--text-xl); margin: 0; color: var(--ink); }
-.loop-step-copy { font-family: var(--font-body); font-size: var(--text-base); line-height: 1.6; color: var(--ink-2); margin: 0; }
 
-/* AHA */
-.aha {
-  max-width: var(--max-content); margin: 0 auto; padding: var(--space-9) var(--space-5);
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: clamp(var(--space-6), 5vw, var(--space-9)); align-items: center;
-}
-.aha-title { font-size: clamp(32px, 5.5vw, 56px); font-weight: 500; font-variation-settings: 'opsz' 144, 'wght' 500; margin: var(--space-3) 0 var(--space-4); color: var(--ink); }
-.aha-title em { color: var(--accent-bright); font-style: normal; }
-.aha-lede { font-family: var(--font-body); font-size: var(--text-md); line-height: 1.65; color: var(--ink-2); max-width: 460px; margin: 0 0 var(--space-6); }
-.aha-visual { min-width: 0; }
+.founder { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--space-7); }
+.founder-bio { margin: var(--space-4) 0 var(--space-5); line-height: 1.65; color: var(--ink-2); max-width: 62ch; }
+.founder-links { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); align-content: start; font-size: var(--text-sm); }
+.founder-links a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+.founder-links a:hover { color: var(--ink); }
 
-/* FOUNDER */
-.founder { max-width: var(--max-content); margin: 0 auto; padding: var(--space-9) var(--space-5); border-top: 1px solid var(--rule); }
-.founder-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: var(--space-8); align-items: start; }
-.founder-name { font-size: clamp(40px, 7vw, 76px); font-weight: 500; font-variation-settings: 'opsz' 144, 'wght' 500; margin: var(--space-2) 0 var(--space-5); color: var(--ink); }
-.founder-bio { font-family: var(--font-body); font-size: var(--text-md); line-height: 1.65; color: var(--ink); max-width: 540px; margin: 0 0 var(--space-6); }
-.founder-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
-.founder-right { padding-top: var(--space-4); }
-.founder-links { list-style: none; padding: 0; margin: var(--space-3) 0 0; display: flex; flex-direction: column; gap: var(--space-3); }
-.founder-links a {
-  font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-2); letter-spacing: 0.02em;
-  border-bottom: 1px dashed var(--rule-2); padding-bottom: 2px;
-  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
-}
-.founder-links a:hover { color: var(--accent-bright); border-color: var(--accent); }
+.closing { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-5); padding-block: var(--space-9); }
+.closing-title { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(30px, 3.6vw, 48px); line-height: 1.1; letter-spacing: -0.02em; max-width: 20ch; }
 
-/* CLOSING CTA */
-.cta { max-width: var(--max-narrow); margin: 0 auto; text-align: center; border-top: 1px solid var(--rule); padding: var(--space-10) var(--space-5); }
-.cta-title { font-size: clamp(36px, 7vw, 76px); font-weight: 500; font-variation-settings: 'opsz' 144, 'wght' 500; margin: 0 auto var(--space-6); color: var(--ink); }
-.cta-title em { color: var(--accent-bright); font-style: normal; }
-.cta-btn { padding: 16px 30px; font-size: var(--text-md); }
 
-/* FOOT */
-.foot { max-width: var(--max-content); margin: 0 auto; padding: var(--space-5); border-top: 1px solid var(--rule); color: var(--ink-3); font-size: var(--text-sm); }
-.foot-row { display: flex; justify-content: space-between; align-items: center; padding: var(--space-3) 0; flex-wrap: wrap; gap: var(--space-3); }
-.foot-sub { font-family: var(--font-mono); font-size: var(--text-xs); }
-.foot a { color: var(--ink-2); border-bottom: 1px dashed var(--rule-2); }
-.foot a:hover { color: var(--ink); }
-.foot-meta { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.06em; }
-
-/* ---- TABLET / iPad ---- */
 @media (max-width: 1024px) {
-  .hero { min-height: auto; align-items: stretch; }
-  .hero-inner { padding-top: var(--space-9); }
-  .hero-grid { grid-template-columns: 1fr; gap: var(--space-7); }
-  .hero-media { order: 2; max-width: 620px; }
-  .hero-copy { order: 1; }
-  .aha { grid-template-columns: 1fr; gap: var(--space-7); }
-  .aha-visual { max-width: 560px; }
-  .founder-grid { grid-template-columns: 1fr; gap: var(--space-6); }
+  .hero { grid-template-columns: minmax(0, 1fr); gap: var(--space-7); padding-top: var(--space-8); }
+  .sample { max-width: 620px; }
 }
+@media (max-width: 767px) {
+  .hero { padding: var(--space-7) var(--space-4) var(--space-7); }
+  .sample-sheet { transform: none; animation: none; padding: var(--space-5) var(--space-4); }
+  .note, .how, .founder, .closing { padding-inline: var(--space-4); }
+  .note, .founder { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+  .steps { grid-template-columns: minmax(0, 1fr); }
+  .steps li, .steps li + li { padding: var(--space-4) 0; border-left: 0; border-bottom: 1px solid var(--rule); }
+}
+/* Archive strip */
+.archive-strip { max-width: 1320px; margin: 0 auto; padding: var(--space-8) var(--space-6); border-top: 1px solid var(--rule); }
+.strip-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: baseline; gap: var(--space-5); }
+.strip-lede { margin: 0; color: var(--ink-3); font-size: var(--text-sm); }
+.strip-all { font-size: var(--text-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.strip-row { margin-top: var(--space-6); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
 
-/* ---- MOBILE ---- */
-@media (max-width: 760px) {
-  .nav { top: 0; margin-top: 0; border-radius: 0; border-left: 0; border-right: 0; border-top: 0; }
-  .hero { min-height: 78vh; margin-top: 0; }
-  .hero-inner { padding: var(--space-7) var(--space-4) var(--space-8); }
-  .hero-title { font-size: clamp(38px, 12vw, 60px); }
-  .hero-actions { gap: var(--space-2); }
-  .hero-cta, .hero-actions .h-btn { width: 100%; }
-  .loop-steps { grid-template-columns: 1fr; gap: var(--space-5); }
-  .loop-media { border-radius: var(--radius-lg); }
-  .founder-actions .h-btn { width: 100%; }
+/* Pricing: a rate card */
+.pricing { max-width: 1320px; margin: 0 auto; padding: var(--space-9) var(--space-6); border-top: 1px solid var(--rule); }
+.pricing-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-8); align-items: end; }
+.pricing-title { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(36px, 4.4vw, 60px); line-height: 1.02; letter-spacing: -0.025em; }
+.pricing-note { margin: 0; color: var(--ink-2); line-height: 1.65; max-width: 56ch; }
+
+.rate-card {
+  margin-top: var(--space-7);
+  display: grid;
+  grid-template-columns: minmax(180px, 1.1fr) repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--rule-2);
+  background: var(--paper);
+  box-shadow: 0 30px 60px -44px oklch(20% 0.02 250 / 0.5);
 }
+.rate { grid-row: 1; padding: var(--space-6) var(--space-5); display: flex; flex-direction: column; border-left: 1px solid var(--rule); }
+.rate-free { grid-column: 2; }
+.rate:nth-of-type(2) { grid-column: 3; }
+.rate-hero { grid-column: 4; background: var(--ink); color: var(--paper); border-left-color: var(--ink); }
+.rate-name { margin: 0; font-size: var(--text-sm); font-weight: 700; }
+.rate-qty { margin: var(--space-4) 0 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(44px, 4.4vw, 64px); line-height: 0.95; letter-spacing: -0.03em; font-variant-numeric: lining-nums; }
+.rate-unit { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--ink-3); min-height: 2.6em; }
+.rate-hero .rate-unit { color: oklch(100% 0 0 / 0.68); }
+.rate-price { margin: var(--space-5) 0 0; font-size: var(--text-lg); font-weight: 700; font-variant-numeric: tabular-nums; }
+.rate-price.is-soon { font-size: var(--text-base); color: var(--ink-3); }
+.rate-hero .rate-price.is-soon { color: oklch(100% 0 0 / 0.72); }
+.rate-cta {
+  margin-top: var(--space-5);
+  align-self: stretch;
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: var(--paper);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+a.rate-cta:hover { background: var(--ink-2); }
+.rate-cta.is-soon { background: transparent; color: var(--ink-3); border: 1px dashed var(--rule-2); }
+.rate-hero .rate-cta.is-soon { color: oklch(100% 0 0 / 0.75); border-color: oklch(100% 0 0 / 0.3); }
+
+.rate-table { grid-column: 1 / -1; grid-row: 2; width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.rate-table thead { display: none; }
+.rate-table th, .rate-table td { padding: var(--space-3) var(--space-5); border-top: 1px solid var(--rule); text-align: left; vertical-align: middle; }
+.rate-table tbody th { font-weight: 600; color: var(--ink); width: calc(1.1 / 4.1 * 100%); }
+.rate-table td { border-left: 1px solid var(--rule); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.rate-table td.is-hero { background: oklch(20% 0.008 250 / 0.04); font-weight: 600; color: var(--ink); }
+.tick { width: 16px; height: 16px; fill: none; stroke: var(--live); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -3px; }
+.dash { color: var(--ink-4); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (max-width: 1024px) {
+  .strip-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .strip-head { grid-template-columns: minmax(0, 1fr) auto; }
+  .strip-lede { grid-column: 1 / -1; grid-row: 2; }
+}
+@media (max-width: 767px) {
+  .archive-strip, .pricing { padding-inline: var(--space-4); }
+  .strip-row { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: var(--space-3); margin-inline: calc(var(--space-4) * -1); padding: 0 var(--space-4) var(--space-2); scrollbar-width: none; }
+  .strip-row > * { flex: 0 0 82%; scroll-snap-align: start; }
+  .pricing-head { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+  .rate-card { grid-template-columns: minmax(0, 1fr); }
+  .rate, .rate-free, .rate:nth-of-type(2), .rate-hero { grid-column: 1; grid-row: auto; border-left: 0; border-top: 1px solid var(--rule); }
+  .rate-free { border-top: 0; }
+  .rate-table { grid-row: auto; }
+  .rate-table thead { display: table-header-group; }
+  .rate-table thead th { font-size: var(--text-xs); color: var(--ink-3); font-weight: 600; }
+  .rate-table th, .rate-table td { padding: var(--space-3) var(--space-2); }
+  .rate-table tbody th { width: auto; }
+}
+.rate-intro { grid-column: 1; grid-row: 1; padding: var(--space-6) var(--space-5); display: flex; flex-direction: column; justify-content: flex-end; }
+.intro-title { margin: 0; font-weight: 700; }
+.intro-copy { margin: var(--space-2) 0 0; font-size: var(--text-sm); line-height: 1.55; color: var(--ink-3); max-width: 28ch; }
+@media (max-width: 767px) { .rate-intro { display: none; } }
 </style>
-

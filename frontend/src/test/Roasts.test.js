@@ -23,7 +23,7 @@ describe('Roasts gallery', () => {
     const cards = w.findAll('.roast-card')
     expect(cards[0].text()).toContain('Quibi')
     expect(cards[0].find('.verdict').classes()).toContain('is-kill')
-    expect(cards[0].find('.verdict').text()).toBe('kill')
+    expect(cards[0].find('.verdict').text()).toBe('Rethink the core.')
   })
 
   it('discloses synthetic users on the page', () => {
@@ -40,6 +40,6 @@ describe('Roasts gallery', () => {
 
   it('shows the silence stat per card', () => {
     const w = mountPage()
-    expect(w.findAll('.roast-card')[0].text()).toMatch(/\d+% scrolled past/)
+    expect(w.findAll('.roast-card')[0].text()).toMatch(/Scrolled past\s*\d+%/)
   })
 })

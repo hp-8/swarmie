@@ -47,13 +47,13 @@ describe('ObjectionList', () => {
     expect(wrapper.findAll('.obj-row')).toHaveLength(2)
   })
 
-  it('shows rank numbers with zero-padding', () => {
+  it('shows plain rank numbers', () => {
     const objections = [makeObjection({ category: 'A' }), makeObjection({ category: 'B', count: 1 })]
     const wrapper = mount(ObjectionList, {
       props: { objections, copy: COPY, jobId: 'job_001' },
     })
     const ranks = wrapper.findAll('.obj-rank').map(el => el.text())
-    expect(ranks).toEqual(['01', '02'])
+    expect(ranks).toEqual(['1', '2'])
   })
 
   it('displays category and count', () => {

@@ -8,10 +8,10 @@
       <span class="tip-row" v-else>{{ hover.state }}</span>
     </div>
     <div class="brain-legend">
-      <span class="lg"><i class="dot idle"></i> idle</span>
-      <span class="lg"><i class="dot thinking"></i> thinking</span>
-      <span class="lg"><i class="dot pos"></i> positive</span>
-      <span class="lg"><i class="dot neg"></i> negative</span>
+      <span class="lg"><i class="dot idle"></i> Waiting</span>
+      <span class="lg"><i class="dot thinking"></i> Reading</span>
+      <span class="lg"><i class="dot pos"></i> Positive</span>
+      <span class="lg"><i class="dot neg"></i> Negative</span>
     </div>
   </div>
 </template>
@@ -47,20 +47,21 @@ let agentNodes = []
 let nodes = []
 let links = []
 
-const SEG_COLORS = d3.scaleOrdinal(d3.schemeTableau10)
+// Canvas can't read CSS custom props: hex mirrors of tokens.css (memo world).
+const C = { ink: '#1d2126', paper: '#ffffff', live: '#2b7d52', warn: '#b42a2b', info: '#3a66a1', idle: '#d9dde3', neutral: '#8a929c', rule: 'rgba(29,33,38,0.10)' }
 
 function color(node) {
-  if (node.kind === 'root') return '#fff'
-  if (node.kind === 'archetype') return SEG_COLORS(node.segment)
+  if (node.kind === 'root') return C.ink
+  if (node.kind === 'archetype') return C.paper
   // agent
-  if (node.state === 'thinking') return '#ffd166'
+  if (node.state === 'thinking') return C.info
   if (node.state === 'reacted') {
     const s = node.sentiment ?? 0
-    if (s > 0.15) return '#3ddc97'
-    if (s < -0.15) return '#ff5470'
-    return '#a0a0b8'
+    if (s > 0.15) return C.live
+    if (s < -0.15) return C.warn
+    return C.neutral
   }
-  return '#3a3a52'
+  return C.idle
 }
 
 function radius(node) {
@@ -138,11 +139,11 @@ function tick() {
     const t = typeof l.target === 'object' ? l.target : nodes.find(n => n.id === l.target)
     if (!s || !t) continue
     if (l.kind === 'spoke') {
-      ctx.strokeStyle = 'rgba(255,255,255,0.10)'
+      ctx.strokeStyle = 'rgba(29,33,38,0.16)'
     } else {
-      if (t.state === 'thinking') ctx.strokeStyle = 'rgba(255,209,102,0.55)'
-      else if (t.state === 'reacted') ctx.strokeStyle = 'rgba(255,255,255,0.07)'
-      else ctx.strokeStyle = 'rgba(255,255,255,0.03)'
+      if (t.state === 'thinking') ctx.strokeStyle = 'rgba(58,102,161,0.45)'
+      else if (t.state === 'reacted') ctx.strokeStyle = C.rule
+      else ctx.strokeStyle = 'rgba(29,33,38,0.05)'
     }
     ctx.beginPath()
     ctx.moveTo(s.x, s.y)
@@ -153,29 +154,18 @@ function tick() {
   // nodes
   for (const n of nodes) {
     const r = radius(n)
-    if (n.state === 'thinking') {
-      ctx.shadowColor = '#ffd166'
-      ctx.shadowBlur = 18
-    } else if (n.kind === 'root') {
-      ctx.shadowColor = '#ff5470'
-      ctx.shadowBlur = 22
-    } else {
-      ctx.shadowBlur = 0
-    }
     ctx.beginPath()
     ctx.arc(n.x, n.y, r, 0, Math.PI * 2)
     ctx.fillStyle = color(n)
     ctx.fill()
     if (n.kind === 'archetype') {
       ctx.lineWidth = 1.5
-      ctx.strokeStyle = 'rgba(255,255,255,0.6)'
+      ctx.strokeStyle = C.ink
       ctx.stroke()
     }
   }
-  ctx.shadowBlur = 0
-
   // root label
-  ctx.fillStyle = '#0b0b14'
+  ctx.fillStyle = C.paper
   ctx.font = '600 10px ui-sans-serif, system-ui'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
@@ -272,14 +262,18 @@ watch(() => props.agents.size, () => { patchAgents() }, { flush: 'post' })
 
 // also watch agents content shallowly via a counter externally (parent triggers via .size)
 
+// Observe the container, not the window: the map can mount hidden (v-show) at
+// zero size and must size itself when it becomes visible.
+let ro = null
 onMounted(() => {
   resize()
-  window.addEventListener('resize', resize)
+  ro = new ResizeObserver(() => resize())
+  ro.observe(wrapRef.value)
   build()
   tick()
 })
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', resize)
+  ro?.disconnect()
   if (raf) cancelAnimationFrame(raf)
   if (sim) sim.stop()
 })
@@ -292,43 +286,40 @@ defineExpose({ patchAgents })
   position: relative;
   width: 100%;
   height: 100%;
-  background: radial-gradient(ellipse at center, #14142a 0%, #07070f 75%);
-  border-radius: 12px;
+  background: var(--paper);
   overflow: hidden;
 }
 .brain-canvas { display: block; width: 100%; height: 100%; }
 .brain-tip {
   position: absolute;
   pointer-events: none;
-  background: rgba(11, 11, 20, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #f0f0fa;
+  background: var(--paper);
+  border: 1px solid var(--rule-2);
+  box-shadow: 0 8px 24px -12px oklch(20% 0.02 250 / 0.3);
+  color: var(--ink);
   padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 11px;
-  font-family: var(--font-mono, ui-monospace);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
   display: flex;
   flex-direction: column;
   gap: 2px;
   z-index: 10;
   max-width: 220px;
 }
-.tip-row { color: rgba(240, 240, 250, 0.7); }
+.tip-row { color: var(--ink-3); }
 .brain-legend {
   position: absolute;
   bottom: 10px;
   left: 12px;
   display: flex;
   gap: 12px;
-  font-size: 10px;
-  font-family: var(--font-mono, ui-monospace);
-  color: rgba(255, 255, 255, 0.55);
-  letter-spacing: 0.08em;
+  font-size: var(--text-sm);
+  color: var(--ink-3);
 }
 .lg { display: inline-flex; align-items: center; gap: 5px; }
 .lg .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
-.dot.idle { background: #3a3a52; }
-.dot.thinking { background: #ffd166; box-shadow: 0 0 6px #ffd166; }
-.dot.pos { background: #3ddc97; }
-.dot.neg { background: #ff5470; }
+.dot.idle { background: #d9dde3; }
+.dot.thinking { background: var(--info); }
+.dot.pos { background: var(--live); }
+.dot.neg { background: var(--warn); }
 </style>

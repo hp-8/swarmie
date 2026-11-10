@@ -1,4 +1,4 @@
-// Swarm catalogue — static config for the PitchInput workbench.
+// Swarm catalogue: static config for the PitchInput workbench.
 // Each swarm answers one founder decision and carries its own input voice
 // (title, sub, placeholder, template) plus the checklist patterns used to
 // light up the "has section" cues. Pure data: no component state here.
@@ -10,13 +10,13 @@ export const SWARMS = [
     blurb: 'Will the market care?',
     enabled: true,
     agentNoun: 'agents',
-    title: 'What are we roasting?',
-    sub: '<em>"AI for sales"</em> is too thin. <em>"AI inbox triage for B2B AEs hitting &gt;50 cold replies/day, $49/seat"</em> is a pitch.',
+    title: 'What should the panel review?',
+    sub: 'Be specific. "AI for sales" is too thin to judge; "AI inbox triage for B2B AEs handling 50+ cold replies a day, $49 a seat" gives the panel something real.',
     placeholder: `PROBLEM: What pain are you solving? Who feels it?
 
 PRODUCT: What does your product do? One-liner + key features.
 
-AUDIENCE: Who is this for? Be specific — role, company size, industry.
+AUDIENCE: Who is this for? Be specific: role, company size, industry.
 
 PRICING: How much? Free tier? Per-seat? Usage-based?
 
@@ -32,19 +32,20 @@ COMPETITORS: Who else solves this? Why are you different?`,
   },
   {
     key: 'investor',
+    tier: 'pack',
     label: 'Investor',
     blurb: 'Is it fundable?',
     enabled: true,
     agentNoun: 'investors',
-    title: 'What deck are we stress-testing?',
-    sub: 'A swarm of investor archetypes reads your deck like inbox #47. You get the likely questions, the missing proof, and the pass reasons before a real partner does.',
+    title: 'Which deck should the panel review?',
+    sub: 'A panel of investor archetypes reads your deck like inbox #47. You get the likely questions, the missing proof, and the pass reasons before a real partner does.',
     placeholder: `PROBLEM: What pain, and why is it urgent now?
 
 SOLUTION: The product + the wedge. Why you win.
 
 MARKET: How big, and why venture-scale?
 
-TRACTION: Revenue, users, growth, retention — real numbers.
+TRACTION: Revenue, users, growth, retention: real numbers.
 
 TEAM: Who you are, why you'll win this.
 
@@ -60,12 +61,13 @@ RAISE: Stage + amount + what it buys.`,
   },
   {
     key: 'launch',
+    tier: 'pack',
     label: 'Launch',
     blurb: 'Will the launch land?',
     enabled: true,
     agentNoun: 'commenters',
-    title: 'How will the launch land?',
-    sub: 'A swarm of Product Hunt, HN, Reddit, Indie Hackers and X archetypes reacts to your launch. You get the questions, objections, confusion, and risks likely to surface before you go live.',
+    title: 'Which launch should the panel review?',
+    sub: 'A panel of Product Hunt, HN, Reddit, Indie Hackers and X archetypes reacts to your launch. You get the questions, objections, confusion, and risks likely to surface before you go live.',
     placeholder: `PRODUCT: What are you launching? One clear sentence.
 
 AUDIENCE: Who is this for? Be specific.
@@ -85,3 +87,8 @@ TIMING: Why now? Is there a trend or moment this taps into?`,
     ],
   },
 ]
+
+// Investor + Launch are pack-only. The server enforces this (402 pack_required);
+// the flag mirrors backend PAID_SWARMS_ENABLED for dev/demo builds.
+export const PAID_UNLOCKED = import.meta.env.VITE_PAID_SWARMS_ENABLED === 'true'
+export const isLocked = (swarm) => swarm?.tier === 'pack' && !PAID_UNLOCKED

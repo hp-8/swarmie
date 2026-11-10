@@ -131,9 +131,8 @@ onUnmounted(() => {
 
 /* trigger — text variant (footer link style) */
 .aid-trigger.text {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--text-xs);
-  letter-spacing: 0.04em;
   color: var(--ink-3, rgba(255, 255, 255, 0.5));
   border-bottom: 1px dotted color-mix(in oklch, var(--ink) 25%, transparent);
   padding-bottom: 1px;
@@ -216,10 +215,8 @@ onUnmounted(() => {
   align-items: baseline;
 }
 .aid-row dt {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--text-xs);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: var(--ink-3, rgba(255, 255, 255, 0.5));
 }
 .aid-row dd {

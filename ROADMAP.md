@@ -2,9 +2,12 @@
 
 A living document. Order roughly reflects priority.
 
-## Phase 0 — Inherited Core (Done)
+## Phase 0 — Inherited Core (Done, superseded)
 
 Forked from MiroFish, rebranded, rebased for founder-validation use case.
+
+> Superseded (2026-06): the OASIS/Zep deep-sim engine below was fully removed in
+> favor of the slim async-LLM swarm. Kept for history.
 
 - [x] OASIS-based simulation engine
 - [x] Zep graph memory
@@ -34,13 +37,15 @@ Turn the output from a vanity scorecard into an action tool.
 - [x] Per-agent chat; verdict-led Result page hierarchy
 - [x] Two feedback layers (per-objection votes + product feedback) → Supabase
 
-## Phase 2 — Founder Intelligence Platform: v1 Swarms (next focus)
+## Phase 2 — Founder Intelligence Platform: v1 Swarms (Investor done; Launch next)
 
 The evolution from a single validation tool into a platform of decision-specific swarms. Each swarm answers one founder decision and ends in a **verdict + next action**, never a dashboard. The wedge that escapes the synthetic-trust ceiling: pair **real market signal** with Swarmie's **synthetic reaction** — the comparison is the moat *and* the calibration ground-truth. v1 ships two.
 
 > **Principle for every swarm: decision stress-testing, not roleplay.** Never pretend to be reality. The simulation is the interface; the intelligence is the product. Ground in real signal over time so synthetic reactions stay calibrated.
 
 ### Launch Swarm — *stress-test the launch* (not "predict your Product Hunt")
+> Blocked on Phase 2.5 ingestion (Reddit + HN) for the grounding items.
+
 Surface the questions, objections, risks, and discussion patterns likely to emerge, from historical community behavior.
 - [ ] Reaction patterns across PH / HN / Reddit / Indie Hackers / X archetypes
 - [ ] Ground in real, recent threads from those communities (via the signal layer below)
@@ -122,6 +127,11 @@ After the v1 swarms (Phase 2) prove the model. Each must still end in a decision
 ## Phase 7 — Paid Tiers
 
 **Value-first:** monetize only once the swarms (Phase 2 + 5) make Swarmie indispensable and usage proves out. Free 60s text brief stays the viral top-of-funnel. Paid bets, in rough priority:
+
+**Freemium model (decided 2026-11-10):** usage-based, no subscription.
+- **Free:** unlimited reviews with 20-reviewer panels, Validate only, full decision memo.
+- **Review packs:** credit packs of 20 and 100 reviews; panels up to 500, Investor (incl. deck upload) and Launch reviews, PDF export and share cards. Prices TBD.
+- Shown on Home as "Planned pricing"; everything stays free during the alpha. Not yet enforced: needs accounts, a credits ledger with atomic server-side deduction, a payment provider + webhooks, and a per-account cap on free runs (unlimited free is the abuse/cost exposure).
 
 - [ ] **Live voice interview / panel** — talk to personas over the realtime API; they interrupt, object, follow up
 - [ ] **Real-user bridge** — recruit 5 real ICP users to test the kill-criteria the sim generated (concierge first, then marketplace cut)

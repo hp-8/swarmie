@@ -172,3 +172,16 @@ describe('PitchInput — hasSection checklist', () => {
     expect(doneItems).toHaveLength(0)
   })
 })
+
+describe('PitchInput — pack-only review types', () => {
+  it('locks Investor: shows the pack note and disables submit', async () => {
+    const router = makeRouter()
+    await router.push('/new')
+    const wrapper = mount(PitchInput, { global: { plugins: [router] } })
+    const investor = wrapper.findAll('.swarm-tab').find((b) => b.text().includes('Investor'))
+    await investor.trigger('click')
+    expect(wrapper.find('.pack-note').exists()).toBe(true)
+    expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.find('.actions-hint').text()).toContain('Validate')
+  })
+})

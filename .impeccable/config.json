@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "geist",
+        "files": [
+          ".impeccable/mocks/decision/canon.html"
+        ],
+        "createdAt": "2026-11-10T19:18:36.456Z",
+        "reason": "Claude: canon card intentionally renders the category-standard look (Geist) as the comparison baseline"
+      }
+    ]
+  }
+}
