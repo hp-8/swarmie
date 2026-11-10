@@ -158,6 +158,7 @@
           <router-link to="/roasts">Famous roasts</router-link>
           <router-link to="/terms">Terms</router-link>
           <router-link to="/privacy">Privacy</router-link>
+          <a href="#" @click.prevent="openConsentSettings">Cookie settings</a>
         </div>
       </footer>
     </main>
@@ -165,6 +166,7 @@
 </template>
 
 <script setup>
+import { openConsentSettings } from '../lib/consent'
 import AiDisclosure from '../components/AiDisclosure.vue'
 import HeroSwarm from '../components/HeroSwarm.vue'
 import DecisionBriefPreview from '../components/marketing/DecisionBriefPreview.vue'

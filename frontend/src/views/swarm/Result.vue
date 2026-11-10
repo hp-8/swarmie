@@ -553,6 +553,8 @@
       <span class="foot-sep">·</span>
       <router-link to="/privacy" class="foot-cta">Privacy</router-link>
       <span class="foot-sep">·</span>
+      <a href="#" class="foot-cta" @click.prevent="openConsentSettings">Cookie settings</a>
+      <span class="foot-sep">·</span>
       <router-link to="/new" class="foot-cta">run another →</router-link>
     </footer>
 
@@ -576,6 +578,7 @@ import { buildShareCardBlob, downloadBlob } from '../../lib/shareCard'
 import { generateRoastPDF } from '../../lib/pdf/template'
 import { trackRoastComplete, trackParsedPitch, trackReport, trackReactions, trackPdfDownload } from '../../lib/analytics'
 import { track } from '../../lib/thirdParty'
+import { openConsentSettings } from '../../lib/consent'
 
 const route = useRoute()
 const jobId = route.params.jobId

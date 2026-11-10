@@ -1,19 +1,21 @@
 <template>
+  <div v-if="show && blocking" class="consent-backdrop" aria-hidden="true"></div>
   <transition name="consent">
-    <div v-if="show" class="consent" role="dialog" aria-label="Cookie consent" aria-live="polite">
+    <div v-if="show" class="consent" role="dialog" :aria-modal="blocking" aria-label="Cookie consent" aria-live="polite">
       <div class="consent-body">
         <p class="consent-text">
-          Cookies keep Swarmie running and help us make it better. The choice is yours.
+          <template v-if="blocking">Pick a cookie setting to continue. Essential cookies keep Swarmie running; analytics (Google Analytics, Microsoft Clarity) help us improve it.</template>
+          <template v-else>Swarmie uses analytics (Google Analytics, Microsoft Clarity) to improve the product. You can turn it off.</template>
         </p>
         <p class="consent-sub">
-          Reject keeps <em>essentials only</em>.
+          Essential only turns analytics off.
           <router-link to="/privacy" class="consent-link">Privacy</router-link>
           <span class="consent-dot">·</span>
           <router-link to="/terms" class="consent-link">Terms</router-link>
         </p>
       </div>
       <div class="consent-actions">
-        <button type="button" class="consent-btn reject" @click="choose('essential')">Reject</button>
+        <button type="button" class="consent-btn reject" @click="choose('essential')">Essential only</button>
         <button type="button" class="consent-btn accept" @click="choose('all')">Accept all</button>
       </div>
     </div>
@@ -21,18 +23,25 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { hasConsentChoice, setConsent } from '../lib/consent'
+import { computed } from 'vue'
+import { consentBannerOpen, hasConsentChoice, setConsent } from '../lib/consent'
 
-const show = ref(!hasConsentChoice())
+// Opt-in regions must choose before using the app; elsewhere the banner only
+// appears when reopened from the footer "Cookie settings" link.
+const blocking = !hasConsentChoice()
+if (blocking) consentBannerOpen.value = true
+const show = computed(() => consentBannerOpen.value)
 
 function choose(choice) {
   setConsent(choice)
-  show.value = false
 }
 </script>
 
 <style scoped>
+.consent-backdrop {
+  position: fixed; inset: 0; z-index: 199;
+  background: color-mix(in oklch, black 55%, transparent);
+}
 .consent {
   position: fixed;
   left: 50%;

@@ -130,7 +130,7 @@
       <section>
         <h2>9. Cookies and Analytics</h2>
         <p>We use essential technologies necessary for the operation of the Service.</p>
-        <p>With your consent we use Google Analytics 4 (traffic sources, page views, feature usage), Microsoft Clarity (heatmaps and session recordings, with pitch text masked), and Vercel Web Analytics and Speed Insights (page views and performance). These load only after you choose "Accept all".</p>
+        <p>With your consent we use Google Analytics 4 (traffic sources, page views, feature usage), Microsoft Clarity (heatmaps and session recordings, with pitch text masked), and Vercel Web Analytics and Speed Insights (page views and performance). Visitors in the EU/EEA, UK and Switzerland are asked first, and these load only after "Accept all". Elsewhere they are on by default; turn them off anytime via "Cookie settings" in the footer.</p>
         <p>Where required by law, analytics, fingerprinting, and non-essential tracking technologies operate only after user consent.</p>
         <p>Users may withdraw consent at any time through browser controls or available consent settings.</p>
       </section>
