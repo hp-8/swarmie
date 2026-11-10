@@ -180,3 +180,89 @@ def test_http_errors_keep_existing_behavior():
     resp = client.get("/api/roast/does-not-exist")
     assert resp.status_code == 404
     assert resp.get_json() == {"error": "job not found"}
+
+
+def test_rate_limit_keys_on_forwarded_client_ip(monkeypatch):
+    """Behind a proxy, distinct clients must get distinct buckets."""
+    monkeypatch.setattr(Config, "RATE_LIMIT_ROAST", "1 per hour")
+    app = _make_app(RATELIMIT_ENABLED=True)
+    client = app.test_client()
+
+    def post(ip):
+        return client.post("/api/roast", json={}, headers={"X-Forwarded-For": ip})
+
+    assert post("1.1.1.1").status_code == 400
+    assert post("1.1.1.1").status_code == 429
+    assert post("2.2.2.2").status_code == 400  # different client, own bucket
+
+
+# ---------------------------------------------------------------------------
+# Global concurrency cap
+# ---------------------------------------------------------------------------
+
+def _patch_slots(monkeypatch, n, pipeline):
+    import threading
+
+    from app.api import roast as roast_api
+
+    monkeypatch.setattr(roast_api, "_roast_slots", threading.BoundedSemaphore(n))
+    monkeypatch.setattr(roast_api, "_run_pipeline", pipeline)
+    return roast_api
+
+
+def test_roast_returns_503_at_capacity_without_burning_quota(monkeypatch):
+    import threading
+
+    gate = threading.Event()
+    _patch_slots(monkeypatch, 1, lambda job: gate.wait(5))
+    monkeypatch.setattr(Config, "RATE_LIMIT_ROAST", "2 per hour")
+    client = _make_app(RATELIMIT_ENABLED=True).test_client()
+    try:
+        assert client.post("/api/roast", json={"pitch": "a"}).status_code == 202
+        for _ in range(3):  # more than the quota: 503s must not count
+            resp = client.post("/api/roast", json={"pitch": "b"})
+            assert resp.status_code == 503
+            body = resp.get_json()
+            assert "capacity" in body["error"]
+            assert body["retry_after_seconds"] == 30
+    finally:
+        gate.set()
+
+
+def test_roast_slot_released_even_if_pipeline_crashes(monkeypatch):
+    def boom(job):
+        raise RuntimeError("pipeline exploded")
+
+    roast_api = _patch_slots(monkeypatch, 1, boom)
+    client = _make_app().test_client()
+    for _ in range(3):
+        assert client.post("/api/roast", json={"pitch": "a"}).status_code == 202
+        assert roast_api._roast_slots.acquire(timeout=2)  # thread finished → slot back
+        roast_api._roast_slots.release()
+
+
+# ---------------------------------------------------------------------------
+# Pack-only review types
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("swarm", ["investor", "launch"])
+def test_paid_swarms_locked_by_default(monkeypatch, swarm):
+    monkeypatch.setattr(Config, "PAID_SWARMS_ENABLED", False)
+    client = _make_app().test_client()
+    resp = client.post("/api/roast", json={"pitch": "a" * 50, "swarm_type": swarm})
+    assert resp.status_code == 402
+    assert resp.get_json()["code"] == "pack_required"
+
+
+def test_validate_swarm_stays_free(monkeypatch):
+    monkeypatch.setattr(Config, "PAID_SWARMS_ENABLED", False)
+    _patch_slots(monkeypatch, 1, lambda job: None)
+    client = _make_app().test_client()
+    assert client.post("/api/roast", json={"pitch": "a" * 50, "swarm_type": "validate"}).status_code == 202
+
+
+def test_paid_swarms_unlock_with_flag(monkeypatch):
+    monkeypatch.setattr(Config, "PAID_SWARMS_ENABLED", True)
+    _patch_slots(monkeypatch, 1, lambda job: None)
+    client = _make_app().test_client()
+    assert client.post("/api/roast", json={"pitch": "a" * 50, "swarm_type": "investor"}).status_code == 202

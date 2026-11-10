@@ -264,8 +264,23 @@ def list_swarms():
 MAX_DECK_BYTES = 25 * 1024 * 1024  # 25 MB
 
 
+# Process-wide cap on in-flight pipelines (single gunicorn worker → one process).
+_roast_slots = threading.BoundedSemaphore(Config.MAX_CONCURRENT_ROASTS)
+_BUSY_RETRY_SECONDS = 30
+
+
+def _run_pipeline_and_release(job: RoastJob) -> None:
+    try:
+        _run_pipeline(job)
+    finally:
+        _roast_slots.release()
+
+
 @roast_bp.route("", methods=["POST"])
-@limiter.limit(lambda: Config.RATE_LIMIT_ROAST)  # callable: env/test overridable
+@limiter.limit(
+    lambda: Config.RATE_LIMIT_ROAST,  # callable: env/test overridable
+    deduct_when=lambda resp: resp.status_code != 503,  # "at capacity" doesn't burn quota
+)
 def create_roast():
     """Start a new roast job.
 
@@ -320,8 +335,24 @@ def create_roast():
 
         job = _new_job(pitch_text=pitch_text, n_agents=n_agents, swarm_type=swarm_type)
 
+    if job.swarm_type in Config.PAID_SWARMS and not Config.PAID_SWARMS_ENABLED:
+        _store.drop(job.job_id)
+        return jsonify({
+            "error": "Investor and Launch reviews are part of review packs, which launch soon.",
+            "code": "pack_required",
+        }), 402
+
+    if not _roast_slots.acquire(blocking=False):
+        _store.drop(job.job_id)
+        # Hint lives in the body: flask-limiter overwrites any Retry-After header
+        # with its own quota-window value on every limited route.
+        return jsonify({
+            "error": "Swarmie is at capacity right now. Please try again in a minute.",
+            "retry_after_seconds": _BUSY_RETRY_SECONDS,
+        }), 503
+
     print(f"[{job.job_id}] creating background thread (n_agents={n_agents}, source={job.source})", flush=True)
-    thread = threading.Thread(target=_run_pipeline, args=(job,), daemon=True)
+    thread = threading.Thread(target=_run_pipeline_and_release, args=(job,), daemon=True)
     thread.start()
     print(f"[{job.job_id}] thread.start() returned; thread.is_alive={thread.is_alive()}", flush=True)
 

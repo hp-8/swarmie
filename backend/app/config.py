@@ -82,6 +82,14 @@ class Config:
     # Concurrency cap for parallel agent reactions (prevents rate-limit hammering).
     ROAST_CONCURRENCY = int(os.environ.get("ROAST_CONCURRENCY", "20"))
     # Hard cost ceiling per sim in USD. Aborts mid-run if exceeded.
+    # Max roasts running at once per process. Each holds a pipeline thread + LLM
+    # fan-out; excess requests get 503 + Retry-After instead of piling up until
+    # the provider rate-limits or the 512 MB free instance OOMs.
+    # Investor + Launch reviews are pack-only. Until accounts/credits exist they
+    # are locked for everyone; set true to use them (dev, demos, or after billing).
+    PAID_SWARMS_ENABLED = _bool("PAID_SWARMS_ENABLED", False)
+    PAID_SWARMS = ("investor", "launch")
+    MAX_CONCURRENT_ROASTS = int(os.environ.get("MAX_CONCURRENT_ROASTS", "4"))
     ROAST_MAX_COST_USD = float(os.environ.get("ROAST_MAX_COST_USD", "1.00"))
 
     # --- Roast job store ---
@@ -105,6 +113,9 @@ class Config:
     # Master switch (flask-limiter reads RATELIMIT_ENABLED from app config).
     # Tests set RATE_LIMIT_ENABLED=false so the suite never trips limits.
     RATELIMIT_ENABLED = _bool("RATE_LIMIT_ENABLED", True)
+    # Reverse-proxy hops in front of the app (Render = 1). Rate limits key on the
+    # client IP from X-Forwarded-For; set 0 when exposed directly (XFF spoofable).
+    TRUSTED_PROXY_HOPS = int(os.environ.get("TRUSTED_PROXY_HOPS", "1"))
 
     @classmethod
     def validate(cls):
