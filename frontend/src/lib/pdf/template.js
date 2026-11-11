@@ -65,7 +65,7 @@ export function sanitize(str) {
     .replace(/[←-⇿]/g, '->')
     .replace(/[≈≅≃]/g, '~')
     .replace(/[•●]/g, '*')
-    .replace(/ /g, ' ')
+    .replace(/00A0/g, ' ')
 }
 
 const lines = (doc, str, w) => doc.splitTextToSize(sanitize(str), w)
