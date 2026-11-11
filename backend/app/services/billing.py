@@ -129,11 +129,19 @@ def diagnose() -> dict:
         "supabase_url_set": bool(url),
         "supabase_url_shape_ok": url.startswith("https://") and url.rstrip("/").endswith(".supabase.co"),
         "supabase_key": key_kind,
-        "stripe_secret_key": "test" if Config.STRIPE_SECRET_KEY.startswith("sk_test_") else
-                             "live" if Config.STRIPE_SECRET_KEY.startswith("sk_live_") else
-                             "missing" if not Config.STRIPE_SECRET_KEY else "unrecognised",
-        "stripe_webhook_secret_set": Config.STRIPE_WEBHOOK_SECRET.startswith("whsec_"),
+        "stripe_mode": Config.STRIPE_MODE,
     }
+    try:
+        k = stripe_secret_key()
+        out["stripe_secret_key"] = "live" if k.startswith(("sk_live_", "rk_live_")) else "test"
+        out["stripe_key_matches_mode"] = True
+    except BillingError as exc:
+        out["stripe_secret_key"] = str(exc)
+        out["stripe_key_matches_mode"] = False
+    try:
+        out["stripe_webhook_secret_set"] = webhook_secret().startswith("whsec_")
+    except BillingError:
+        out["stripe_webhook_secret_set"] = False
     try:
         _rpc("launch_buyers_count", {})
         out["ledger"] = "ok"
@@ -169,17 +177,42 @@ def pack_offer(pack_key: str, launch_left: int) -> dict:
 
 # ---------------------------------------------------------------- Stripe
 
+def stripe_mode() -> str:
+    mode = Config.STRIPE_MODE
+    if mode not in ("test", "live"):
+        raise BillingError(f"STRIPE_MODE must be 'test' or 'live', got {mode!r}")
+    return mode
+
+
+def stripe_secret_key() -> str:
+    """The secret key for the active mode. Refuses a key from the other mode,
+    so test keys can never run in live mode (or the reverse)."""
+    mode = stripe_mode()
+    key = (Config.STRIPE_SECRET_KEY_LIVE if mode == "live" else Config.STRIPE_SECRET_KEY_TEST) or Config.STRIPE_SECRET_KEY
+    if not key:
+        raise BillingError(f"no Stripe secret key set for {mode} mode")
+    if not key.startswith((f"sk_{mode}_", f"rk_{mode}_")):
+        raise BillingError(f"STRIPE_MODE={mode} but the secret key is not a {mode} key")
+    return key
+
+
+def webhook_secret() -> str:
+    mode = stripe_mode()
+    secret = (Config.STRIPE_WEBHOOK_SECRET_LIVE if mode == "live" else Config.STRIPE_WEBHOOK_SECRET_TEST) or Config.STRIPE_WEBHOOK_SECRET
+    if not secret:
+        raise BillingError(f"no Stripe webhook secret set for {mode} mode")
+    return secret
+
 def create_checkout(user: User, pack_key: str) -> str:
     """Create a hosted Checkout session for a pack; returns its URL."""
     import stripe
 
-    if not Config.STRIPE_SECRET_KEY:
-        raise BillingError("Stripe is not configured")
+    api_key = stripe_secret_key()
     offer = pack_offer(pack_key, launch_remaining())
     base = Config.APP_BASE_URL.rstrip("/")
     try:
         session = stripe.checkout.Session.create(
-            api_key=Config.STRIPE_SECRET_KEY,
+            api_key=api_key,
             mode="payment",
             line_items=[{
                 "quantity": 1,
@@ -213,16 +246,19 @@ def handle_webhook(payload: bytes, signature: str | None) -> str:
     """
     import stripe
 
-    if not Config.STRIPE_WEBHOOK_SECRET:
-        raise BillingError("Stripe webhook secret is not configured")
+    secret = webhook_secret()
     try:
-        stripe.Webhook.construct_event(payload, signature or "", Config.STRIPE_WEBHOOK_SECRET)
+        stripe.Webhook.construct_event(payload, signature or "", secret)
     except (stripe.SignatureVerificationError, ValueError) as exc:
         raise ValueError(f"invalid webhook: {exc}") from exc
     # Signature verified; read plain JSON rather than SDK objects, whose
     # dict-like interface changes across stripe-python majors.
     event = json.loads(payload)
 
+    # Only act on events from the active mode: a stray test-mode webhook can never
+    # grant credits in production, nor a live payment be counted during testing.
+    if bool(event.get("livemode")) != (stripe_mode() == "live"):
+        return f"ignored {'live' if event.get('livemode') else 'test'} event in {stripe_mode()} mode"
     if event["type"] not in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
         return f"ignored {event['type']}"
     session = event["data"]["object"]

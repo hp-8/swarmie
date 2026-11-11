@@ -99,6 +99,14 @@ class Config:
     LAUNCH_BUYERS = int(os.environ.get("LAUNCH_BUYERS", "100"))
     SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
     SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    # Stripe mode switch: "test" or "live". Both key sets can sit side by side;
+    # the mode picks one, and keys/events that don't match the mode are refused.
+    STRIPE_MODE = os.environ.get("STRIPE_MODE", "test").strip().lower()
+    STRIPE_SECRET_KEY_TEST = os.environ.get("STRIPE_SECRET_KEY_TEST", "")
+    STRIPE_SECRET_KEY_LIVE = os.environ.get("STRIPE_SECRET_KEY_LIVE", "")
+    STRIPE_WEBHOOK_SECRET_TEST = os.environ.get("STRIPE_WEBHOOK_SECRET_TEST", "")
+    STRIPE_WEBHOOK_SECRET_LIVE = os.environ.get("STRIPE_WEBHOOK_SECRET_LIVE", "")
+    # Single-key form (pre-switch); used when the mode-specific one is unset.
     STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
     STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
     APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:3000")

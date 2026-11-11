@@ -48,6 +48,7 @@ def packs():
     return jsonify({
         "packs": [billing.pack_offer(k, left) for k in billing.PACKS],
         "launch_remaining": left,
+        "mode": billing.Config.STRIPE_MODE,
     }), 200
 
 

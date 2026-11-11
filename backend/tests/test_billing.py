@@ -277,3 +277,57 @@ def test_status_reports_config_without_secrets(monkeypatch):
     assert body["supabase_key"] == "secret" and body["stripe_secret_key"] == "test"
     assert body["ledger_error_code"] == "401"
     assert "TOPSECRET" not in resp.get_data(as_text=True)
+
+
+# ---------------------------------------------------------------- test/live switch
+
+def _mode(monkeypatch, mode, test_key="sk_test_1", live_key="sk_live_1"):
+    monkeypatch.setattr(Config, "STRIPE_MODE", mode)
+    monkeypatch.setattr(Config, "STRIPE_SECRET_KEY", "")
+    monkeypatch.setattr(Config, "STRIPE_SECRET_KEY_TEST", test_key)
+    monkeypatch.setattr(Config, "STRIPE_SECRET_KEY_LIVE", live_key)
+
+
+def test_mode_picks_matching_key(monkeypatch):
+    _mode(monkeypatch, "test")
+    assert billing.stripe_secret_key() == "sk_test_1"
+    _mode(monkeypatch, "live")
+    assert billing.stripe_secret_key() == "sk_live_1"
+
+
+@pytest.mark.parametrize("mode,test_key,live_key", [
+    ("live", "sk_test_1", "sk_test_oops"),   # test key pasted into the live slot
+    ("test", "sk_live_oops", ""),             # live key pasted into the test slot
+    ("staging", "sk_test_1", "sk_live_1"),    # typo in the switch itself
+])
+def test_mismatched_key_or_mode_is_refused(monkeypatch, mode, test_key, live_key):
+    _mode(monkeypatch, mode, test_key, live_key)
+    with pytest.raises(billing.BillingError):
+        billing.stripe_secret_key()
+
+
+def test_live_mode_checkout_refuses_test_key(ledger, monkeypatch):
+    _mode(monkeypatch, "live", live_key="sk_test_wrong_slot")
+    resp = _client().post("/api/billing/checkout", json={"pack": "try"}, headers={"Authorization": "Bearer u1"})
+    assert resp.status_code == 503  # refuses to sell rather than half-working
+
+
+def test_live_mode_ignores_test_mode_payments(ledger, monkeypatch):
+    monkeypatch.setattr(Config, "STRIPE_MODE", "live")
+    monkeypatch.setattr(Config, "STRIPE_WEBHOOK_SECRET_LIVE", SECRET)
+    event = _paid_session(session_id="cs_test_x")
+    event["livemode"] = False
+    payload, sig = _signed(event)
+    resp = _client().post("/api/billing/webhook", data=payload, headers={"Stripe-Signature": sig})
+    assert resp.status_code == 200 and "ignored test event" in resp.get_json()["outcome"]
+    assert ledger.balance("u5") == 0
+
+
+def test_live_mode_grants_live_payments(ledger, monkeypatch):
+    monkeypatch.setattr(Config, "STRIPE_MODE", "live")
+    monkeypatch.setattr(Config, "STRIPE_WEBHOOK_SECRET_LIVE", SECRET)
+    event = _paid_session(session_id="cs_live_x")
+    event["livemode"] = True
+    payload, sig = _signed(event)
+    assert _client().post("/api/billing/webhook", data=payload, headers={"Stripe-Signature": sig}).status_code == 200
+    assert ledger.balance("u5") == 20

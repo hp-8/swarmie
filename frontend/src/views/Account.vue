@@ -2,6 +2,9 @@
   <div class="page">
     <SiteNav />
     <main class="account">
+      <p v-if="mode === 'test'" class="banner banner-test" role="note">
+        Test mode: no real charges. Pay with card 4242 4242 4242 4242, any future date and CVC.
+      </p>
       <p v-if="purchased" class="banner" role="status">
         Payment received. Your credits appear below within a few seconds.
       </p>
@@ -68,6 +71,7 @@ const router = useRouter()
 const me = ref(null)
 const packs = ref([])
 const launchLeft = ref(null)
+const mode = ref('')
 const loading = ref(false)
 const buying = ref('')
 const error = ref('')
@@ -83,6 +87,7 @@ async function load() {
     me.value = m
     packs.value = p.packs
     launchLeft.value = p.launch_remaining
+    mode.value = p.mode || ''
   } catch (e) {
     error.value = e?.response?.data?.error || 'Could not load your account. Refresh to try again.'
   } finally {
@@ -126,6 +131,7 @@ watch(session, (s) => {
 .page { min-height: 100vh; color: var(--ink); background: var(--paper-2); display: flex; flex-direction: column; }
 .account { flex: 1; width: min(720px, 100%); margin: 0 auto; padding: var(--space-8) var(--space-4); }
 .banner { margin: 0 0 var(--space-4); padding: var(--space-3) var(--space-4); background: var(--live-soft); color: var(--ink); border-radius: var(--radius-sm); font-weight: 600; }
+.banner-test { background: var(--info-soft); }
 .sheet { background: var(--paper); border: 1px solid var(--rule); box-shadow: 0 24px 48px -36px oklch(20% 0.02 250 / 0.4); padding: var(--space-7) var(--space-6); }
 .head { display: flex; justify-content: space-between; align-items: start; gap: var(--space-4); }
 .title { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: var(--text-3xl); letter-spacing: -0.015em; }

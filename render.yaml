@@ -47,6 +47,19 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      # Stripe: STRIPE_MODE (test|live) picks the key set; mismatched keys are
+      # refused and other-mode webhook events ignored. Legacy single-key
+      # STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET still work as a fallback.
+      - key: STRIPE_MODE
+        value: test
+      - key: STRIPE_SECRET_KEY_TEST
+        sync: false
+      - key: STRIPE_SECRET_KEY_LIVE
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET_TEST
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET_LIVE
+        sync: false
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
