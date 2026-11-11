@@ -33,6 +33,7 @@ export const CARD_COLORS = {
   accentBright: '#9a5b13', // sharpen / middling
   live: '#2b7a4b',
   warn: '#bf2f2a',
+  warnHl: '#f7d4ce', // --warn-hl over white
 }
 
 const ELLIPSIS = '…'
@@ -299,15 +300,14 @@ function trackedWidth(ctx, str, tracking) {
   return w - tracking
 }
 
-// Outlined mono tag, like the memo's "Risk" flag.
+// Red-highlighted mono tag (ink on --warn-hl), like the memo's "Risk" flag.
 function drawFlag(ctx, label, x, y) {
   ctx.font = `600 13px ${FONT_MONO}`
   const w = trackedWidth(ctx, label, 2)
-  ctx.strokeStyle = CARD_COLORS.warn
-  ctx.lineWidth = 1.5
-  roundRect(ctx, x, y - 18, w + 18, 28, 5)
-  ctx.stroke()
-  ctx.fillStyle = CARD_COLORS.warn
+  ctx.fillStyle = CARD_COLORS.warnHl
+  roundRect(ctx, x, y - 18, w + 18, 28, 4)
+  ctx.fill()
+  ctx.fillStyle = CARD_COLORS.ink
   drawTracked(ctx, label, x + 9, y + 1, 2)
 }
 

@@ -224,7 +224,7 @@ async function copyAnchor(id) {
 .memo-fields dt { font-size: var(--text-sm); color: var(--ink-3); }
 .memo-fields dd { margin: 0; font-size: var(--text-base); font-weight: 600; overflow-wrap: anywhere; }
 .conf { font-weight: 600; }
-.conf.is-low { color: var(--warn); }
+.conf.is-low { color: var(--ink); background: var(--warn-hl); padding: 0.1em 0.45em; border-radius: 3px; }
 .conf-why { display: block; font-weight: 400; color: var(--ink-3); font-size: var(--text-sm); }
 .memo-disclose { margin: var(--space-4) 0 0; font-size: var(--text-sm); color: var(--ink-3); }
 
@@ -240,7 +240,7 @@ async function copyAnchor(id) {
   text-wrap: balance;
   overflow-wrap: anywhere;
 }
-.rec-verdict.is-kill, .rec-verdict.is-wrong { color: var(--warn); }
+.rec-verdict.is-kill, .rec-verdict.is-wrong { color: var(--ink); background: linear-gradient(transparent 58%, var(--warn-hl) 58%); -webkit-box-decoration-break: clone; box-decoration-break: clone; width: fit-content; }
 .rec-reason {
   margin: var(--space-4) 0 0;
   font-family: var(--font-display);
@@ -294,7 +294,7 @@ async function copyAnchor(id) {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--warn);
+  color: var(--ink); background: var(--warn-hl); padding: 0.1em 0.45em; border-radius: 3px;
   vertical-align: 0.12em;
 }
 .f-line { margin: var(--space-2) 0 0; color: var(--ink-2); line-height: 1.55; max-width: 66ch; }

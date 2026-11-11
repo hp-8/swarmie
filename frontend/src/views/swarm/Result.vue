@@ -966,8 +966,7 @@ onMounted(() => {
 }
 .verdict-chip.is-ship { color: var(--live); }
 .verdict-chip.is-sharpen { color: var(--accent-bright); }
-.verdict-chip.is-wrong { color: var(--warn); }
-.verdict-chip.is-kill { color: var(--warn); text-shadow: 0 0 55px var(--warn); }
+.verdict-chip.is-wrong, .verdict-chip.is-kill { color: var(--ink); background: linear-gradient(transparent 58%, var(--warn-hl) 58%); -webkit-box-decoration-break: clone; box-decoration-break: clone; text-shadow: none; width: fit-content; }
 .verdict-meta { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); cursor: help; }
 
 /* NEXT ACTION */
@@ -1350,9 +1349,9 @@ onMounted(() => {
   border: 1px solid color-mix(in oklch, var(--live) 35%, transparent);
 }
 .zone-tag-warn {
-  color: var(--warn);
-  background: var(--warn-soft);
-  border: 1px solid color-mix(in oklch, var(--warn) 35%, transparent);
+  color: var(--ink);
+  background: var(--warn-hl);
+  border: 1px solid transparent;
 }
 
 /* Investor simulation */

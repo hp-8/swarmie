@@ -38,7 +38,7 @@ defineProps({ quotes: { type: Array, default: () => [] } })
 }
 .q-meta { grid-area: meta; display: flex; flex-wrap: wrap; gap: 0 var(--space-2); font-size: var(--text-sm); color: var(--ink-3); }
 .q-tone::first-letter { text-transform: uppercase; }
-.quote.tone-skeptical .q-tone, .quote.tone-aggressive .q-tone { color: var(--warn); }
+.quote.tone-skeptical .q-tone, .quote.tone-aggressive .q-tone { color: var(--ink); background: var(--warn-hl); padding: 0.1em 0.45em; border-radius: 3px; }
 .quote.tone-enthusiastic .q-tone { color: var(--live); }
 .muted { color: var(--ink-3); font-size: var(--text-sm); margin: 0; }
 

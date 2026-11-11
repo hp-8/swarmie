@@ -78,7 +78,7 @@ async function copyTest(obj) {
 .obj-guide dd { margin: 0; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
 .obj-tag { font-size: var(--text-sm); font-weight: 600; color: var(--ink-3); }
 .obj-tag::first-letter { text-transform: uppercase; }
-.obj-tag.warn { color: var(--warn); }
+.obj-tag.warn { color: var(--ink); background: var(--warn-hl); padding: 0.1em 0.45em; border-radius: 3px; }
 .obj-test-text { color: var(--ink); }
 .obj-test-q {
   margin-left: var(--space-3);

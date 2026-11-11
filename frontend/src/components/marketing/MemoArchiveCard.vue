@@ -75,7 +75,7 @@ const pitch = computed(() => props.memo.one_liner.replace(ERA_RE, ''))
   line-height: 1.1;
   letter-spacing: -0.015em;
 }
-.verdict.is-kill, .verdict.is-wrong { color: var(--warn); }
+.verdict.is-kill, .verdict.is-wrong { color: var(--ink); background: linear-gradient(transparent 58%, var(--warn-hl) 58%); -webkit-box-decoration-break: clone; box-decoration-break: clone; width: fit-content; }
 .verdict.is-ship { color: var(--live); }
 
 .card-quote {

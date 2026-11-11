@@ -298,7 +298,7 @@ function startDraft() {
 .s-reason { margin: var(--space-2) 0 0; font-family: var(--font-display); font-size: var(--text-md); line-height: 1.5; color: var(--ink-2); }
 .s-finding { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--rule); }
 .s-title { margin: 0; font-weight: 600; }
-.s-flag { margin-right: var(--space-2); font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--warn); vertical-align: 0.1em; }
+.s-flag { margin-right: var(--space-2); font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); background: var(--warn-hl); padding: 0.1em 0.45em; border-radius: 3px; vertical-align: 0.1em; }
 .s-line { margin: var(--space-1) 0 0; font-size: var(--text-sm); line-height: 1.55; color: var(--ink-2); }
 .s-action { margin: var(--space-5) 0 0; padding: var(--space-3) var(--space-4); background: var(--paper-2); border-top: 1px solid var(--rule-2); font-size: var(--text-sm); line-height: 1.55; }
 
