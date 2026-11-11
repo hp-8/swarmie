@@ -58,7 +58,7 @@ describe('DecisionMemo', () => {
     const f = w.find('#risk-1')
     expect(f.exists()).toBe(true)
     expect(f.text()).toContain('Buyer is not the user.')
-    expect(f.text()).toContain('only teachers spoke.')
+    expect(f.text()).toContain('Only teachers spoke.')
     expect(f.text()).toContain('Ask 5 admins.')
   })
 
@@ -84,11 +84,23 @@ describe('DecisionMemo', () => {
     expect(w2.find('#path').text()).toContain('If not')
   })
 
-  it('letters exhibits by which ones actually render', () => {
-    const w = mountMemo(makeReport(), { usage: { total_cost_usd: 0.0213, total_tokens: 1000, total_calls: 4 } })
-    const ids = w.findAll('.ex-id').map((e) => e.text())
-    // sentiment, segments, cost (no silence, no voices)
-    expect(ids).toEqual(['A', 'B', 'C'])
+  it('does not repeat an objection quote under loudest voices', () => {
+    const w = mountMemo(
+      makeReport({
+        top_objections: [{ category: 'price', example_quote: 'Too pricey' }],
+        quoted_reactions: [{ text: 'too pricey' }, { text: 'Love it' }],
+      }),
+      { },
+    )
+    const voices = w.findComponent({ name: 'QuotesList' })
+    expect(voices.props('quotes')).toEqual([{ text: 'Love it' }])
+  })
+
+  it('leads with this week and shows only the branches in the path', () => {
+    const w = mountMemo(makeReport({ path_forward: { this_week: 'dup', if_confirmed: 'go wider' } }))
+    expect(w.find('.rec-action').text()).toContain('Interview 5 administrators.')
+    expect(w.find('#path').text()).not.toContain('dup')
+    expect(w.find('#path').text()).toContain('If it holds')
   })
 
   it('shows real cost, and says so when it is negligible instead of inventing one', () => {
