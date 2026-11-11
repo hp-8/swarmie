@@ -38,11 +38,11 @@ services:
       # in-process store (jobs lost on restart → "job not found" 404s).
       - key: REDIS_URL
         sync: false
-      # Billing (credits via Stripe Checkout, ledger in Supabase). Leave
-      # BILLING_ENABLED false until the keys below are set and the
-      # 20261110200000_billing_credits migration has been applied.
+      # Billing (credits via Stripe Checkout, ledger in Supabase).
+      # BILLING_ENABLED and STRIPE_MODE are set in the Render dashboard only:
+      # a hardcoded value here would reset them on every Blueprint sync.
       - key: BILLING_ENABLED
-        value: "false"
+        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
@@ -51,7 +51,7 @@ services:
       # refused and other-mode webhook events ignored. Legacy single-key
       # STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET still work as a fallback.
       - key: STRIPE_MODE
-        value: test
+        sync: false
       - key: STRIPE_SECRET_KEY_TEST
         sync: false
       - key: STRIPE_SECRET_KEY_LIVE
