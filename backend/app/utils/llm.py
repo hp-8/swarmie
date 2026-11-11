@@ -139,6 +139,7 @@ class UsageTracker:
             "total_tokens": self.total_tokens,
             "total_calls": len(self.calls),
             "by_tier": by_tier,
+            "models": sorted({c.model for c in self.calls if c.model}),
         }
 
 

@@ -20,6 +20,7 @@ import logging
 import threading
 import time
 import uuid
+from datetime import datetime, timezone
 from typing import Any
 
 from flask import Blueprint, Response, jsonify, request, stream_with_context
@@ -27,6 +28,7 @@ from flask import Blueprint, Response, jsonify, request, stream_with_context
 from ..config import Config
 from ..extensions import limiter
 from ..services import billing
+from . import analytics
 from ..services.job_store import RoastJob, make_store
 from ..services.swarm import (
     CHAT_SOFT_CAP,
@@ -238,6 +240,7 @@ def _run_pipeline(job: RoastJob) -> None:
         _push_event(job, "status", {"status": job.status, "progress": 1.0})
         _push_event(job, "usage", job.usage)
         _push_event(job, "done", {"job_id": job.job_id})
+        _record_run(job)
 
     except Exception as exc:
         if _store.is_cancelled(job.job_id):
@@ -250,6 +253,34 @@ def _run_pipeline(job: RoastJob) -> None:
         job.usage = tracker.summary()
         _store.persist(job)
         _push_event(job, "status", {"status": job.status, "error": job.error})
+        _record_run(job, exc)
+
+
+def _record_run(job: RoastJob, exc: Exception | None = None) -> None:
+    """Write the run's final status to roast_runs from the server.
+
+    The browser only reported completion from the Result page, so failed runs
+    stayed 'started' forever. PATCH by job_id: a run the user didn't consent
+    to track has no row, so nothing is written for it. The error column holds
+    the raw cause (server-side only; browser keys can't read the table).
+    """
+    usage = job.usage or {}
+    row = {
+        "job_id": job.job_id,
+        "status": job.status,
+        "completed_at": datetime.now(timezone.utc).isoformat(),
+        "agent_count": len(job.reactions),
+        "total_tokens": usage.get("total_tokens"),
+        "cost_usd": usage.get("total_cost_usd"),
+        # More than one model means some calls fell back (e.g. to Gemini).
+        "model": ",".join(usage.get("models") or []) or None,
+    }
+    if exc is not None:
+        row["error"] = f"{type(exc).__name__}: {exc}"[:500]
+    try:
+        analytics.write("run_complete", [{k: v for k, v in row.items() if v is not None}])
+    except Exception:  # analytics must never break a run
+        logger.warning("could not record run %s", job.job_id, exc_info=True)
 
 
 # ---------- routes ----------

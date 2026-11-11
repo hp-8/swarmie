@@ -467,7 +467,7 @@ import { roastApi } from '../../api/roast'
 import { verdictMeta } from '../../lib/verdict'
 import { buildShareCardBlob, downloadBlob } from '../../lib/shareCard'
 import { generateRoastPDF } from '../../lib/pdf/template'
-import { trackRoastComplete, trackParsedPitch, trackReport, trackReactions, trackPdfDownload } from '../../lib/analytics'
+import { trackParsedPitch, trackReport, trackReactions, trackPdfDownload } from '../../lib/analytics'
 import { track } from '../../lib/thirdParty'
 import { openConsentSettings } from '../../lib/consent'
 
@@ -517,7 +517,6 @@ async function load() {
     const res = await roastApi.get(jobId)
     const j = res.data || res
     if (j.status === 'failed') {
-      trackRoastComplete(jobId, { error: j.error || 'unknown' }).catch(() => {})
       error.value = j.error || 'Roast failed'
     } else if (j.status !== 'completed') {
       error.value = `Job not finished (status: ${j.status})`
@@ -528,14 +527,6 @@ async function load() {
       swarmType.value = j.swarm_type || 'validate'
       archetypes.value = Array.isArray(j.archetypes) ? j.archetypes : []
       reactions.value = Array.isArray(j.reactions) ? j.reactions : []
-      trackRoastComplete(jobId, {
-        agentCount: reactions.value.length,
-        promptTokens: j.usage?.prompt_tokens,
-        completionTokens: j.usage?.completion_tokens,
-        totalTokens: j.usage?.total_tokens,
-        costUsd: j.usage?.total_cost_usd,
-        model: j.usage?.breakdown?.[0]?.model,
-      }).catch(() => {})
       trackParsedPitch(jobId, j.parsed_pitch).catch(() => {})
       trackReport(jobId, j.report).catch(() => {})
       trackReactions(jobId, j.reactions).catch(() => {})

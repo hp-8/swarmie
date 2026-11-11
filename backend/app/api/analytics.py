@@ -49,6 +49,8 @@ OPS: dict[str, tuple[str, str, str | None, tuple[str, ...]]] = {
 }
 
 MAX_ROWS = 600  # largest swarm is 500 agents
+# Written by the backend itself (roast pipeline), never accepted from browsers.
+SERVER_ONLY = {"run_complete"}
 
 
 def write(op: str, rows: list[dict]) -> None:
@@ -76,7 +78,7 @@ def write(op: str, rows: list[dict]) -> None:
 @analytics_bp.route("/<op>", methods=["POST"])
 @limiter.limit("300 per hour")
 def ingest(op: str):
-    if op not in OPS:
+    if op not in OPS or op in SERVER_ONLY:
         return jsonify({"error": "unknown event"}), 404
     if not (Config.SUPABASE_URL and Config.SUPABASE_SERVICE_ROLE_KEY):
         return "", 204  # analytics not configured: drop silently

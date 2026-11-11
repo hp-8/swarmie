@@ -62,25 +62,6 @@ export async function trackRoastStart(jobId, { pitchText, pitchLength, nAgents, 
   })
 }
 
-export async function trackRoastComplete(jobId, { agentCount, promptTokens, completionTokens, totalTokens, costUsd, model, error: runError } = {}) {
-  if (!hasAnalyticsConsent()) return
-
-  const update = {
-    job_id: jobId,
-    status: runError ? 'failed' : 'completed',
-    completed_at: new Date().toISOString(),
-  }
-  if (agentCount != null) update.agent_count = agentCount
-  if (promptTokens != null) update.prompt_tokens = promptTokens
-  if (completionTokens != null) update.completion_tokens = completionTokens
-  if (totalTokens != null) update.total_tokens = totalTokens
-  if (costUsd != null) update.cost_usd = costUsd
-  if (model) update.model = model
-  if (runError) update.error = String(runError).slice(0, 500)
-
-  await send('run_complete', update)
-}
-
 export async function trackParsedPitch(jobId, pitch) {
   if (!hasAnalyticsConsent() || !pitch) return
   await send('pitch', {

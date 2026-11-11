@@ -12,7 +12,6 @@ vi.mock('../api/roast.js', () => ({
 
 vi.mock('../lib/analytics.js', () => ({
   trackRoastStart: vi.fn().mockResolvedValue(undefined),
-  trackRoastComplete: vi.fn().mockResolvedValue(undefined),
   trackParsedPitch: vi.fn().mockResolvedValue(undefined),
   trackReport: vi.fn().mockResolvedValue(undefined),
   trackReactions: vi.fn().mockResolvedValue(undefined),

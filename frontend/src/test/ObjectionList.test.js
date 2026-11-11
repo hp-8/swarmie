@@ -6,7 +6,6 @@ import ObjectionList from '../components/swarm/ObjectionList.vue'
 vi.mock('../lib/analytics.js', () => ({
   trackObjectionFeedback: vi.fn().mockResolvedValue(undefined),
   trackRoastStart: vi.fn().mockResolvedValue(undefined),
-  trackRoastComplete: vi.fn().mockResolvedValue(undefined),
   trackParsedPitch: vi.fn().mockResolvedValue(undefined),
   trackReport: vi.fn().mockResolvedValue(undefined),
   trackReactions: vi.fn().mockResolvedValue(undefined),
