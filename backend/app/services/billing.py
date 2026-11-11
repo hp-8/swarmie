@@ -110,6 +110,44 @@ def refund(user_id: str, ref: str) -> bool:
         return False
 
 
+def diagnose() -> dict:
+    """Billing configuration health for operators. Never returns secret values."""
+    key = Config.SUPABASE_SERVICE_ROLE_KEY or ""
+    if not key:
+        key_kind = "missing"
+    elif key.startswith("sb_secret_"):
+        key_kind = "secret"
+    elif key.startswith("sb_publishable_"):
+        key_kind = "publishable (wrong: needs the secret key)"
+    elif key.startswith("eyJ"):
+        key_kind = "legacy jwt"
+    else:
+        key_kind = "unrecognised"
+    url = Config.SUPABASE_URL or ""
+    out = {
+        "billing_enabled": enabled(),
+        "supabase_url_set": bool(url),
+        "supabase_url_shape_ok": url.startswith("https://") and url.rstrip("/").endswith(".supabase.co"),
+        "supabase_key": key_kind,
+        "stripe_secret_key": "test" if Config.STRIPE_SECRET_KEY.startswith("sk_test_") else
+                             "live" if Config.STRIPE_SECRET_KEY.startswith("sk_live_") else
+                             "missing" if not Config.STRIPE_SECRET_KEY else "unrecognised",
+        "stripe_webhook_secret_set": Config.STRIPE_WEBHOOK_SECRET.startswith("whsec_"),
+    }
+    try:
+        _rpc("launch_buyers_count", {})
+        out["ledger"] = "ok"
+    except BillingError as exc:
+        # Status code and Postgres/PostgREST error code only; no payload echo.
+        msg = str(exc)
+        out["ledger"] = msg.split(":")[0][:120]
+        for code in ("42501", "PGRST202", "PGRST301", "401", "403", "404"):
+            if code in msg:
+                out["ledger_error_code"] = code
+                break
+    return out
+
+
 def launch_remaining() -> int:
     used = int(_rpc("launch_buyers_count", {}) or 0)
     return max(0, Config.LAUNCH_BUYERS - used)

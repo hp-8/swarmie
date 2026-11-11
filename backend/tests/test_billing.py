@@ -260,3 +260,20 @@ def test_service_headers_support_new_and_legacy_keys(monkeypatch, key, bearer):
     h = billing._svc_headers()
     assert h["apikey"] == key
     assert ("Authorization" in h) is bearer
+
+
+def test_status_reports_config_without_secrets(monkeypatch):
+    monkeypatch.setattr(Config, "SUPABASE_URL", "https://abc.supabase.co")
+    monkeypatch.setattr(Config, "SUPABASE_SERVICE_ROLE_KEY", "sb_secret_TOPSECRET")
+    monkeypatch.setattr(Config, "STRIPE_SECRET_KEY", "sk_test_TOPSECRET")
+
+    def boom(fn, args):
+        raise billing.BillingError("supabase rpc launch_buyers_count returned 401: Invalid API key")
+
+    monkeypatch.setattr(billing, "_rpc", boom)
+    resp = _client().get("/api/billing/status")
+    body = resp.get_json()
+    assert resp.status_code == 200
+    assert body["supabase_key"] == "secret" and body["stripe_secret_key"] == "test"
+    assert body["ledger_error_code"] == "401"
+    assert "TOPSECRET" not in resp.get_data(as_text=True)

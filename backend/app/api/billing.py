@@ -51,6 +51,13 @@ def packs():
     }), 200
 
 
+@billing_bp.route("/status", methods=["GET"])
+@limiter.limit("30 per hour")
+def status():
+    """Config health: which settings are present and whether the ledger answers."""
+    return jsonify(billing.diagnose()), 200
+
+
 @billing_bp.route("/me", methods=["GET"])
 def me():
     if not billing.enabled():
