@@ -15,8 +15,15 @@
 
         <div v-else class="sent" role="status">
           <p class="sent-title">Check your inbox.</p>
-          <p class="sent-copy">We sent a sign-in link to <strong>{{ email }}</strong>. Open it on this device to continue.</p>
-          <button class="link" type="button" @click="sent = false">Use a different email</button>
+          <p class="sent-copy">We sent a sign-in link to <strong>{{ email }}</strong>. Open it on this device to continue. It can take a minute, and may land in spam.</p>
+          <div class="sent-actions">
+            <button class="btn btn-ghost" type="button" :disabled="busy || cooldown > 0" @click="resend">
+              {{ busy ? 'Sending…' : cooldown > 0 ? `Resend link in ${cooldown}s` : 'Resend link' }}
+            </button>
+            <button class="link" type="button" @click="changeEmail">Use a different email</button>
+          </div>
+          <p v-if="resent" class="note">Sent again. Use the newest email; earlier links stop working.</p>
+          <p v-if="error" class="error" role="alert">{{ error }}</p>
         </div>
       </div>
     </main>
@@ -25,7 +32,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import SiteNav from '../components/marketing/SiteNav.vue'
 import SiteFooter from '../components/marketing/SiteFooter.vue'
@@ -36,6 +43,20 @@ const email = ref('')
 const busy = ref(false)
 const sent = ref(false)
 const error = ref('')
+const resent = ref(false)
+// Supabase allows one email per address about every 60s.
+const COOLDOWN_S = 60
+const cooldown = ref(0)
+let timer = null
+function startCooldown() {
+  cooldown.value = COOLDOWN_S
+  clearInterval(timer)
+  timer = setInterval(() => {
+    cooldown.value -= 1
+    if (cooldown.value <= 0) clearInterval(timer)
+  }, 1000)
+}
+onBeforeUnmount(() => clearInterval(timer))
 
 // Return to the account page, carrying the pack the visitor meant to buy.
 function nextPath() {
@@ -49,11 +70,24 @@ async function submit() {
   try {
     await sendMagicLink(email.value, nextPath())
     sent.value = true
+    startCooldown()
   } catch (e) {
     error.value = e?.message || 'Could not send the link. Try again in a moment.'
   } finally {
     busy.value = false
   }
+}
+
+async function resend() {
+  resent.value = false
+  await submit()
+  if (!error.value) resent.value = true
+}
+
+function changeEmail() {
+  sent.value = false
+  resent.value = false
+  error.value = ''
 }
 </script>
 
@@ -73,5 +107,10 @@ async function submit() {
 .error { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--warn); }
 .sent-title { margin: 0; font-weight: 700; font-size: var(--text-lg); }
 .sent-copy { margin: var(--space-2) 0 var(--space-4); color: var(--ink-2); line-height: 1.6; overflow-wrap: anywhere; }
+.sent-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
+.btn-ghost { margin-top: 0; background: var(--paper); color: var(--ink); border: 1px solid var(--rule-2); }
+.btn-ghost:hover:not(:disabled) { background: var(--paper-3); }
+.btn-ghost:disabled { background: var(--paper-2); color: var(--ink-3); cursor: not-allowed; }
+.note { margin: var(--space-3) 0 0; font-size: var(--text-sm); color: var(--ink-2); }
 .link { font: inherit; font-size: var(--text-sm); color: var(--ink-2); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 </style>
