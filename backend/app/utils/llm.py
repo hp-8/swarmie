@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import contextvars
 import logging
 import os
 import re
@@ -29,6 +30,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
+import anthropic
 from openai import APIError, APITimeoutError, AsyncOpenAI, OpenAI, RateLimitError
 
 from ..config import Config
@@ -61,6 +63,10 @@ _PRICING: dict[str, tuple[float, float]] = {
     # OpenRouter-routed DeepSeek (verified openrouter.ai/api/v1/models, 2026-06)
     "deepseek/deepseek-v4-flash": (0.0983, 0.1966),
     "deepseek/deepseek-v4-pro": (0.435, 0.87),
+    # Anthropic (platform.claude.com pricing, 2026-11)
+    "claude-opus-5-5": (4.00, 20.00),
+    "claude-sonnet-5-5": (2.00, 10.00),
+    "claude-haiku-5-5": (0.10, 0.50),
     # Google
     # Standard tier, verified aistudio.google.com/docs/pricing 2026-11-11.
     # Doubles to (1.50, 7.50) on 2027-01-01; update then.
@@ -201,6 +207,35 @@ def _resolve_model(tier: str) -> tuple[str, str, str]:
     return api_key, base_url, model
 
 
+# --- paid runs on Claude ---
+# Set True by the roast pipeline for runs that spent a credit. Every LLM built
+# while it's set (same thread / asyncio tasks) talks to Claude through the
+# Anthropic SDK instead of the free OpenAI-compatible provider.
+paid_run: contextvars.ContextVar[bool] = contextvars.ContextVar("paid_run", default=False)
+
+_CLAUDE_DEFAULT_MODEL = "claude-opus-5-5"
+_CLAUDE_DEFAULT_EFFORT = {"cheap": "low"}  # others: model default
+
+
+def _resolve_claude(tier: str) -> tuple[str, str | None] | None:
+    """(model, effort) for a paid run, or None to use the free provider.
+
+    Env: ANTHROPIC_API_KEY, LLM_PAID_MODEL_NAME, LLM_PAID_<TIER>_MODEL_NAME,
+    LLM_PAID_<TIER>_EFFORT (low | medium | high | xhigh | max).
+    """
+    if not (paid_run.get() and os.environ.get("ANTHROPIC_API_KEY")):
+        return None
+    t = (tier or "default").lower()
+    up = t.upper()
+    model = (
+        os.environ.get(f"LLM_PAID_{up}_MODEL_NAME")
+        or os.environ.get("LLM_PAID_MODEL_NAME")
+        or _CLAUDE_DEFAULT_MODEL
+    )
+    effort = os.environ.get(f"LLM_PAID_{up}_EFFORT") or _CLAUDE_DEFAULT_EFFORT.get(t)
+    return model, effort
+
+
 def _strip_think_tags(text: str) -> str:
     """Reasoning models (MiniMax, GLM, DeepSeek-R1) leak <think> blocks. Strip them."""
     if not text:
@@ -249,6 +284,16 @@ class LLM:
         # Env-overridable so slow local backends (Ollama 7B) don't abort the
         # longer deep-tier generations. Default 30s for hosted providers.
         self.timeout = timeout if timeout is not None else float(os.environ.get("LLM_TIMEOUT", "30"))
+
+        claude = _resolve_claude(tier)
+        self._claude: anthropic.Anthropic | None = None
+        self._aclaude: anthropic.AsyncAnthropic | None = None
+        if claude:
+            self.model, self._claude_effort = claude
+            self.base_url = "anthropic"
+            # Thinking models take longer than the free provider's 30s budget.
+            self._claude_timeout = float(os.environ.get("LLM_PAID_TIMEOUT", "300"))
+            self._claude = anthropic.Anthropic(timeout=self._claude_timeout, max_retries=self.max_retries)
 
         self._sync = OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=self.timeout)
         self._async: AsyncOpenAI | None = None  # lazy
@@ -302,6 +347,8 @@ class LLM:
         model: str | None = None,
     ) -> str:
         """Single chat completion. Returns plain text."""
+        if self._claude:
+            return self._claude_chat(messages, max_tokens, response_format)
         resp = self._call_with_retry(
             messages=messages,
             temperature=temperature,
@@ -344,6 +391,8 @@ class LLM:
         model: str | None = None,
     ) -> str:
         """Async chat completion."""
+        if self._claude:
+            return await self._aclaude_chat(messages, max_tokens, response_format)
         resp = await self._acall_with_retry(
             messages=messages,
             temperature=temperature,
@@ -373,6 +422,57 @@ class LLM:
             return json.loads(cleaned)
         except json.JSONDecodeError as exc:
             raise ValueError(f"LLM did not return valid JSON: {cleaned[:200]}...") from exc
+
+    # --- Claude (paid runs) ---
+
+    def _claude_request(self, messages: list[dict], max_tokens: int, response_format: dict | None) -> dict:
+        # OpenAI-style system messages become the top-level system prompt.
+        system = "\n\n".join(m["content"] for m in messages if m["role"] == "system")
+        if response_format and response_format.get("type") == "json_object":
+            system += "\n\nRespond with a single JSON object and nothing else."
+        req: dict[str, Any] = {
+            "model": self.model,
+            # Thinking counts toward max_tokens; callers sized theirs for
+            # non-thinking models, so give room or JSON gets cut off.
+            "max_tokens": max(max_tokens, 16000),
+            "messages": [m for m in messages if m["role"] != "system"],
+        }
+        if system.strip():
+            req["system"] = system.strip()
+        if self._claude_effort:
+            req["output_config"] = {"effort": self._claude_effort}
+        return req
+
+    def _claude_text(self, resp: Any) -> str:
+        if resp.stop_reason == "refusal":
+            category = getattr(resp.stop_details, "category", None) if resp.stop_details else None
+            raise RuntimeError(f"Claude declined the request (category={category})")
+        if self.tracker:
+            pt, ct = resp.usage.input_tokens, resp.usage.output_tokens
+            in_price, out_price = _lookup_price(resp.model)
+            self.tracker.add(Usage(
+                prompt_tokens=pt, completion_tokens=ct, total_tokens=pt + ct,
+                cost_usd=round((pt * in_price + ct * out_price) / 1_000_000, 6),
+                model=resp.model, tier=self.tier,
+            ))
+        return "".join(b.text for b in resp.content if b.type == "text")
+
+    def _claude_create(self, client: Any, req: dict):
+        # Haiku has no server-side refusal fallback; Opus/Sonnet route a
+        # declined request to a fallback model inside the same call.
+        if self.model.startswith("claude-haiku"):
+            return client.messages.create(**req)
+        return client.beta.messages.create(**req, betas=["server-side-fallback-2026-07-01"], fallbacks="default")
+
+    def _claude_chat(self, messages, max_tokens, response_format) -> str:
+        req = self._claude_request(messages, max_tokens, response_format)
+        return self._claude_text(self._claude_create(self._claude, req))
+
+    async def _aclaude_chat(self, messages, max_tokens, response_format) -> str:
+        if self._aclaude is None:
+            self._aclaude = anthropic.AsyncAnthropic(timeout=self._claude_timeout, max_retries=self.max_retries)
+        req = self._claude_request(messages, max_tokens, response_format)
+        return self._claude_text(await self._claude_create(self._aclaude, req))
 
     # --- retry wrappers ---
 

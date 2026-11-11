@@ -17,6 +17,7 @@ gunicorn>=21.2.0
 
 # LLM (OpenAI-format client)
 openai>=1.0.0
+anthropic>=1.17.0,<2
 # Billing: Supabase REST + Stripe Checkout
 httpx>=0.27
 stripe>=10.0.0

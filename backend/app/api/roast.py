@@ -43,7 +43,7 @@ from ..services.swarm import (
     get_swarm,
     load_pdf,
 )
-from ..utils.llm import UsageTracker
+from ..utils.llm import UsageTracker, paid_run
 from .billing import current_user
 
 logger = logging.getLogger("swarmie.api.roast")
@@ -303,6 +303,8 @@ _BUSY_RETRY_SECONDS = 30
 
 
 def _run_pipeline_and_release(job: RoastJob) -> None:
+    # Paid runs use Claude; this thread's LLMs read the flag when built.
+    paid_run.set(bool(job.charged_user))
     try:
         _run_pipeline(job)
     finally:
