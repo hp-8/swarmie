@@ -6,8 +6,6 @@ import {
   agentCountLine,
   confidenceLine,
   resolveVerdictDisplay,
-  CARD_W,
-  CARD_H,
   CARD_COLORS,
 } from '../lib/shareCard'
 import { verdictMeta, VERDICT_HEX } from '../lib/verdict'
