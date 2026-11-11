@@ -236,6 +236,19 @@ def _resolve_claude(tier: str) -> tuple[str, str | None] | None:
     return model, effort
 
 
+def _reasoning_extra(base_url: str) -> dict | None:
+    """Request body extras that switch a thinking model's reasoning off.
+
+    Reasoning roughly doubles latency on free OpenRouter models and adds
+    nothing to JSON extraction or persona writing. LLM_REASONING=on keeps the
+    model's default; =off forces it off on any OpenRouter base URL (the default).
+    """
+    mode = os.environ.get("LLM_REASONING", "off").lower()
+    if mode == "off" and "openrouter.ai" in (base_url or ""):
+        return {"reasoning": {"enabled": False}}
+    return None
+
+
 def _strip_think_tags(text: str) -> str:
     """Reasoning models (MiniMax, GLM, DeepSeek-R1) leak <think> blocks. Strip them."""
     if not text:
@@ -287,7 +300,7 @@ class LLM:
         self.max_retries = max_retries
         # Env-overridable so slow local backends (Ollama 7B) don't abort the
         # longer deep-tier generations. Default 30s for hosted providers.
-        self.timeout = timeout if timeout is not None else float(os.environ.get("LLM_TIMEOUT", "30"))
+        self.timeout = timeout if timeout is not None else float(os.environ.get("LLM_TIMEOUT", "90"))
 
         self._claude: anthropic.Anthropic | None = None
         self._aclaude: anthropic.AsyncAnthropic | None = None
@@ -298,6 +311,7 @@ class LLM:
             self._claude = anthropic.Anthropic(timeout=self._claude_timeout, max_retries=self.max_retries)
 
         # Paid runs never call the free provider, so no OpenAI client.
+        self._extra = None if claude else _reasoning_extra(self.base_url)
         self._sync = None if claude else OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=self.timeout)
         self._async: AsyncOpenAI | None = None  # lazy
 
@@ -482,6 +496,8 @@ class LLM:
     def _call_with_retry(self, **kwargs):
         last_exc: Exception | None = None
         payload = {k: v for k, v in kwargs.items() if v is not None}
+        if self._extra:
+            payload["extra_body"] = self._extra
         model = payload.get("model", self.model)
         max_tok = payload.get("max_tokens", "?")
         # Coarse prompt size for logging — sum of message content lengths.
@@ -505,10 +521,19 @@ class LLM:
                 )
                 return resp
             except APITimeoutError as exc:
+                # A model that just took the whole timeout will likely do it again;
+                # hand over to the fallback instead of waiting through more retries.
                 last_exc = exc
-                print(f"[llm.{self.tier}] TIMEOUT after {self.timeout}s (attempt {attempt + 1})", flush=True)
+                print(f"[llm.{self.tier}] TIMEOUT after {self.timeout}s (attempt {attempt + 1}); skipping to fallback", flush=True)
+                break
             except (RateLimitError, APIError) as exc:
                 last_exc = exc
+                if "extra_body" in payload and getattr(exc, "status_code", None) == 400:
+                    payload.pop("extra_body")
+                    # Model rejected the reasoning switch: drop it for good and retry now.
+                    self._extra = None
+                    print(f"[llm.{self.tier}] provider rejected reasoning=off; retrying without it", flush=True)
+                    continue
                 wait = min(2 ** attempt, 30)
                 print(f"[llm.{self.tier}] attempt {attempt + 1} failed: {exc}; retrying in {wait}s", flush=True)
                 time.sleep(wait)
@@ -516,7 +541,7 @@ class LLM:
         fb = self._fb_sync_client()
         if fb is not None:
             fb_model = self._fallback[2]  # type: ignore[index]
-            fb_payload = {**payload, "model": fb_model}
+            fb_payload = {k: v for k, v in payload.items() if k != "extra_body"} | {"model": fb_model}
             print(f"[llm.{self.tier}] FALLBACK -> {fb_model}", flush=True)
             try:
                 resp = fb.chat.completions.create(**fb_payload)
@@ -531,6 +556,8 @@ class LLM:
     async def _acall_with_retry(self, **kwargs):
         last_exc: Exception | None = None
         payload = {k: v for k, v in kwargs.items() if v is not None}
+        if self._extra:
+            payload["extra_body"] = self._extra
         model = payload.get("model", self.model)
         for attempt in range(self.max_retries):
             try:
@@ -544,9 +571,16 @@ class LLM:
                 return resp
             except APITimeoutError as exc:
                 last_exc = exc
-                print(f"[llm.{self.tier}/async] TIMEOUT after {self.timeout}s", flush=True)
+                print(f"[llm.{self.tier}/async] TIMEOUT after {self.timeout}s; skipping to fallback", flush=True)
+                break
             except (RateLimitError, APIError) as exc:
                 last_exc = exc
+                if "extra_body" in payload and getattr(exc, "status_code", None) == 400:
+                    payload.pop("extra_body")
+                    # Model rejected the reasoning switch: drop it for good and retry now.
+                    self._extra = None
+                    print(f"[llm.{self.tier}/async] provider rejected reasoning=off; retrying without it", flush=True)
+                    continue
                 wait = min(2 ** attempt, 30)
                 print(f"[llm.{self.tier}/async] attempt {attempt + 1} failed: {exc}; retrying in {wait}s", flush=True)
                 await asyncio.sleep(wait)
@@ -554,7 +588,7 @@ class LLM:
         fb = self._fb_async_client()
         if fb is not None:
             fb_model = self._fallback[2]  # type: ignore[index]
-            fb_payload = {**payload, "model": fb_model}
+            fb_payload = {k: v for k, v in payload.items() if k != "extra_body"} | {"model": fb_model}
             print(f"[llm.{self.tier}/async] FALLBACK -> {fb_model}", flush=True)
             try:
                 resp = await fb.chat.completions.create(**fb_payload)

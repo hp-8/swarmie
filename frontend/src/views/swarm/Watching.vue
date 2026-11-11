@@ -23,7 +23,7 @@
           >
             <span class="st-num">{{ i + 1 }}</span>
             <span class="st-label">{{ st.label }}</span>
-            <span v-if="stationState(i) === 'is-current'" class="st-detail">{{ stationDetail(st.key) }}</span>
+            <span v-if="stationState(i) === 'is-current'" class="st-detail">{{ stationDetail(st.key) }}<template v-if="isRunning"> · {{ elapsedLabel }}</template></span>
           </li>
         </ol>
 
@@ -68,9 +68,29 @@
         </div>
 
         <div v-show="view === 'list'" class="list-host">
-          <p v-if="visibleReactions.length === 0" class="stream-empty">
-            {{ isRunning ? 'The first reactions appear here as reviewers finish reading.' : 'No reactions recorded.' }}
-          </p>
+          <div v-if="visibleReactions.length === 0" class="stream-empty">
+            <template v-if="isRunning && archetypes.length">
+              <h3 class="wait-title">Who's on the panel</h3>
+              <ul class="wait-panel">
+                <li v-for="a in archetypes.slice(0, 12)" :key="a.id">
+                  <b>{{ a.name }}</b>
+                  <span>{{ a.segment }}<template v-if="a.objection_bias?.length"> · watches for {{ a.objection_bias.slice(0, 2).join(', ') }}</template></span>
+                </li>
+              </ul>
+              <p class="wait-note">Their first reactions appear here as they finish reading.</p>
+            </template>
+            <template v-else-if="isRunning && parsedPitch">
+              <h3 class="wait-title">What the panel will read</h3>
+              <dl class="wait-pitch">
+                <div v-for="f in pitchFields" :key="f.label"><dt>{{ f.label }}</dt><dd>{{ f.value }}</dd></div>
+              </dl>
+              <p class="wait-note">Next: choosing reviewers who match your audience.</p>
+            </template>
+            <p v-else class="wait-note">{{ isRunning ? 'Reading your pitch first. Reviewers appear here next.' : 'No reactions recorded.' }}</p>
+            <p v-if="isRunning && stageSeconds >= 45" class="wait-slow">
+              Still working. Free reviews run on a free model, so a step can take a minute or two.
+            </p>
+          </div>
           <transition-group name="slide" tag="ol" class="stream-list scroll-zone">
             <li
               v-for="r in visibleReactions"
@@ -175,6 +195,26 @@ const STATUS_MAP = {
   cancelled: 'Cancelled',
 }
 const statusLabel = computed(() => STATUS_MAP[status.value] || status.value)
+
+// Time on the current step, so a slow free-model step reads as progress, not a freeze.
+const now = ref(Date.now())
+const stageStartedAt = ref(Date.now())
+watch(status, () => { stageStartedAt.value = Date.now() })
+const clock = setInterval(() => { now.value = Date.now() }, 1000)
+const stageSeconds = computed(() => Math.max(0, Math.floor((now.value - stageStartedAt.value) / 1000)))
+const elapsedLabel = computed(() => {
+  const s = stageSeconds.value
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+})
+const pitchFields = computed(() => {
+  const p = parsedPitch.value || {}
+  return [
+    { label: 'Problem', value: p.problem },
+    { label: 'Solution', value: p.solution },
+    { label: 'Price', value: p.pricing },
+    { label: 'Competitors', value: Array.isArray(p.competitors) ? p.competitors.join(', ') : p.competitors },
+  ].filter((f) => f.value)
+})
 const isRunning = computed(() =>
   !['completed', 'failed', 'cancelled'].includes(status.value),
 )
@@ -339,6 +379,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey)
   if (evtSource) evtSource.close()
   if (pollTimer) clearInterval(pollTimer)
+  clearInterval(clock)
 })
 </script>
 
@@ -401,7 +442,20 @@ onBeforeUnmount(() => {
 .vt-btn.active { background: var(--ink); color: var(--paper); }
 
 .list-host, .brain-host { flex: 1; min-height: 0; position: relative; }
-.stream-empty { margin: 0; padding: var(--space-7) var(--space-6); color: var(--ink-3); max-width: 52ch; }
+.stream-empty { padding: var(--space-6); max-width: 68ch; height: 100%; overflow-y: auto; }
+.wait-title { margin: 0 0 var(--space-4); font-size: var(--text-base); font-weight: 700; }
+.wait-panel { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-4) var(--space-5); }
+.wait-panel li { display: grid; gap: 2px; font-size: var(--text-sm); animation: wait-in 360ms var(--ease-out) both; }
+.wait-panel b { color: var(--ink); }
+.wait-panel span { color: var(--ink-3); line-height: 1.45; }
+.wait-pitch { margin: 0; display: grid; gap: var(--space-3); }
+.wait-pitch > div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: var(--space-4); }
+.wait-pitch dt { font-size: var(--text-sm); color: var(--ink-3); }
+.wait-pitch dd { margin: 0; line-height: 1.5; color: var(--ink-2); }
+.wait-note { margin: var(--space-5) 0 0; font-size: var(--text-sm); color: var(--ink-3); }
+.wait-slow { margin: var(--space-3) 0 0; font-size: var(--text-sm); color: var(--ink-2); }
+@keyframes wait-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .wait-panel li { animation: none; } }
 .stream-list { list-style: none; margin: 0; padding: 0 var(--space-6); height: 100%; overflow-y: auto; }
 .reaction { border-bottom: 1px solid var(--rule); }
 .r-open { display: grid; gap: var(--space-1); width: 100%; text-align: left; font: inherit; color: inherit; background: none; border: 0; padding: var(--space-4) 0; cursor: pointer; }
