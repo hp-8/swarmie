@@ -62,6 +62,9 @@ _PRICING: dict[str, tuple[float, float]] = {
     "deepseek/deepseek-v4-flash": (0.0983, 0.1966),
     "deepseek/deepseek-v4-pro": (0.435, 0.87),
     # Google
+    # Standard tier, verified aistudio.google.com/docs/pricing 2026-11-11.
+    # Doubles to (1.50, 7.50) on 2027-01-01; update then.
+    "gemini-3.6-flash": (0.75, 3.75),
     "gemini-2.0-flash": (0.10, 0.40),
     # Local — free
     "ollama": (0.0, 0.0),
@@ -165,7 +168,7 @@ def _resolve_fallback() -> tuple[str, str, str] | None:
         "LLM_FALLBACK_BASE_URL",
         "https://generativelanguage.googleapis.com/v1beta/openai/",
     )
-    model = os.environ.get("LLM_FALLBACK_MODEL_NAME", "gemini-2.0-flash")
+    model = os.environ.get("LLM_FALLBACK_MODEL_NAME", "gemini-3.6-flash")
     return api_key, base_url, model
 
 
