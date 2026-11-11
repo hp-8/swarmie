@@ -27,7 +27,7 @@ Honest limits: the personas carry training-data biases, are wrong sometimes, and
 Runs for $0 on local Ollama — no key needed. AGPL-3.0.
 
 GitHub: github.com/hp-8/swarmie
-Live: swarmie.vercel.app
+Live: swarmie.harshpatadia.com
 
 I'd like HN to roast the roaster. Tell me where the brief is wrong.
 

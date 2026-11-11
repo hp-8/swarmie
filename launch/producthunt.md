@@ -48,7 +48,7 @@ Free. No signup to run a roast. Runs for $0 on local Ollama. AGPL-3.0 on GitHub.
 
 Now, per the spirit of the product — I'd genuinely like this community to run a pitch through it and tell me where the Decision Brief was wrong. That feedback is more useful to me than upvotes.
 
-swarmie.vercel.app | github.com/hp-8/swarmie
+swarmie.harshpatadia.com | github.com/hp-8/swarmie
 
 — Harsh
 
@@ -92,7 +92,7 @@ Most validators return a score. That score is optimized to make you feel good en
 
 ### "What does this cost? What's the pricing?"
 
-Free to run on local Ollama — zero cost, zero API key. The hosted version at swarmie.vercel.app is free with a hard cost ceiling on our end. We're not currently charging. When that changes, it will be transparent and not a surprise. The full source is AGPL-3.0 on GitHub if you want to self-host with your own keys.
+Free to run on local Ollama — zero cost, zero API key. The hosted version at swarmie.harshpatadia.com is free with a hard cost ceiling on our end. We're not currently charging. When that changes, it will be transparent and not a surprise. The full source is AGPL-3.0 on GitHub if you want to self-host with your own keys.
 
 ---
 

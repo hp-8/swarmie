@@ -312,7 +312,7 @@ export function drawShareCard(canvas, data = {}) {
 
   ctx.fillStyle = C.accentBright
   ctx.font = `600 18px ${FONT_MONO}`
-  ctx.fillText(data.url || 'swarmie.vercel.app', PAD, 596)
+  ctx.fillText(data.url || 'swarmie.harshpatadia.com', PAD, 596)
 
   ctx.fillStyle = C.ink4
   ctx.font = `500 14px ${FONT_MONO}`

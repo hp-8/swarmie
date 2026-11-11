@@ -64,7 +64,7 @@ Quibi was the only kill. Top objection: "just let me rotate my phone like a norm
 
 Theranos got: "let me know when your edison machine actually works outside a demo room."
 
-swarmie.vercel.app/roasts
+swarmie.harshpatadia.com/roasts
 
 [IMAGE: /roasts gallery page screenshot — Quibi "kill" card and Airbnb (2008) card visible side by side.]
 
@@ -102,7 +102,7 @@ Free. No signup to run a roast.
 
 Paste your pitch. Get the objection you've been avoiding.
 
-swarmie.vercel.app
+swarmie.harshpatadia.com
 
 [IMAGE: Swarmie homepage hero — the animated swarm canvas with "Roast your startup with 500 AI users." headline visible. Clean, dark, no clutter.]
 

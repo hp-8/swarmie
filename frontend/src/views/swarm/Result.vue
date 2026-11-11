@@ -660,7 +660,7 @@ function shareCardData() {
     agentCount: reactions.value.length,
     objectionCategory: top?.category || '',
     objectionText: top?.example_quote || top?.real_test || '',
-    url: 'swarmie.vercel.app',
+    url: 'swarmie.harshpatadia.com',
   }
 }
 
@@ -678,7 +678,7 @@ async function shareCard() {
         await navigator.share({
           files: [file],
           title: 'Swarmie roast',
-          text: `${verdictMeta(report.value.verdict).label} — what ${reactions.value.length || 'a swarm of'} synthetic users said about my pitch. swarmie.vercel.app`,
+          text: `${verdictMeta(report.value.verdict).label} — what ${reactions.value.length || 'a swarm of'} synthetic users said about my pitch. swarmie.harshpatadia.com`,
         })
         return
       } catch (e) {

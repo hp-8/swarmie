@@ -65,4 +65,4 @@ services:
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
       - key: APP_BASE_URL
-        value: https://swarmie.vercel.app
+        value: https://swarmie.harshpatadia.com

@@ -6,12 +6,12 @@
 
 Founder validation through AI swarm simulation. Paste a pitch and watch 100–500 AI users react like a real Reddit / HN / Product Hunt thread — objections, questions, snark, and silence — then walk away with a **decision brief**: ship, sharpen, or kill, plus the exact questions to ask real users next.
 
-[![Live demo](https://img.shields.io/badge/Live-swarmie.vercel.app-ff6b35?logo=vercel&logoColor=white)](https://swarmie.vercel.app)
+[![Live demo](https://img.shields.io/badge/Live-swarmie.harshpatadia.com-ff6b35?logo=vercel&logoColor=white)](https://swarmie.harshpatadia.com)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 [![Status: Alpha](https://img.shields.io/badge/Status-Alpha-orange.svg)]()
 
-**👉 Try it live: [swarmie.vercel.app](https://swarmie.vercel.app)**
+**👉 Try it live: [swarmie.harshpatadia.com](https://swarmie.harshpatadia.com)**
 
 <br />
 

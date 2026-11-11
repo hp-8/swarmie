@@ -14,7 +14,7 @@ It's called Swarmie. You paste a startup pitch (yours, a client's, anything) and
 
 I need to know where the brief is wrong, not where it's right. Specifically: run a pitch you know well, read the top objection card, and tell me if the "ask 5 users" question is actually the right question or if it's off-base.
 
-No signup needed. Free: swarmie.vercel.app
+No signup needed. Free: swarmie.harshpatadia.com
 
 If you find something genuinely broken, I'll owe you a coffee and I'll fix it before launch. No pressure if you're slammed.
 
@@ -26,7 +26,7 @@ If you find something genuinely broken, I'll owe you a coffee and I'll fix it be
 
 Hi [name] — hope things are going well.
 
-I shipped something I think you'd be the right person to stress-test: it's called Swarmie (swarmie.vercel.app). You paste a pitch — yours or any project you've worked on — and a swarm of 500 AI personas reacts to it and hands you a decision brief.
+I shipped something I think you'd be the right person to stress-test: it's called Swarmie (swarmie.harshpatadia.com). You paste a pitch — yours or any project you've worked on — and a swarm of 500 AI personas reacts to it and hands you a decision brief.
 
 I'm specifically looking for cases where the brief gets it wrong: where the top objection doesn't match what real users actually said, or where the "kill-criteria" question is the wrong one to bring to an interview.
 

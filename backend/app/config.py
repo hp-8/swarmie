@@ -126,7 +126,7 @@ class Config:
 
     # --- API hardening (public launch) ---
     # Browser origins allowed to call /api/* (comma-separated env CORS_ORIGINS).
-    CORS_ORIGINS = _csv("CORS_ORIGINS", "https://swarmie.vercel.app,http://localhost:3000")
+    CORS_ORIGINS = _csv("CORS_ORIGINS", "https://swarmie.harshpatadia.com,https://swarmie.vercel.app,http://localhost:3000")
     # Per-IP rate limits (flask-limiter notation). Roast creation + agent chat
     # both burn LLM tokens; reads and the SSE stream are deliberately unlimited.
     RATE_LIMIT_ROAST = os.environ.get("RATE_LIMIT_ROAST", "5 per hour")

@@ -110,8 +110,8 @@ def test_cors_reflects_allowlisted_origin():
     app = _make_app()
     client = app.test_client()
 
-    resp = client.get("/api/roast/swarms", headers={"Origin": "https://swarmie.vercel.app"})
-    assert resp.headers.get("Access-Control-Allow-Origin") == "https://swarmie.vercel.app"
+    resp = client.get("/api/roast/swarms", headers={"Origin": "https://swarmie.harshpatadia.com"})
+    assert resp.headers.get("Access-Control-Allow-Origin") == "https://swarmie.harshpatadia.com"
 
     resp = client.get("/api/roast/swarms", headers={"Origin": "http://localhost:3000"})
     assert resp.headers.get("Access-Control-Allow-Origin") == "http://localhost:3000"
@@ -133,7 +133,7 @@ def test_cors_allowlist_is_config_driven():
     resp = client.get("/api/roast/swarms", headers={"Origin": "https://only.example"})
     assert resp.headers.get("Access-Control-Allow-Origin") == "https://only.example"
 
-    resp = client.get("/api/roast/swarms", headers={"Origin": "https://swarmie.vercel.app"})
+    resp = client.get("/api/roast/swarms", headers={"Origin": "https://swarmie.harshpatadia.com"})
     assert "Access-Control-Allow-Origin" not in resp.headers
 
 
@@ -142,8 +142,8 @@ def test_cors_origins_env_parsing(monkeypatch):
     assert _csv("CORS_ORIGINS", "unused") == ["https://a.example", "https://b.example"]
 
     monkeypatch.delenv("CORS_ORIGINS", raising=False)
-    assert _csv("CORS_ORIGINS", "https://swarmie.vercel.app,http://localhost:3000") == [
-        "https://swarmie.vercel.app",
+    assert _csv("CORS_ORIGINS", "https://swarmie.harshpatadia.com,http://localhost:3000") == [
+        "https://swarmie.harshpatadia.com",
         "http://localhost:3000",
     ]
 

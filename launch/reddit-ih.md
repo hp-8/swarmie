@@ -25,7 +25,7 @@ There's also an Investor Swarm mode that stress-tests fundability.
 
 Free. No signup. Runs for $0 on local Ollama. AGPL-3.0 on GitHub.
 
-Live: swarmie.vercel.app
+Live: swarmie.harshpatadia.com
 GitHub: github.com/hp-8/swarmie
 
 Happy to hear where it breaks for you.
@@ -83,7 +83,7 @@ That one landed. I haven't fully solved it. But at least I know exactly what que
 
 That's the idea.
 
-swarmie.vercel.app | github.com/hp-8/swarmie
+swarmie.harshpatadia.com | github.com/hp-8/swarmie
 
 Would genuinely appreciate anyone who runs a real pitch through it and tells me where the brief was wrong. That's more useful to me than upvotes.
 
@@ -105,7 +105,7 @@ Ran your pitch through a tool I've been building — here's what the swarm flagg
 
 **[OBJECTION 2 — paste verbatim, e.g.: "Price anchor is missing — several personas stalled on 'how much does this cost?'"]**
 
-Disclosure: those came from Swarmie (swarmie.vercel.app) — a synthetic AI swarm, not real users. Take it as a pre-filter, not validation. But if those two hit, worth asking a few real people the same question before the next draft.
+Disclosure: those came from Swarmie (swarmie.harshpatadia.com) — a synthetic AI swarm, not real users. Take it as a pre-filter, not validation. But if those two hit, worth asking a few real people the same question before the next draft.
 
 ---
 
@@ -119,6 +119,6 @@ Hey — I actually ran your pitch through Swarmie (a tool I built — synthetic 
 
 **[OBJECTION 2 — e.g.: "The pricing section raised more questions than it answered."]**
 
-Full disclosure, it's a simulation — it's wrong sometimes. But if those two resonate, it might be worth addressing them before the next round of real feedback. Link if you want to try it on a revised version: swarmie.vercel.app
+Full disclosure, it's a simulation — it's wrong sometimes. But if those two resonate, it might be worth addressing them before the next round of real feedback. Link if you want to try it on a revised version: swarmie.harshpatadia.com
 
 ---

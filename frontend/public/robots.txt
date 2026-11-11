@@ -3,4 +3,4 @@ Allow: /
 Disallow: /run/
 Disallow: /result/
 
-Sitemap: https://swarmie.vercel.app/sitemap.xml
+Sitemap: https://swarmie.harshpatadia.com/sitemap.xml

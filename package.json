@@ -14,7 +14,7 @@
     "backend": "cd backend && uv run python run.py",
     "frontend": "cd frontend && npm run dev",
     "build": "cd frontend && npm install && npm run build",
-    "indexnow": "node scripts/indexnow.mjs https://swarmie.vercel.app c5303eaaf37147dba3cb3fb496469858"
+    "indexnow": "node scripts/indexnow.mjs https://swarmie.harshpatadia.com c5303eaaf37147dba3cb3fb496469858"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
