@@ -1,43 +1,40 @@
-# Swarmie — DM Templates for Founder Friends
+# Swarmie V2: DM Templates for Founder Friends
 
-*Frame: asking for feedback on where the brief is WRONG, not asking for promotion.*
-
----
-
-## Variant 1 — Close Friend
+*Frame: asking where the memo is WRONG, not asking for promotion.*
 
 ---
 
-Hey — built something I want to stress-test before it gets real traffic.
+## Variant 1: Close Friend
 
-It's called Swarmie. You paste a startup pitch (yours, a client's, anything) and 500 AI personas roast it — returns a decision brief in ~60 seconds.
+Hey, I shipped V2 of Swarmie and want to stress-test it before it gets real traffic.
 
-I need to know where the brief is wrong, not where it's right. Specifically: run a pitch you know well, read the top objection card, and tell me if the "ask 5 users" question is actually the right question or if it's off-base.
+You paste a pitch (yours, a client's, anything) and a panel of AI reviewers writes a decision memo: what's working, hidden risks, and what to test this week.
 
-No signup needed. Free: swarmie.harshpatadia.com
+What I need: run a pitch you know well and tell me if the hidden risks are real, or if it missed the one you'd have named.
 
-If you find something genuinely broken, I'll owe you a coffee and I'll fix it before launch. No pressure if you're slammed.
+Small reviews are free, no signup: swarmie.harshpatadia.com
 
----
-
-## Variant 2 — Acquaintance / Warm Contact
+If you want the 500-reviewer or Investor version, tell me and I'll add credits to your account. If you find something broken, coffee's on me.
 
 ---
 
-Hi [name] — hope things are going well.
+## Variant 2: Acquaintance / Warm Contact
 
-I shipped something I think you'd be the right person to stress-test: it's called Swarmie (swarmie.harshpatadia.com). You paste a pitch — yours or any project you've worked on — and a swarm of 500 AI personas reacts to it and hands you a decision brief.
+Hi [name], hope things are going well.
 
-I'm specifically looking for cases where the brief gets it wrong: where the top objection doesn't match what real users actually said, or where the "kill-criteria" question is the wrong one to bring to an interview.
+I think you'd be the right person to stress-test something I built: Swarmie (swarmie.harshpatadia.com). You paste a pitch, a panel of AI reviewers reacts, and you get a decision memo with a verdict, the risks it found, and a path forward.
 
-If you have 10 minutes and a pitch handy, I'd value the feedback. Free to use, no signup required.
+I'm specifically looking for where it gets things wrong: a hidden risk that isn't real, or an obvious one it missed.
 
-No obligation at all — just wanted to reach out to people who'd give me an honest read.
+If you have 10 minutes and a pitch handy, I'd value an honest read. Small reviews are free and need no signup. Happy to set you up with credits for an Investor review if that's more useful.
+
+No obligation at all.
 
 ---
 
 <!-- NOTES:
-- Do not use these as mass DMs. Send individually after a genuine reason to be in touch.
-- The ask is explicit: "where is the brief WRONG" — this keeps the frame honest and filters for useful feedback.
-- If they ask what to do with the results: tell them the Decision Brief is a pre-interview filter, not a research output. The goal is to find a pitch framing that doesn't collapse on first contact.
+- Send individually, only when there's a real reason to be in touch. Never mass DM.
+- The ask is "where is the memo WRONG". Keeps the frame honest and filters for useful feedback.
+- Credits for friends: insert a 'grant' row in credit_ledger (reason 'grant', unique ref like 'grant:<name>:2026-11').
+- If they ask what to do with results: the memo is a pre-interview filter. Take the top risk to five real people.
 -->

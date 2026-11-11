@@ -1,109 +1,74 @@
-# Swarmie — Product Hunt Launch Kit
+# Swarmie V2: Product Hunt Launch Kit
 
 ---
 
-## Tagline Options (pick one — each < 60 chars)
+## Tagline Options (each < 60 chars)
 
-1. **Roast your startup with 500 AI users in 60 seconds.**
-2. **The objection you're avoiding, surfaced in 60 seconds.**
-3. **A decision brief for your pitch. Not a score.**
+1. **Find the problem you can't see yet.**
+2. **A decision memo for your pitch. Not a score.**
+3. **500 AI reviewers read your pitch in a minute.**
 
 ---
 
 ## Description (≤ 260 chars)
 
-Paste your pitch. A swarm of 100–500 AI personas reacts like Reddit, HN, and Product Hunt at once — some scroll past, the rest roast it. You get a Decision Brief: verdict, top objections, kill-criteria, and why the silent ones left.
+Paste your pitch. A panel of AI reviewers reads it like Reddit, HN and Product Hunt would. You get a decision memo: what's working, hidden risks, the objections behind them, and what to test this week. Small reviews free, no signup.
 
 ---
 
 ## Maker First Comment
 
----
+I built Swarmie because idea validators lie nicely. You paste a pitch, get "8.1 / 10", feel better, and ignore the thing you already suspected. Three months later a real user says it out loud.
 
-I built Swarmie because I was tired of validators that lie nicely.
+V1 fixed that by being blunt. V2 fixes the overcorrection: blunt for its own sake is just as useless. So the new **decision memo** opens with what's working, then names the risks you missed, shows the reactions behind every claim, and ends with fixes to try this week.
 
-You know the type — you paste your pitch, they hand back a number. "8.1 / 10." "Strong market signal." You feel slightly better. You ignore the thing you already suspected was wrong with your positioning. Three months later you're in a user interview and someone says the exact thing the number never surfaced.
+**What it does:**
+- Convenes a panel of AI reviewers (20 free, up to 500 with a pack), each with its own background, bias and attention span
+- Part of the panel scrolls past without a word, because real audiences do
+- Writes a decision memo: verdict, what's working, hidden risks, objections, path forward, exhibits
 
-Swarmie is built around a different premise: **the output should cost something to ignore.**
+**Three review types:**
+- **Validate:** does the market care?
+- **Investor:** would a partner take the meeting? Upload your deck.
+- **Launch:** how will HN, PH and Reddit react on launch day? (Yes, I ran this launch through it.) [Only keep if true.]
 
-Here's what it actually does:
+**What it costs:** small Validate reviews are free and unlimited, no signup. Packs start at $5 for 5 full reviews. Launch prices for the first 100 buyers: Starter $15 for 20, Sprint $49 for 100. No subscription, and failed reviews are refunded automatically.
 
-- Runs 100–500 AI personas against your pitch, each with a different background, bias, and attention span
-- Part of the swarm scrolls past without reacting — because real audiences do that, and modeling silence is free
-- The ones who stop leave objections, questions, snark
-- The output is a **Decision Brief**: verdict, the single next action, each objection with the exact question to ask 5 real users, kill-criteria (what a real user would have to say to kill the objection), and a silence analysis explaining why the majority left without engaging
+**What it is NOT:** a prediction engine, a research replacement, or market validation. The reviewers are AI and they are wrong sometimes. Use it to find the question to bring to five real people.
 
-There's also an **Investor Swarm mode** — stress-tests fundability, surfaces likely partner-meeting questions, flags missing proof points.
+Open source (AGPL-3.0), free to self-host on Ollama.
 
-**What it is NOT:**
-
-- Not a prediction engine. It cannot tell you your startup will succeed.
-- Not a research replacement. Synthetic reactions are not user interviews.
-- Not a score. There is no 7.4/10.
-- Not accurate by definition. AI personas are wrong sometimes. We say so on every screen.
-
-The honest framing is this: it's a **pre-interview filter**. Kill the bad positioning before it costs a real conversation.
-
-Free. No signup to run a roast. Runs for $0 on local Ollama. AGPL-3.0 on GitHub.
-
-Now, per the spirit of the product — I'd genuinely like this community to run a pitch through it and tell me where the Decision Brief was wrong. That feedback is more useful to me than upvotes.
-
-swarmie.harshpatadia.com | github.com/hp-8/swarmie
-
-— Harsh
+Tell me where the memo is wrong. That's the feedback I want most.
 
 ---
 
 ## Gallery Shot List (5 images)
+<!-- Recapture from V2 UI. launch/assets/ holds V1 screenshots (decision brief); don't use those. -->
 
-1. **Hero — homepage with swarm canvas.** The live animated swarm canvas mid-run. Shows the "Roast your startup with 500 AI users." headline and the glowing agent dots. Dark background. No UI chrome — just the atmosphere.
-
-2. **The Decision Brief.** Full Decision Brief output: verdict chip ("sharpen"), confidence band, "do this next" block, one complete objection card showing the category, example quote, "ask 5 users" question, kill signal, and fix. This is the core product value — make it legible.
-
-3. **The Swarm in Motion.** The Watching screen mid-run. Brain graph or reaction stream with the counter ticking up. Shows 300+ agents reacting live. Add an annotation: "silent agents cost zero tokens."
-
-4. **Inside the Neuron.** The neuron drawer opened on a specific agent — shows the persona card, the agent's segment, tone, biases, and their actual reaction text. Demonstrates the depth behind each dot.
-
-5. **Investor Swarm mode.** The pitch input screen with Investor Swarm tab selected. Shows the "stress-test fundability" framing and the deck upload dropzone. For the investor audience.
+1. **Home hero:** "Find the problem you can't see yet." with the sample memo beside it.
+2. **Decision memo, top:** verdict, what's working, hidden risks.
+3. **Exhibits close-up:** one objection with the reactions that back it.
+4. **Review type picker:** Validate / Investor / Launch, Investor with a deck attached.
+5. **Rate card:** Free vs packs, launch price visible.
 
 ---
 
 ## Prepared Replies to Likely Comments
 
----
-
 ### "Isn't this just asking ChatGPT?"
-
-Partly, yes — and the honest answer matters. Asking a single LLM "does this idea work?" averages everything into mush: it hedges, it says "it depends," it wants to be helpful. Swarmie does something structurally different: it forces 100–500 personas to react independently, with different biases, different skepticism thresholds, and different reasons to leave. Silence is explicitly modeled — agents that ignore the pitch produce no output at all, because ignoring is free and real audiences do the same. The output is a falsifiable decision brief with kill-criteria you can test with 5 real humans. And every screen discloses it's synthetic. We don't call it research.
-
----
+Partly, and fair to ask. One LLM call averages everything into a hedge. Swarmie makes up to 500 reviewers react independently, models the ones who scroll past, and the memo cites the reactions behind each claim so you can check it. We also run a fixed set of trap pitches (flattery bait, harshness bait, a planted hidden risk) every time we change the memo.
 
 ### "Synthetic users are useless. You need real feedback."
+Agreed that you need real feedback. Swarmie is the step before it: it tells you which question to bring to five real people, so those conversations aren't wasted on things you could have caught yourself.
 
-Agreed — eventually. Swarmie is a pre-interview filter, not a research replacement. We say that on the homepage, in the app, and in the first-comment. The use case isn't "skip user interviews." It's "before you spend 5 hours recruiting and scheduling 5 user interviews, spend 60 seconds finding out whether your current framing will confuse them on the first sentence." If the swarm can't explain what your product does, neither can a real prospect. Kill that problem first. Then talk to humans.
+### "How is this different from other idea validators?"
+No score. A memo with a verdict, the evidence behind it, and a next step. And it's tuned to neither flatter nor pile on.
 
----
+### "What does this cost?"
+Small reviews (20 reviewers, Validate) are free and unlimited, no signup. Packs: $5 for 5 full reviews; Starter $15 for 20 and Sprint $49 for 100 at launch price for the first 100 buyers ($25 and $82 after). Full reviews unlock 500-reviewer panels, Investor and Launch reviews, deck upload, PDF and share card. No subscription.
 
-### "How is this different from [idea validator X]?"
+### "Why AGPL?"
+So anyone who hosts a modified Swarmie has to publish the changes. The core stays inspectable, which matters for a tool that influences real decisions. Self-hosting is free.
 
-Most validators return a score. That score is optimized to make you feel good enough to keep using the product. Swarmie returns the objection you're avoiding and a falsifiable kill-criteria: the specific thing a real user would have to say to prove the objection is fatal. That's a different design goal. We also disclose every limitation aggressively — wrong sometimes, agreeable too often, not a research replacement. We think the honesty is the moat, not the swarm.
-
----
-
-### "What does this cost? What's the pricing?"
-
-Free to run on local Ollama — zero cost, zero API key. The hosted version at swarmie.harshpatadia.com is free with a hard cost ceiling on our end. We're not currently charging. When that changes, it will be transparent and not a surprise. The full source is AGPL-3.0 on GitHub if you want to self-host with your own keys.
-
----
-
-### "Why AGPL? That's restrictive."
-
-Intentionally. AGPL means if you build a service on top of Swarmie, you have to open-source the modifications. We want the core to stay open and improvable by anyone, not absorbed into a proprietary product. If you want to use it in a closed commercial context, reach out — we can talk. The goal is to keep the tool available and honest, not to gate it.
-
----
-
-### "Can the swarm be wrong? What's the error rate?"
-
-Yes, it can be wrong — and we don't know the error rate in a rigorous sense. AI personas carry the biases of their training data. They can miss niche markets, overweight obvious objections, or surface noise instead of signal. We are explicit about this on every screen. The correct use of Swarmie is not "the swarm said X, therefore X is true." It's "the swarm flagged X as a possible objection — let me go ask 5 real users whether X is actually a problem." The kill-criteria in the Decision Brief are designed for exactly that: take the output to humans, run the test, and let the real conversation override the simulation.
-
----
+### "Can the panel be wrong?"
+Yes. The reviewers carry their training data's biases. The memo shows its evidence so you can judge it, and every memo says it's synthetic. Treat it as a filter, never as proof.

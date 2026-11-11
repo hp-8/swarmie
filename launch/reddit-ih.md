@@ -1,124 +1,104 @@
-# Swarmie — Reddit / Indie Hackers Launch Posts
+# Swarmie V2: Reddit / Indie Hackers Launch Posts
 
 ---
 
 ## (a) r/SideProject Post
 
-**Title:** I built a tool that roasts your startup pitch with 500 AI personas — free, open-source, no signup
+**Title:** Swarmie v2: a panel of AI reviewers reads your startup pitch and writes a decision memo. Small reviews free, no signup
 
 ---
 
-Spent the last few weeks building Swarmie.
+I shipped V2 of Swarmie.
 
-You paste a startup pitch. A swarm of 100–500 AI personas reacts like a Reddit/HN/Product Hunt thread — objections, questions, snark. Part of the swarm silently scrolls past without saying anything, because real audiences do that too.
+You paste a pitch. A panel of AI reviewers reads it the way a Reddit, HN or Product Hunt thread would. Some object, some ask questions, and a lot of them scroll past without a word, because real audiences do.
 
-In ~60 seconds you get a Decision Brief:
-- Verdict: ship it / sharpen / wrong audience / kill
-- The single next action
-- Top objections, each with the exact question to test with 5 real users
-- Kill-criteria (what a real user would need to say to prove the objection is fatal)
-- Silence analysis: why the majority left without engaging
+In about a minute you get a decision memo:
+- A verdict (ship it / sharpen / wrong audience / rethink the core)
+- What's working
+- Hidden risks you didn't mention
+- The objections, with the reactions behind each one
+- A path forward, with fixes to try this week
 
-There's also an Investor Swarm mode that stress-tests fundability.
+New in V2: Investor reviews (upload your deck, get the questions a partner will ask) and Launch reviews (how HN, PH and Reddit will react on launch day). V1 was harsh for the sake of it; V2 is tuned to neither flatter nor pile on.
 
-**Honest disclaimer:** The personas are AI-generated. They're wrong sometimes, agreeable too often, and this is not a replacement for real user research. It's a pre-interview filter — kill the bad positioning before it costs a real conversation.
+**Disclaimer:** the reviewers are AI. They're wrong sometimes and this doesn't replace talking to users. It's a filter for before those conversations.
 
-Free. No signup. Runs for $0 on local Ollama. AGPL-3.0 on GitHub.
+**Pricing:** small reviews (20 reviewers) are free and unlimited, no signup. Packs from $5 unlock 500-reviewer panels, Investor and Launch reviews and PDF export. Open source (AGPL-3.0) and free to self-host on Ollama.
 
 Live: swarmie.harshpatadia.com
 GitHub: github.com/hp-8/swarmie
 
-Happy to hear where it breaks for you.
+Tell me where it gets your pitch wrong.
 
 ---
 
 ## (b) Indie Hackers Post
 
-**Title:** I built Swarmie: 500 synthetic users roast your startup in 60 seconds (and no, it's not the wow tech — it's the objection you've been avoiding)
+**Title:** I rebuilt my pitch-feedback tool after it got too harsh. Here's what V2 does differently
 
 ---
 
-There's a particular kind of feedback you get from idea validators that is technically accurate and completely useless.
-
-"Strong market opportunity." "Clear value proposition." "Consider pricing strategy."
-
-It's not wrong. It's just formatted to not make you feel bad. And the one thing that would actually help you — the specific thing your ICP says when they see your pitch for the first time — gets laundered into "consider positioning."
-
-I built Swarmie because I kept running into this problem when helping founders sharpen pitches. The gap between "validation tool" and "useful input" was almost always: the tool wouldn't tell you the specific objection, and it definitely wouldn't give you the falsifiable test to bring to a real user interview.
+Idea validators fail in one of two ways. Most flatter you: "strong market opportunity", "clear value proposition". My V1 failed the other way. It was so blunt that founders could dismiss it as negative and move on. Either way, the useful thing gets lost: the specific risk your customer would raise, and what to test next.
 
 **What Swarmie does**
 
-You paste your pitch text. Swarmie parses the ICP, problem, solution, and price from it, then spawns 100–500 AI personas — each with a distinct background, tone, and objection bias. Each persona can also just scroll past (zero LLM calls, zero cost — they don't engage, because real audiences don't either; how many ignore you depends on the pitch). The ones who stop post reactions: objections, questions, snark, upvotes.
+You paste your pitch. Swarmie pulls out the ICP, problem, solution, pricing, competitors and traction, then convenes a panel of AI reviewers (20 free, up to 500 with a pack), each with its own background, tone and biases. Reviewers can scroll past without engaging, which costs nothing, the same way most real readers do. The ones who stop leave reactions.
 
-The output is a Decision Brief:
+**What V2 changed**
 
-- **Verdict** — ship it / sharpen / wrong audience / kill, with a confidence band
-- **The single next action** — not a list of 12 things, one thing
-- **Top objections** — ranked by frequency, each with:
-  - The example quote from the swarm
-  - The exact question to ask 5 real users ("At what monthly price would you stop evaluating this entirely?")
-  - Kill-criteria: what a real user would need to say to prove this objection is fatal
-  - Suggested fix to try first
-- **Silence analysis** — why the majority left without engaging, and what to change
+The output is now a decision memo:
+- **Verdict**, with confidence
+- **What's working:** so you know what not to break
+- **Hidden risks:** things the panel spotted that your pitch doesn't address
+- **Objections**, backed by exhibits (the actual reactions)
+- **Path forward:** fixes to try and what to test this week
 
-There's also an Investor Swarm mode: stress-tests fundability, surfaces likely partner-meeting questions, flags missing proof points, returns a fundability verdict.
+To keep it honest in both directions, there's an eval suite. An LLM judge scores the full memo on six dimensions, and trap pitches check whether it flatters a weak pitch, piles onto a strong one, or misses a risk I planted. Every change to the memo runs against it.
 
-**The thing I want to be honest about**
+Two new review types: **Investor** (deck upload, likely partner questions, missing proof points) and **Launch** (go / sharpen / hold before you post anywhere).
 
-The personas are synthetic. They carry the biases of their training data. They're wrong sometimes. They can miss niche markets and overweight obvious objections.
+**Pricing, plainly**
 
-The correct framing: Swarmie is a pre-interview filter, not a research replacement. If 400 out of 500 personas can't figure out what your product does from your pitch text, that's a real signal — not because they're right, but because real audiences read at the same speed and with the same attention span. Fix that problem before you bring the pitch to humans.
+Small Validate reviews are free and unlimited, no account. Packs are for the expensive runs: $5 for 5 full reviews, and at launch price for the first 100 buyers, $15 for 20 or $49 for 100. No subscription; a failed review refunds its credit.
 
-**The tech (briefly)**
+**The honest part**
 
-- Async LLM swarm with two-tier model routing (fast model for reactions, larger model for synthesis)
-- Silent ignores and upvotes cost zero LLM calls — models real-audience attention without paying for it
-- Hard cost ceiling on the hosted version; Gemini fallback for rate limits
-- Runs for $0 on local Ollama
-- AGPL-3.0 — full source on GitHub
+The reviewers are synthetic and share one model's biases. Treat a memo as the question to bring to five real people, not as the answer.
 
-I ran Swarmie through Swarmie before launch (real run, not a hypothetical). Verdict: **sharpen**, medium confidence. The top objection the swarm wrote: *"a swarm of bots with 'distinct biases' is just a fancier way to confirm my own bias. i'll stick to cold emailing 10 real people."* The kill-criteria it handed me: if 3 of 5 founders say "it's just a bot with different temperature settings," the positioning is dead. 100% of the silent agents binned it as "seen this before — me-too AI tool."
+**The tech**
 
-That one landed. I haven't fully solved it. But at least I know exactly what question to bring to the next five conversations.
-
-That's the idea.
+- Async LLM panel, two-tier routing (fast model for reactions, larger for synthesis)
+- Silent reviewers make zero LLM calls
+- Hard per-run cost cap on hosted runs
+- AGPL-3.0, $0 on local Ollama
 
 swarmie.harshpatadia.com | github.com/hp-8/swarmie
 
-Would genuinely appreciate anyone who runs a real pitch through it and tells me where the brief was wrong. That's more useful to me than upvotes.
+If you run a real pitch through it, tell me where the memo was wrong. That's worth more to me than upvotes.
 
 ---
 
 ## (c) Concierge Reply Template
 
-*Use this when replying to someone else's "give me feedback on my startup idea" post — after you've actually run their pitch through Swarmie. Open with their objections, then disclose. Zero pushiness.*
-
----
+*For replying to someone's "feedback on my idea?" post, after you've actually run their pitch. Lead with their memo, then disclose. No pushiness.*
 
 ### Reddit-casual variant
 
----
+Ran your pitch through a tool I built. The memo flagged two things:
 
-Ran your pitch through a tool I've been building — here's what the swarm flagged as the top two friction points:
+**[HIDDEN RISK: paste from the memo, e.g. "Nothing says why a team would switch from the spreadsheet they already use."]**
 
-**[OBJECTION 1 — paste verbatim from the Decision Brief, e.g.: "Couldn't tell who the target customer is from the first sentence."]**
+**[OBJECTION: paste from the memo, e.g. "Several reviewers stalled on price: there's no anchor."]**
 
-**[OBJECTION 2 — paste verbatim, e.g.: "Price anchor is missing — several personas stalled on 'how much does this cost?'"]**
+It also liked **[WHAT'S WORKING: e.g. "the one-line problem statement"]**, so I'd keep that.
 
-Disclosure: those came from Swarmie (swarmie.harshpatadia.com) — a synthetic AI swarm, not real users. Take it as a pre-filter, not validation. But if those two hit, worth asking a few real people the same question before the next draft.
-
----
+Disclosure: that's from Swarmie (swarmie.harshpatadia.com), AI reviewers, not real users. A filter, not validation. If those two land, worth asking a few real people before the next draft.
 
 ### Discord-casual variant
 
----
+Hey, I ran your pitch through Swarmie (a tool I built, AI reviewers, not real people). Top two flags:
 
-Hey — I actually ran your pitch through Swarmie (a tool I built — synthetic AI personas, not real users) and these two things came up most:
+**[HIDDEN RISK]**
+**[OBJECTION]**
 
-**[OBJECTION 1 — e.g.: "The ICP isn't clear until the third paragraph — most personas stopped reading before that."]**
-
-**[OBJECTION 2 — e.g.: "The pricing section raised more questions than it answered."]**
-
-Full disclosure, it's a simulation — it's wrong sometimes. But if those two resonate, it might be worth addressing them before the next round of real feedback. Link if you want to try it on a revised version: swarmie.harshpatadia.com
-
----
+It's a simulation and it's wrong sometimes, but if those ring true, worth fixing before the next round of real feedback. Free to try on a revised version: swarmie.harshpatadia.com

@@ -61,7 +61,7 @@ const WATERMARK = {
   name: 'Harsh Patadia',
   links: [
     'github.com/hp-8',
-    'harshpatadia.space',
+    'harshpatadia.com',
     'linkedin.com/in/harsh-patadia',
     'x.com/harshpatadia_',
   ],

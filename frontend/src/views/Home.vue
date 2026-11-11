@@ -24,7 +24,7 @@
             ></textarea>
             <div class="quick-row">
               <button type="submit" class="btn">Convene the panel</button>
-              <span class="quick-meta">Free during the alpha · about a minute</span>
+              <span class="quick-meta">Free, no signup · about a minute</span>
             </div>
           </form>
           <p class="disclose">
@@ -98,7 +98,7 @@
           <h2 id="pricing-title" class="pricing-title">Pay per review.<br />Never per month.</h2>
           <p class="pricing-note">
             Free reviews stay free. When you need a bigger panel, an investor read of your deck or a
-            launch rehearsal, buy a pack and use it when it matters. Every review is free during the alpha.
+            launch rehearsal, buy a pack and use it when it matters.
           </p>
         </div>
 
@@ -156,13 +156,13 @@
             focused on the objection you actually need to hear. If you want a human in the loop, to ship
             the MVP, sharpen the pitch or prep the raise, that's the day job.
           </p>
-          <a href="https://harshpatadia.space" target="_blank" rel="noopener" class="btn btn-ghost">Work with me</a>
+          <a href="https://harshpatadia.com" target="_blank" rel="noopener" class="btn btn-ghost">Work with me</a>
         </div>
         <ul class="founder-links" aria-label="Elsewhere">
           <li><a href="https://github.com/hp-8" target="_blank" rel="noopener">github.com/hp-8</a></li>
           <li><a href="https://x.com/harshpatadia_" target="_blank" rel="noopener">x.com/harshpatadia_</a></li>
           <li><a href="https://www.linkedin.com/in/harsh-patadia" target="_blank" rel="noopener">linkedin.com/in/harsh-patadia</a></li>
-          <li><a href="https://harshpatadia.space" target="_blank" rel="noopener">harshpatadia.space</a></li>
+          <li><a href="https://harshpatadia.com" target="_blank" rel="noopener">harshpatadia.com</a></li>
         </ul>
       </section>
 

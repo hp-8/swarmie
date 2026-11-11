@@ -1,7 +1,7 @@
 <template>
   <footer class="foot">
     <span class="brand-mark">Swarmie</span>
-    <span class="foot-meta">v0.1 alpha · AGPL-3.0 · open source · reviewers are synthetic, always disclosed</span>
+    <span class="foot-meta">v2 · AGPL-3.0 · open source · reviewers are synthetic, always disclosed</span>
     <nav class="foot-links" aria-label="Footer">
       <router-link to="/terms">Terms</router-link>
       <router-link to="/privacy">Privacy</router-link>
