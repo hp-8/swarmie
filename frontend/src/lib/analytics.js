@@ -1,9 +1,19 @@
 import FingerprintJS from '@fingerprintjs/fingerprintjs'
-import { supabase } from './supabase'
+import service from '../api/index'
 import { hasAnalyticsConsent } from './consent'
 
 let _fpPromise = null
 let _fingerprint = null
+
+// Events go to our backend, which writes them with the server key. Browser
+// keys have no access to analytics tables. Failures never reach the user.
+async function send(op, payload) {
+  try {
+    await service.post(`/api/analytics/${op}`, payload)
+  } catch (e) {
+    console.warn(`[analytics] ${op} failed:`, e.message)
+  }
+}
 
 function getFpPromise() {
   if (!_fpPromise) _fpPromise = FingerprintJS.load()
@@ -21,51 +31,42 @@ export async function getFingerprint() {
 }
 
 export async function registerDevice() {
-  if (!supabase || !hasAnalyticsConsent()) return null
+  if (!hasAnalyticsConsent()) return null
   const fingerprint = await getFingerprint()
-
-  const { error } = await supabase
-    .from('devices')
-    .upsert({
-      fingerprint_id: fingerprint,
-      user_agent: navigator.userAgent,
-      platform: navigator.platform || navigator.userAgentData?.platform || '',
-      screen_res: `${screen.width}x${screen.height}`,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      last_seen_at: new Date().toISOString(),
-    }, { onConflict: 'fingerprint_id' })
-
-  if (error) console.warn('[analytics] device register failed:', error.message)
+  await send('device', {
+    fingerprint_id: fingerprint,
+    user_agent: navigator.userAgent,
+    platform: navigator.platform || navigator.userAgentData?.platform || '',
+    screen_res: `${screen.width}x${screen.height}`,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    last_seen_at: new Date().toISOString(),
+  })
   return fingerprint
 }
 
 export async function trackRoastStart(jobId, { pitchText, pitchLength, nAgents, swarmType, source } = {}) {
-  if (!supabase || !hasAnalyticsConsent()) return
+  if (!hasAnalyticsConsent()) return
   // Must land before the insert below: roast_runs.fingerprint_id has an FK to
   // devices, and registerDevice() at app-boot is fire-and-forget so it can
   // still be in flight (or have silently failed) when a run starts.
   const fingerprint = await registerDevice()
-
-  const { error } = await supabase
-    .from('roast_runs')
-    .insert({
-      job_id: jobId,
-      fingerprint_id: fingerprint,
-      status: 'started',
-      pitch_length: pitchLength || null,
-      pitch_text: pitchText || null,
-      n_agents_requested: nAgents || null,
-      swarm_type: swarmType || 'validate',
-      source: source || null,
-    })
-
-  if (error) console.warn('[analytics] trackRoastStart failed:', error.message)
+  await send('run_start', {
+    job_id: jobId,
+    fingerprint_id: fingerprint,
+    status: 'started',
+    pitch_length: pitchLength || null,
+    pitch_text: pitchText || null,
+    n_agents_requested: nAgents || null,
+    swarm_type: swarmType || 'validate',
+    source: source || null,
+  })
 }
 
 export async function trackRoastComplete(jobId, { agentCount, promptTokens, completionTokens, totalTokens, costUsd, model, error: runError } = {}) {
-  if (!supabase || !hasAnalyticsConsent()) return
+  if (!hasAnalyticsConsent()) return
 
   const update = {
+    job_id: jobId,
     status: runError ? 'failed' : 'completed',
     completed_at: new Date().toISOString(),
   }
@@ -77,65 +78,49 @@ export async function trackRoastComplete(jobId, { agentCount, promptTokens, comp
   if (model) update.model = model
   if (runError) update.error = String(runError).slice(0, 500)
 
-  const { error } = await supabase
-    .from('roast_runs')
-    .update(update)
-    .eq('job_id', jobId)
-
-  if (error) console.warn('[analytics] trackRoastComplete failed:', error.message)
+  await send('run_complete', update)
 }
 
 export async function trackParsedPitch(jobId, pitch) {
-  if (!supabase || !hasAnalyticsConsent() || !pitch) return
-
-  const { error } = await supabase
-    .from('roast_pitches')
-    .upsert({
-      job_id: jobId,
-      one_liner: pitch.one_liner || null,
-      problem: pitch.problem || null,
-      solution: pitch.solution || null,
-      target_icp: pitch.target_icp || null,
-      pricing: pitch.pricing || null,
-      icp_segments: pitch.icp_segments || [],
-      competitors: pitch.competitors || [],
-      channels: pitch.channels || [],
-      founder_ask: pitch.founder_ask || null,
-    }, { onConflict: 'job_id' })
-
-  if (error) console.warn('[analytics] trackParsedPitch failed:', error.message)
+  if (!hasAnalyticsConsent() || !pitch) return
+  await send('pitch', {
+    job_id: jobId,
+    one_liner: pitch.one_liner || null,
+    problem: pitch.problem || null,
+    solution: pitch.solution || null,
+    target_icp: pitch.target_icp || null,
+    pricing: pitch.pricing || null,
+    icp_segments: pitch.icp_segments || [],
+    competitors: pitch.competitors || [],
+    channels: pitch.channels || [],
+    founder_ask: pitch.founder_ask || null,
+  })
 }
 
 export async function trackReport(jobId, report) {
-  if (!supabase || !hasAnalyticsConsent() || !report) return
-
-  const { error } = await supabase
-    .from('roast_reports')
-    .upsert({
-      job_id: jobId,
-      pmf_score: report.pmf_score ?? null,
-      headline: report.headline || null,
-      narrative: report.narrative || null,
-      sentiment_positive: report.sentiment_split?.positive ?? null,
-      sentiment_neutral: report.sentiment_split?.neutral ?? null,
-      sentiment_negative: report.sentiment_split?.negative ?? null,
-      action_post: report.action_split?.post ?? 0,
-      action_comment: report.action_split?.comment ?? 0,
-      action_upvote: report.action_split?.upvote ?? 0,
-      action_ignore: report.action_split?.ignore ?? 0,
-      top_objections: report.top_objections || [],
-      messaging_gaps: report.messaging_gaps || [],
-      icp_fit: report.icp_fit || {},
-      quoted_reactions: report.quoted_reactions || [],
-    }, { onConflict: 'job_id' })
-
-  if (error) console.warn('[analytics] trackReport failed:', error.message)
+  if (!hasAnalyticsConsent() || !report) return
+  await send('report', {
+    job_id: jobId,
+    pmf_score: report.pmf_score ?? null,
+    headline: report.headline || null,
+    narrative: report.narrative || null,
+    sentiment_positive: report.sentiment_split?.positive ?? null,
+    sentiment_neutral: report.sentiment_split?.neutral ?? null,
+    sentiment_negative: report.sentiment_split?.negative ?? null,
+    action_post: report.action_split?.post ?? 0,
+    action_comment: report.action_split?.comment ?? 0,
+    action_upvote: report.action_split?.upvote ?? 0,
+    action_ignore: report.action_split?.ignore ?? 0,
+    top_objections: report.top_objections || [],
+    messaging_gaps: report.messaging_gaps || [],
+    icp_fit: report.icp_fit || {},
+    quoted_reactions: report.quoted_reactions || [],
+  })
 }
 
 export async function trackReactions(jobId, reactions) {
-  if (!supabase || !hasAnalyticsConsent() || !reactions?.length) return
-
-  const rows = reactions.map(r => ({
+  if (!hasAnalyticsConsent() || !reactions?.length) return
+  await send('reactions', reactions.map(r => ({
     job_id: jobId,
     agent_id: r.agent_id,
     archetype_id: r.archetype_id || null,
@@ -146,68 +131,37 @@ export async function trackReactions(jobId, reactions) {
     reaction_text: r.text || null,
     sentiment: r.sentiment ?? null,
     objections: r.objections || [],
-  }))
-
-  // batch in chunks of 100
-  for (let i = 0; i < rows.length; i += 100) {
-    const chunk = rows.slice(i, i + 100)
-    const { error } = await supabase
-      .from('roast_reactions')
-      .upsert(chunk, { onConflict: 'job_id,agent_id' })
-
-    if (error) {
-      console.warn('[analytics] trackReactions failed:', error.message)
-      break
-    }
-  }
+  })))
 }
 
 export async function trackPdfDownload(jobId) {
-  if (!supabase || !hasAnalyticsConsent()) return
+  if (!hasAnalyticsConsent()) return
   const fingerprint = await registerDevice()
-
-  const { error } = await supabase
-    .from('pdf_downloads')
-    .insert({
-      job_id: jobId,
-      fingerprint_id: fingerprint,
-    })
-
-  if (error) console.warn('[analytics] trackPdfDownload failed:', error.message)
+  await send('pdf_download', { job_id: jobId, fingerprint_id: fingerprint })
 }
 
 // vote: +1 | -1. Upsert so re-vote overwrites.
 export async function trackObjectionFeedback(jobId, objectionCategory, vote) {
-  if (!supabase || !hasAnalyticsConsent()) return
+  if (!hasAnalyticsConsent()) return
   const fingerprint = await getFingerprint()
-
-  const { error } = await supabase
-    .from('objection_feedback')
-    .upsert({
-      job_id: jobId,
-      fingerprint_id: fingerprint,
-      objection_category: objectionCategory,
-      vote,
-    }, { onConflict: 'job_id,fingerprint_id,objection_category' })
-
-  if (error) console.warn('[analytics] trackObjectionFeedback failed:', error.message)
+  await send('objection_feedback', {
+    job_id: jobId,
+    fingerprint_id: fingerprint,
+    objection_category: objectionCategory,
+    vote,
+  })
 }
 
 // { helpful: bool, comment?: string, email?: string, trigger: 'button'|'popup' }
 export async function trackProductFeedback(jobId, { helpful, comment, email, trigger }) {
-  if (!supabase || !hasAnalyticsConsent()) return
+  if (!hasAnalyticsConsent()) return
   const fingerprint = await getFingerprint()
-
-  const { error } = await supabase
-    .from('product_feedback')
-    .insert({
-      job_id: jobId,
-      fingerprint_id: fingerprint,
-      helpful: helpful ?? null,
-      comment: comment || null,
-      email: email || null,
-      trigger: trigger || null,
-    })
-
-  if (error) console.warn('[analytics] trackProductFeedback failed:', error.message)
+  await send('product_feedback', {
+    job_id: jobId,
+    fingerprint_id: fingerprint,
+    helpful: helpful ?? null,
+    comment: comment || null,
+    email: email || null,
+    trigger: trigger || null,
+  })
 }

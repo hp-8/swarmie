@@ -106,6 +106,8 @@ def create_app(config_class=Config):
     app.register_blueprint(roast_bp, url_prefix='/api/roast')
     from .api.billing import billing_bp
     app.register_blueprint(billing_bp, url_prefix='/api/billing')
+    from .api.analytics import analytics_bp
+    app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
     
     # Health check endpoint
     @app.route('/health')
