@@ -115,16 +115,17 @@
             :style="{ gridColumn: i + 2 }"
           >
             <p class="rate-name">{{ plan.name }}</p>
-            <p class="rate-qty">{{ plan.qty }}</p>
+            <p class="rate-qty" :class="{ 'is-word': isNaN(plan.qty) }">{{ plan.qty }}</p>
             <p class="rate-unit">{{ plan.unit }}</p>
             <p class="rate-price">
               {{ plan.price }}
               <span v-if="plan.perReview" class="rate-per">{{ plan.perReview }} per review</span>
             </p>
             <p v-if="plan.regular" class="rate-launch">Launch price for the first {{ LAUNCH_BUYERS }} buyers. {{ plan.regular }} after that, save {{ plan.save }}.</p>
+            <span class="rate-spacer" aria-hidden="true"></span>
             <router-link v-if="plan.cta" :to="plan.cta" class="rate-cta">Start a free review</router-link>
             <button v-else-if="BILLING_ENABLED" type="button" class="rate-cta rate-buy" :disabled="buying === plan.key" @click="buy(plan.key)">
-              {{ buying === plan.key ? 'Opening checkout…' : `Buy ${plan.short}` }}
+              {{ buying === plan.key ? 'Opening checkout…' : `Buy ${plan.qty} reviews` }}
             </button>
             <span v-else class="rate-cta is-soon">Coming soon</span>
           </div>
@@ -361,7 +362,9 @@ function startDraft() {
 .rate { grid-row: 1; padding: var(--space-6) var(--space-5); display: flex; flex-direction: column; border-left: 1px solid var(--rule); }
 .rate-hero { background: var(--ink); color: var(--paper); border-left-color: var(--ink); }
 .rate-name { margin: 0; font-size: var(--text-sm); font-weight: 700; }
-.rate-qty { margin: var(--space-4) 0 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(44px, 4.4vw, 64px); line-height: 0.95; letter-spacing: -0.03em; font-variant-numeric: lining-nums; }
+.rate-qty { overflow-wrap: anywhere; margin: var(--space-4) 0 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(44px, 4.4vw, 64px); line-height: 0.95; letter-spacing: -0.03em; font-variant-numeric: lining-nums; }
+/* Words ("Unlimited") at number size overflow the column; keep the same line box so units still align. */
+.rate-qty.is-word { font-size: clamp(30px, 2.6vw, 40px); line-height: calc(clamp(44px, 4.4vw, 64px) * 0.95); }
 .rate-unit { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--ink-3); min-height: 2.6em; }
 .rate-hero .rate-unit { color: oklch(100% 0 0 / 0.68); }
 .rate-price { margin: var(--space-5) 0 0; font-size: var(--text-lg); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -370,8 +373,9 @@ function startDraft() {
 .rate-launch { margin: var(--space-2) 0 0; font-size: var(--text-sm); line-height: 1.45; color: var(--ink); font-weight: 600; }
 .rate-hero .rate-launch { color: var(--paper); }
 .rate-legal { grid-column: 1 / -1; margin: var(--space-3) 0 0; font-size: var(--text-sm); color: var(--ink-3); }
+/* Pushes every CTA to the card bottom so buttons line up across columns. */
+.rate-spacer { flex: 1 0 var(--space-5); }
 .rate-cta {
-  margin-top: var(--space-5);
   align-self: stretch;
   text-align: center;
   font-size: var(--text-sm);
@@ -390,7 +394,7 @@ a.rate-cta:hover, .rate-buy:hover:not(:disabled) { background: var(--ink-2); }
 .rate-cta.is-soon { background: transparent; color: var(--ink-3); border: 1px dashed var(--rule-2); }
 .rate-hero .rate-cta.is-soon { color: oklch(100% 0 0 / 0.75); border-color: oklch(100% 0 0 / 0.3); }
 
-.rate-table { grid-column: 1 / -1; grid-row: 2; width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.rate-table { grid-column: 1 / -1; grid-row: 2; width: 100%; border-collapse: collapse; font-size: var(--text-sm); table-layout: fixed; }
 .rate-table thead { display: none; }
 .rate-table th, .rate-table td { padding: var(--space-3) var(--space-5); border-top: 1px solid var(--rule); text-align: left; vertical-align: middle; }
 .rate-table tbody th { font-weight: 600; color: var(--ink); width: 20%; }
@@ -413,7 +417,7 @@ a.rate-cta:hover, .rate-buy:hover:not(:disabled) { background: var(--ink-2); }
   .rate-card { grid-template-columns: minmax(0, 1fr); }
   .rate { grid-column: 1 !important; grid-row: auto; border-left: 0; border-top: 1px solid var(--rule); }
   .rate-intro + .rate { border-top: 0; }
-  .rate-table { grid-row: auto; }
+  .rate-table { grid-row: auto; table-layout: auto; }
   .rate-table thead { display: table-header-group; }
   .rate-table thead th { font-size: var(--text-xs); color: var(--ink-3); font-weight: 600; }
   .rate-table th, .rate-table td { padding: var(--space-3) var(--space-2); }
