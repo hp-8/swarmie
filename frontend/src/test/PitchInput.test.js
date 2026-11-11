@@ -41,34 +41,15 @@ beforeEach(async () => {
   PitchInput = (await import('../views/swarm/PitchInput.vue')).default
 })
 
-describe('PitchInput — costEst computed', () => {
-  async function mountComp(router) {
+describe('PitchInput — panel size note', () => {
+  it('never shows a price for the run', async () => {
+    const router = makeRouter()
     await router.push('/new')
-    return mount(PitchInput, {
-      global: { plugins: [router] },
-    })
-  }
-
-  it('shows "<0.01" for small agent counts (20 agents)', async () => {
-    const router = makeRouter()
-    const wrapper = await mountComp(router)
-    // Default agentCount is 100; change to 20
-    const slider = wrapper.find('input[type="range"]')
-    await slider.setValue(20)
-    // costEst with 20 agents: speaking=4, tokens=10000, usd=0.006 → '<0.01'
-    // The size field meta shows "N agents · est. $X" — find the one in .field-size
-    const sizeFieldMeta = wrapper.find('.field-size .field-meta')
-    expect(sizeFieldMeta.text()).toContain('<0.01')
-  })
-
-  it('shows numeric cost for 500 agents', async () => {
-    const router = makeRouter()
-    const wrapper = await mountComp(router)
-    const slider = wrapper.find('input[type="range"]')
-    await slider.setValue(500)
-    // 500 agents: speaking=100, tokens=106000, usd~0.0636 → '0.06'
-    const sizeFieldMeta = wrapper.find('.field-size .field-meta')
-    expect(sizeFieldMeta.text()).toMatch(/\$0\.\d\d/)
+    const wrapper = mount(PitchInput, { global: { plugins: [router] } })
+    for (const n of [20, 500]) {
+      await wrapper.find('input[type="range"]').setValue(n)
+      expect(wrapper.find('.field-size .field-meta').text()).not.toMatch(/\$/)
+    }
   })
 })
 

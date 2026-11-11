@@ -103,11 +103,10 @@ describe('DecisionMemo', () => {
     expect(w.find('#path').text()).toContain('If it holds')
   })
 
-  it('shows real cost, and says so when it is negligible instead of inventing one', () => {
+  it('never shows what the run cost', () => {
     const w = mountMemo(makeReport(), { usage: { total_cost_usd: 0.0213, total_tokens: 1, total_calls: 1 } })
-    expect(w.text()).toContain('$0.0213')
-    const w2 = mountMemo(makeReport(), { usage: { total_cost_usd: 0.0001, total_tokens: 1, total_calls: 1 } })
-    expect(w2.text()).toContain('under $0.001')
+    expect(w.text()).not.toContain('$0.0213')
+    expect(w.text()).not.toMatch(/model calls|tokens/)
   })
 
   it('colours low confidence as a warning', () => {

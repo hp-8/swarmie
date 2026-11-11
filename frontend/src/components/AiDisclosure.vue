@@ -53,17 +53,17 @@
               <div class="aid-row">
                 <dt>known limits</dt>
                 <dd>Personas are LLM-hallucinated unless grounded against real comment corpora.
-                  Same pitch can yield different scores across runs (≈ ±0.7 PMF).</dd>
+                  The same pitch can come back with somewhat different findings across runs.</dd>
               </div>
               <div class="aid-row">
-                <dt>cost &amp; privacy</dt>
+                <dt>privacy</dt>
                 <dd>Pitch text is sent to the configured LLM provider. We do not retain it
                   past the job lifetime. No PII is requested.</dd>
               </div>
             </dl>
 
             <p class="aid-fine">
-              Use the signal to decide what to <em>ask real users next</em> — not to skip them.
+              Use it to find what to change and re-run, and the few questions only real buyers can answer.
             </p>
           </div>
         </div>

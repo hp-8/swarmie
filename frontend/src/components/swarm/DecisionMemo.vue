@@ -61,6 +61,9 @@
         </ol>
       </section>
 
+      <!-- Review-type extras (deck diagnosis, launch brief) render as full-width board rows. -->
+      <slot name="extra" />
+
       <section id="objections" class="cell cell-objections">
         <h2>{{ capitalize(copy.objections) }}</h2>
         <ObjectionList :objections="report.top_objections" :copy="copy" :job-id="jobId" />
@@ -110,9 +113,6 @@
         <summary>Read the panel's full summary</summary>
         <p class="prose">{{ report.narrative }}</p>
       </details>
-      <p v-if="usage" class="cost">
-        This run: <span class="num">{{ costLabel }}</span> · {{ Number(usage.total_tokens || 0).toLocaleString() }} tokens · {{ usage.total_calls }} model calls
-      </p>
     </footer>
   </article>
 </template>
@@ -128,7 +128,6 @@ import { verdictMeta, recPhrase } from '../../lib/verdict'
 const props = defineProps({
   report: { type: Object, required: true },
   parsedPitch: { type: Object, default: null },
-  usage: { type: Object, default: null },
   copy: { type: Object, required: true },
   jobId: { type: String, required: true },
   reactionCount: { type: Number, default: 0 },
@@ -179,11 +178,6 @@ const segments = computed(() =>
 const segTotal = computed(() => segments.value.reduce((a, s) => a + (Number(s.count) || 0), 0))
 const segShare = (n) => (segTotal.value ? Math.round(((Number(n) || 0) / segTotal.value) * 100) : 0)
 
-// Real cost only. Sub-tenth-of-a-cent runs (local models) say so instead of inventing a figure.
-const costLabel = computed(() => {
-  const c = Number(props.usage?.total_cost_usd || 0)
-  return c >= 0.001 ? `$${c.toFixed(4)}` : 'under $0.001'
-})
 
 const copiedAnchor = ref(null)
 async function copyAnchor(id) {
@@ -350,7 +344,6 @@ async function copyAnchor(id) {
 .summary summary { cursor: pointer; color: var(--ink-2); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .summary[open] summary { margin-bottom: var(--space-3); }
 .prose { margin: 0; font-family: var(--font-display); font-size: var(--text-md); line-height: 1.6; color: var(--ink-2); white-space: pre-line; }
-.cost .num { color: var(--ink-2); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* Settle in once, as one sheet */
 .board { animation: settle 460ms var(--ease-out) both; }

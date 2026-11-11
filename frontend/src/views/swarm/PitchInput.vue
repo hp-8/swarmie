@@ -196,20 +196,12 @@ function hasSection(check) {
   return check.pattern?.test(pitchText.value.toLowerCase()) || false
 }
 
-const costEst = computed(() => {
-  const speaking = agentCount.value * 0.2
-  const tokens = speaking * 1000 + 6000
-  const usd = (tokens / 1_000_000) * 0.6
-  return usd < 0.01 ? '<0.01' : usd.toFixed(2)
-})
-
 // With billing on, larger panels and pack-only types cost one credit.
 const FREE_MAX_AGENTS = 20
 const usesCredit = computed(() => BILLING_ENABLED && (agentCount.value > FREE_MAX_AGENTS || activeSwarm.value.tier === 'pack'))
 const sizeNote = computed(() => {
   if (usesCredit.value) return 'uses 1 credit'
-  if (BILLING_ENABLED) return 'free'
-  return 'est. $' + costEst.value
+  return 'free'
 })
 
 const runHint = computed(() => {

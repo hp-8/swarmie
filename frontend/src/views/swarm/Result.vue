@@ -97,340 +97,19 @@
       </transition>
     </main>
 
-    <!-- Deck Diagnosis layout — investor + deck_diagnosis present -->
-    <main v-else-if="report && deckDiagnosis" class="diag-dash scroll-zone">
-      <!-- Hero: readiness + stage + overall score -->
-      <section class="strip strip-diag-hero">
-        <div class="cell cell-readiness">
-          <span class="h-eyebrow">funding readiness</span>
-          <div class="readiness-pct" :style="{ color: readinessColor(deckDiagnosis.readiness_pct) }">
-            {{ deckDiagnosis.readiness_pct }}<span class="readiness-unit">%</span>
-          </div>
-          <div class="readiness-bar" role="progressbar" :aria-valuenow="deckDiagnosis.readiness_pct" aria-valuemin="0" aria-valuemax="100">
-            <div class="readiness-fill" :style="{ width: deckDiagnosis.readiness_pct + '%', background: readinessColor(deckDiagnosis.readiness_pct) }"></div>
-          </div>
-        </div>
-        <div class="cell cell-diag-meta">
-          <span class="h-eyebrow">stage</span>
-          <div class="diag-stage">{{ deckDiagnosis.stage }}</div>
-          <p class="diag-stage-hint">overall score</p>
-          <div class="diag-overall" :style="{ color: scoreColor(deckDiagnosis.overall_score / 13) }">
-            {{ deckDiagnosis.overall_score }}<span class="diag-overall-denom">/130</span>
-          </div>
-        </div>
-        <div class="cell cell-next-move">
-          <span class="h-eyebrow">next move</span>
-          <p class="next-move-text">{{ deckDiagnosis.next_move }}</p>
-        </div>
-      </section>
-
-      <AdvisorBrief :report="report" />
-
-      <!-- Slide scorecard -->
-      <section class="strip strip-diag-main">
-        <article class="cell cell-scorecard">
-          <header class="cell-head">
-            <span class="h-eyebrow">slide scorecard</span>
-            <span class="cell-meta">{{ deckDiagnosis.slides?.length || 0 }} slides</span>
-          </header>
-          <div class="scroll-zone scorecard-scroll">
-            <div v-for="slide in deckDiagnosis.slides" :key="slide.page + slide.slide_type" class="slide-row">
-              <div class="slide-left">
-                <span class="slide-type">{{ slide.slide_type }}</span>
-                <span class="slide-page h-eyebrow">p.{{ slide.page }}</span>
-              </div>
-              <div class="slide-center">
-                <p class="slide-verdict">{{ slide.verdict }}</p>
-                <p v-if="slide.top_issue" class="slide-issue">{{ slide.top_issue }}</p>
-              </div>
-              <div class="slide-score" :style="{ color: slideScoreColor(slide.score) }">
-                {{ slide.score }}<span class="slide-score-denom">/10</span>
-              </div>
-            </div>
-          </div>
-        </article>
-
-        <!-- Red flags -->
-        <article class="cell cell-redflags">
-          <header class="cell-head">
-            <span class="h-eyebrow">red flags</span>
-            <span class="cell-meta">{{ deckDiagnosis.red_flags?.length || 0 }}</span>
-          </header>
-          <div class="scroll-zone redflags-scroll">
-            <div v-for="(flag, i) in deckDiagnosis.red_flags" :key="i" class="redflag-row">
-              <span class="h-chip" :class="severityChipClass(flag.severity)">{{ flag.severity }}</span>
-              <div class="redflag-body">
-                <div class="redflag-cite">
-                  <span class="redflag-slide">{{ flag.slide_type }}</span>
-                  <span class="redflag-page h-eyebrow">p.{{ flag.page }}</span>
-                </div>
-                <p class="redflag-text">{{ flag.text }}</p>
-              </div>
-            </div>
-            <p v-if="!deckDiagnosis.red_flags?.length" class="muted">No critical flags.</p>
-          </div>
-        </article>
-      </section>
-
-      <!-- Zones + investor simulation -->
-      <section class="strip strip-diag-zones">
-        <article class="cell cell-zones">
-          <header class="cell-head"><span class="h-eyebrow">strong zones</span></header>
-          <div class="zone-tags">
-            <span v-for="z in deckDiagnosis.strong_zones" :key="z" class="zone-tag zone-tag-live">{{ z }}</span>
-            <span v-if="!deckDiagnosis.strong_zones?.length" class="muted">None identified.</span>
-          </div>
-          <hr class="h-rule" style="margin: var(--space-3) 0" />
-          <header class="cell-head"><span class="h-eyebrow">weak zones</span></header>
-          <div class="zone-tags">
-            <span v-for="z in deckDiagnosis.weak_zones" :key="z" class="zone-tag zone-tag-warn">{{ z }}</span>
-            <span v-if="!deckDiagnosis.weak_zones?.length" class="muted">None identified.</span>
-          </div>
-        </article>
-
-        <article class="cell cell-investor-sim">
-          <header class="cell-head"><span class="h-eyebrow">investor simulation</span></header>
-          <div class="scroll-zone inv-sim-scroll">
-            <p class="inv-sim-text">{{ deckDiagnosis.investor_simulation }}</p>
-          </div>
-        </article>
-      </section>
-
-      <!-- Swarm reactions below as supporting -->
-      <section class="strip strip-three">
-        <article class="cell cell-narrative">
-          <header class="cell-head"><span class="h-eyebrow">synthesis</span></header>
-          <div class="scroll-zone narrative-scroll">
-            <p class="narrative-body">{{ report.narrative }}</p>
-            <div v-if="report.messaging_gaps?.length" class="fixes">
-              <span class="h-eyebrow">fixes to try</span>
-              <ul class="fix-list">
-                <li v-for="g in report.messaging_gaps" :key="g">{{ g }}</li>
-              </ul>
-            </div>
-          </div>
-        </article>
-
-        <article class="cell cell-objections">
-          <header class="cell-head">
-            <span class="h-eyebrow">{{ copy.objections }}</span>
-            <span class="cell-meta">{{ report.top_objections?.length || 0 }}</span>
-          </header>
-          <ObjectionList :objections="report.top_objections" :copy="copy" :job-id="jobId" />
-        </article>
-
-        <article class="cell cell-quotes">
-          <header class="cell-head">
-            <span class="h-eyebrow">{{ copy.voices }}</span>
-            <span class="cell-meta">{{ report.quoted_reactions?.length || 0 }}</span>
-          </header>
-          <QuotesList :quotes="report.quoted_reactions" />
-        </article>
-      </section>
-    </main>
-
-    <!-- Launch Brief layout — launch swarm + launch_brief present -->
-    <main v-else-if="report && launchBrief" class="launch-dash scroll-zone">
-      <!-- Hero: verdict + next action -->
-      <section class="strip strip-launch-hero">
-        <div class="cell cell-launch-verdict">
-          <span class="h-eyebrow">launch verdict <AiDisclosure aria-label="About this verdict" /></span>
-          <div class="verdict-chip" :class="verdictMeta(report.verdict).cls">{{ verdictMeta(report.verdict).label }}</div>
-          <div class="verdict-meta" :title="report.confidence_reason || ''">confidence {{ report.confidence || '—' }}</div>
-        </div>
-        <div class="cell cell-launch-action">
-          <span class="h-eyebrow">do this next</span>
-          <h1 class="next-action h-display">{{ report.next_action || report.headline }}</h1>
-          <p v-if="report.verdict_reason" class="verdict-reason">{{ report.verdict_reason }}</p>
-          <SharpenPanel :report="report" :parsed-pitch="parsedPitch" />
-        </div>
-        <div class="cell cell-launch-sentiment">
-          <span class="h-eyebrow">sentiment of those who spoke</span>
-          <div class="sent-bar">
-            <div class="sent-seg pos" :style="{ flex: report.sentiment_split?.positive || 0 }">
-              <span v-if="(report.sentiment_split?.positive || 0) >= 8">{{ report.sentiment_split.positive }}%</span>
-            </div>
-            <div class="sent-seg neu" :style="{ flex: report.sentiment_split?.neutral || 0 }">
-              <span v-if="(report.sentiment_split?.neutral || 0) >= 8">{{ report.sentiment_split.neutral }}%</span>
-            </div>
-            <div class="sent-seg neg" :style="{ flex: report.sentiment_split?.negative || 0 }">
-              <span v-if="(report.sentiment_split?.negative || 0) >= 8">{{ report.sentiment_split.negative }}%</span>
-            </div>
-          </div>
-          <div class="sent-key">
-            <span><i class="dot pos"></i>positive</span>
-            <span><i class="dot neu"></i>neutral</span>
-            <span><i class="dot neg"></i>negative</span>
-          </div>
-        </div>
-      </section>
-
-      <AdvisorBrief :report="report" />
-
-      <!-- Row 2: questions + confusion + risks -->
-      <section class="strip strip-launch-qcr">
-        <article class="cell cell-launch-questions">
-          <header class="cell-head">
-            <span class="h-eyebrow">likely questions</span>
-            <span class="cell-meta">{{ launchBrief.questions?.length || 0 }}</span>
-          </header>
-          <div class="scroll-zone launch-list-scroll">
-            <ul class="launch-list">
-              <li v-for="(q, i) in launchBrief.questions" :key="i" class="launch-list-item">{{ q }}</li>
-            </ul>
-            <p v-if="!launchBrief.questions?.length" class="muted">No questions surfaced.</p>
-          </div>
-        </article>
-
-        <article class="cell cell-launch-confusion">
-          <header class="cell-head">
-            <span class="h-eyebrow">confusion points</span>
-            <span class="cell-meta">{{ launchBrief.confusion?.length || 0 }}</span>
-          </header>
-          <div class="scroll-zone launch-list-scroll">
-            <ul class="launch-list launch-list-warn">
-              <li v-for="(c, i) in launchBrief.confusion" :key="i" class="launch-list-item">{{ c }}</li>
-            </ul>
-            <p v-if="!launchBrief.confusion?.length" class="muted">No confusion points found.</p>
-          </div>
-        </article>
-
-        <article class="cell cell-launch-risks">
-          <header class="cell-head">
-            <span class="h-eyebrow">risks</span>
-            <span class="cell-meta">{{ launchBrief.risks?.length || 0 }}</span>
-          </header>
-          <div class="scroll-zone launch-list-scroll">
-            <ul class="launch-list launch-list-warn">
-              <li v-for="(r, i) in launchBrief.risks" :key="i" class="launch-list-item">{{ r }}</li>
-            </ul>
-            <p v-if="!launchBrief.risks?.length" class="muted">No significant risks flagged.</p>
-          </div>
-        </article>
-      </section>
-
-      <!-- Row 3: themes + playbook -->
-      <section class="strip strip-launch-tp">
-        <article class="cell cell-launch-themes">
-          <header class="cell-head"><span class="h-eyebrow">discussion themes</span></header>
-          <div class="theme-tags">
-            <span v-for="t in launchBrief.themes" :key="t" class="theme-tag">{{ t }}</span>
-            <span v-if="!launchBrief.themes?.length" class="muted">No themes identified.</span>
-          </div>
-          <hr class="h-rule" style="margin: var(--space-3) 0" />
-          <header class="cell-head"><span class="h-eyebrow">next actions</span></header>
-          <ul class="launch-list launch-list-live">
-            <li v-for="(a, i) in launchBrief.next_actions" :key="i" class="launch-list-item">{{ a }}</li>
-          </ul>
-          <p v-if="!launchBrief.next_actions?.length" class="muted">No actions listed.</p>
-        </article>
-
-        <article class="cell cell-launch-playbook">
-          <header class="cell-head">
-            <span class="h-eyebrow">response playbook</span>
-            <span class="cell-meta">{{ launchBrief.playbook?.length || 0 }}</span>
-          </header>
-          <div class="scroll-zone playbook-scroll">
-            <div v-for="(play, i) in launchBrief.playbook" :key="i" class="play-row">
-              <div class="play-trigger">
-                <span class="play-tag">trigger</span>
-                <span class="play-trigger-text">{{ play.trigger }}</span>
-              </div>
-              <div class="play-response">
-                <span class="play-tag accent">respond</span>
-                <span class="play-response-text">{{ play.response }}</span>
-              </div>
-            </div>
-            <p v-if="!launchBrief.playbook?.length" class="muted">No playbook generated.</p>
-          </div>
-        </article>
-      </section>
-
-      <!-- Row 4: swarm reactions as supporting evidence -->
-      <section class="strip strip-three">
-        <article class="cell cell-narrative">
-          <header class="cell-head"><span class="h-eyebrow">synthesis</span></header>
-          <div class="scroll-zone narrative-scroll">
-            <p class="narrative-body">{{ report.narrative }}</p>
-            <div v-if="report.messaging_gaps?.length" class="fixes">
-              <span class="h-eyebrow">fixes to try</span>
-              <ul class="fix-list">
-                <li v-for="g in report.messaging_gaps" :key="g">{{ g }}</li>
-              </ul>
-            </div>
-            <div v-if="report.ignore_reasons?.length" class="silence">
-              <span class="h-eyebrow">{{ copy.silence(report.silent_share_pct) }}</span>
-              <ul class="silence-list">
-                <li v-for="ir in report.ignore_reasons" :key="ir.category" class="silence-row">
-                  <div class="silence-head">
-                    <span class="silence-label">{{ ir.label }}</span>
-                    <span class="silence-share">{{ ir.share_pct }}%</span>
-                  </div>
-                  <p v-if="ir.example" class="silence-ex">"{{ ir.example }}"</p>
-                  <p v-if="ir.implication" class="silence-imp">{{ ir.implication }}</p>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </article>
-
-        <article class="cell cell-objections">
-          <header class="cell-head">
-            <span class="h-eyebrow">{{ copy.objections }}</span>
-            <span class="cell-meta">{{ report.top_objections?.length || 0 }}</span>
-          </header>
-          <ObjectionList :objections="report.top_objections" :copy="copy" :job-id="jobId" />
-        </article>
-
-        <article class="cell cell-quotes">
-          <header class="cell-head">
-            <span class="h-eyebrow">{{ copy.voices }}</span>
-            <span class="cell-meta">{{ report.quoted_reactions?.length || 0 }}</span>
-          </header>
-          <QuotesList :quotes="report.quoted_reactions" />
-        </article>
-      </section>
-
-      <!-- ICP fit row -->
-      <section class="strip strip-foot">
-        <article class="cell cell-icp" v-if="segmentNames.length">
-          <header class="cell-head">
-            <span class="h-eyebrow">{{ copy.segments }}</span>
-            <span class="cell-meta">{{ segmentNames.length }}</span>
-          </header>
-          <div class="segment-tags">
-            <span v-for="name in segmentNames" :key="name" class="segment-tag">{{ name }}</span>
-          </div>
-        </article>
-        <article v-if="usage" class="cell cell-usage">
-          <header class="cell-head"><span class="h-eyebrow">run cost</span></header>
-          <div class="usage-row">
-            <div class="usage-stat">
-              <div class="usage-num">${{ costDisplay.value }}</div>
-              <div class="usage-label">total</div>
-            </div>
-            <div class="usage-stat">
-              <div class="usage-num">{{ formatTokens(usage.total_tokens) }}</div>
-              <div class="usage-label">tokens</div>
-            </div>
-            <div class="usage-stat">
-              <div class="usage-num">{{ usage.total_calls }}</div>
-              <div class="usage-label">calls</div>
-            </div>
-          </div>
-        </article>
-      </section>
-    </main>
-
     <main v-else-if="report" class="memo-main scroll-zone">
       <DecisionMemo
         :report="report"
         :parsed-pitch="parsedPitch"
-        :usage="usage"
         :copy="copy"
         :job-id="jobId"
         :reaction-count="reactions.length"
-      />
+      >
+        <template #extra>
+          <DeckDiagnosis v-if="deckDiagnosis" :d="deckDiagnosis" />
+          <LaunchBrief v-else-if="launchBrief" :b="launchBrief" />
+        </template>
+      </DecisionMemo>
     </main>
 
     <footer v-if="report" class="foot-strip">
@@ -456,10 +135,8 @@ import { ref, shallowRef, computed, onMounted, watch } from 'vue'
 import BrainGraph from './BrainGraph.vue'
 import AgentChatPanel from './AgentChatPanel.vue'
 import AiDisclosure from '../../components/AiDisclosure.vue'
-import ObjectionList from '../../components/swarm/ObjectionList.vue'
-import QuotesList from '../../components/swarm/QuotesList.vue'
-import SharpenPanel from '../../components/swarm/SharpenPanel.vue'
-import AdvisorBrief from '../../components/swarm/AdvisorBrief.vue'
+import DeckDiagnosis from '../../components/swarm/DeckDiagnosis.vue'
+import LaunchBrief from '../../components/swarm/LaunchBrief.vue'
 import DecisionMemo from '../../components/swarm/DecisionMemo.vue'
 import FeedbackWidget from '../../components/feedback/FeedbackWidget.vue'
 import { useRoute } from 'vue-router'
@@ -478,7 +155,6 @@ const loading = ref(true)
 const error = ref('')
 const report = ref(null)
 const parsedPitch = ref(null)
-const usage = ref(null)
 const copied = ref(false)
 const archetypes = ref([])
 const reactions = ref([])
@@ -496,20 +172,6 @@ function onSelectAgent(id) { selectedId.value = id }
 // Animated score count-up
 const scoreDisplayed = ref(0)
 
-// Plain list of segment names — display only. No sorting, no ranking.
-const segmentNames = computed(() => {
-  const icp = report.value?.icp_fit
-  if (!icp) return []
-  return Object.keys(icp)
-})
-
-// Real cost only: sub-tenth-of-a-cent runs (local models) say so rather than
-// showing an invented "reference" figure.
-const costDisplay = computed(() => {
-  const real = Number(usage.value?.total_cost_usd || 0)
-  return { value: real >= 0.001 ? real.toFixed(4) : '<0.001' }
-})
-
 const jobShort = computed(() => (jobId || '').replace('roast_', '').slice(0, 8))
 
 async function load() {
@@ -523,7 +185,6 @@ async function load() {
     } else {
       report.value = j.report
       parsedPitch.value = j.parsed_pitch
-      usage.value = j.usage
       swarmType.value = j.swarm_type || 'validate'
       archetypes.value = Array.isArray(j.archetypes) ? j.archetypes : []
       reactions.value = Array.isArray(j.reactions) ? j.reactions : []
@@ -594,43 +255,6 @@ const deckDiagnosis = computed(() => report.value?.deck_diagnosis ?? null)
 // Launch brief computed
 const launchBrief = computed(() => report.value?.launch_brief ?? null)
 
-function readinessColor(pct) {
-  if (pct >= 70) return 'var(--live)'
-  if (pct >= 45) return 'var(--accent-bright)'
-  return 'var(--warn)'
-}
-
-function slideScoreColor(score) {
-  if (score >= 7) return 'var(--live)'
-  if (score >= 5) return 'var(--accent-bright)'
-  return 'var(--warn)'
-}
-
-function severityChipClass(severity) {
-  switch ((severity || '').toUpperCase()) {
-    case 'CRITICAL':
-    case 'HIGH':
-      return 'is-warn'
-    case 'MEDIUM':
-      return 'is-accent'
-    case 'LOW':
-    default:
-      return ''
-  }
-}
-
-function scoreColor(s) {
-  if (s >= 7) return 'var(--live)'
-  if (s >= 5) return 'var(--accent-bright)'
-  return 'var(--warn)'
-}
-function formatTokens(n) {
-  const v = Number(n || 0)
-  if (v < 1000) return v.toLocaleString()
-  if (v < 1_000_000) return (v / 1000).toFixed(v >= 10_000 ? 0 : 1) + 'k'
-  return (v / 1_000_000).toFixed(2) + 'M'
-}
-
 async function copyShareUrl() {
   await navigator.clipboard.writeText(window.location.href)
   track('share', { method: 'copy_link', content_type: 'roast' })
@@ -698,7 +322,6 @@ async function downloadPdf() {
     await generateRoastPDF({
       report: report.value,
       parsedPitch: parsedPitch.value,
-      usage: usage.value,
       jobId,
       swarmType: swarmType.value,
       reactionCount: reactions.value.length,
@@ -790,96 +413,10 @@ onMounted(() => {
 }
 .state-title { font-size: var(--text-3xl); color: var(--ink); margin: 0; }
 
-/* Dashboard grid */
-.dash {
-  flex: 1;
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  max-width: 1480px;
-  width: 100%;
-  margin: 0 auto;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.strip { display: grid; gap: var(--space-3); min-height: 0; }
-.strip-hero { grid-template-columns: 200px 1.5fr minmax(184px, 216px); }
-.strip-three { grid-template-columns: 0.92fr 1.32fr 0.82fr; }
-.strip-foot { grid-template-columns: 1.6fr 1fr; }
-
-.cell {
-  padding: var(--space-4);
-  background: var(--paper-2);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  min-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateY(8px);
-  animation: cell-in var(--dur-slow) var(--ease-out) forwards;
-}
-.strip-hero .cell { animation-delay: 60ms; }
-.strip-three .cell-narrative { animation-delay: 140ms; }
-.strip-three .cell-objections { animation-delay: 200ms; }
-.strip-three .cell-quotes { animation-delay: 260ms; }
-.strip-foot .cell { animation-delay: 340ms; }
-
 @keyframes cell-in {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.cell-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  flex-shrink: 0;
-}
-.cell-meta { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); }
-
-/* --- Decongested detail: segmented-control tabs --- */
-/* Recessed track holds the tabs; the active tab reads as a raised pill via the
-   paper depth ladder (track = deepest paper, pill = one step up + top highlight). */
-.detail-tabs {
-  display: inline-flex;
-  align-items: stretch;
-  gap: 3px;
-  width: max-content;
-  max-width: 100%;
-  padding: 4px;
-  flex-shrink: 0;
-  background: var(--paper);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-md);
-  box-shadow: inset 0 1px 2px color-mix(in oklch, black 30%, transparent);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.detail-tabs::-webkit-scrollbar { display: none; }
-.detail-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 7px var(--space-3);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-out),
-              color var(--dur-fast) var(--ease-out),
-              border-color var(--dur-fast) var(--ease-out);
-}
-.detail-tab:hover { color: var(--ink-2); background: var(--paper-2); }
 .detail-tab.active {
   color: var(--ink);
   background: var(--paper-3);
@@ -887,158 +424,11 @@ onMounted(() => {
   box-shadow: inset 0 1px 0 color-mix(in oklch, white 7%, transparent),
               0 1px 3px color-mix(in oklch, black 35%, transparent);
 }
-.detail-tab:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.detail-tab-count {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--ink-4);
-  padding: 2px 6px;
-  background: color-mix(in oklch, var(--ink) 8%, transparent);
-  border-radius: var(--radius-pill);
-  transition: color var(--dur-fast) var(--ease-out),
-              background var(--dur-fast) var(--ease-out);
-}
+
 .detail-tab.active .detail-tab-count {
   color: var(--accent-bright);
   background: var(--accent-soft);
 }
-
-.detail-pane {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  background: var(--paper-2);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-lg);
-  box-shadow: inset 0 1px 0 color-mix(in oklch, white 4%, transparent);
-  overflow: hidden;
-}
-/* Each pane fills the bezel. Self-scrolling list panes (objections / voices)
-   let their inner .scroll-zone do the scrolling; padded panes scroll themselves. */
-.pane {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-.pane-padded {
-  display: block;
-  overflow-y: auto;
-  padding: var(--space-5) var(--space-5) var(--space-6);
-}
-.pane :deep(.obj-list),
-.pane :deep(.quotes-list) {
-  flex: 1;
-  min-height: 0;
-  margin: 0;
-  padding: var(--space-4);
-}
-
-/* SCORE */
-.cell-score { text-align: center; justify-content: center; align-items: center; padding: var(--space-3); }
-.score-num {
-  font-family: var(--font-display); font-style: normal; font-weight: 600;
-  font-variation-settings: 'opsz' 144, 'wght' 600;
-  font-size: clamp(72px, 11vh, 120px);
-  line-height: 0.85; letter-spacing: -0.05em;
-  text-shadow: 0 0 60px currentColor;
-}
-.score-band { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.16em; text-transform: uppercase; }
-
-/* HEADLINE */
-.cell-headline { gap: var(--space-2); justify-content: center; }
-.score-headline {
-  font-size: clamp(20px, 2.6vh, 30px);
-  font-weight: 500; font-variation-settings: 'opsz' 144, 'wght' 500;
-  margin: 0; color: var(--ink);
-}
-.score-target { display: flex; gap: var(--space-2); align-items: baseline; margin: 0; font-size: var(--text-sm); }
-.target-key { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; }
-.target-val { color: var(--ink-2); }
-
-/* VERDICT (reframed hero) */
-.cell-verdict { text-align: center; justify-content: center; align-items: center; padding: var(--space-3); gap: var(--space-2); }
-.verdict-chip {
-  font-family: var(--font-display); font-style: normal; font-weight: 600;
-  font-variation-settings: 'opsz' 144, 'wght' 600;
-  font-size: clamp(28px, 5vh, 50px); line-height: 0.95; letter-spacing: -0.02em;
-  text-transform: uppercase; text-shadow: 0 0 40px currentColor;
-}
-.verdict-chip.is-ship { color: var(--live); }
-.verdict-chip.is-sharpen { color: var(--accent-bright); }
-.verdict-chip.is-wrong, .verdict-chip.is-kill { color: var(--ink); background: linear-gradient(transparent 58%, var(--warn-hl) 58%); -webkit-box-decoration-break: clone; box-decoration-break: clone; text-shadow: none; width: fit-content; }
-.verdict-meta { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); cursor: help; }
-
-/* NEXT ACTION */
-.cell-next { gap: var(--space-2); justify-content: center; }
-.next-action {
-  font-size: clamp(20px, 2.8vh, 32px); font-weight: 500;
-  font-variation-settings: 'opsz' 144, 'wght' 500; margin: 0; color: var(--ink); line-height: 1.15;
-}
-.verdict-reason { margin: 0; font-size: var(--text-sm); color: var(--ink-2); line-height: 1.5; }
-
-/* SENTIMENT cell */
-.cell-sentiment { gap: var(--space-3); justify-content: center; }
-.sent-bar { display: flex; height: 26px; border-radius: var(--radius-sm); overflow: hidden; background: var(--paper-3); }
-.sent-seg { display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 10px; font-weight: 700; min-width: 0; transition: flex 480ms var(--ease-out); }
-.sent-seg.pos { background: var(--live); color: var(--paper); }
-.sent-seg.neu { background: var(--ink-4); color: var(--ink); }
-.sent-seg.neg { background: var(--warn); color: var(--paper); }
-.sent-key { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
-.sent-key i.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
-.sent-key i.dot.pos { background: var(--live); } .sent-key i.dot.neu { background: var(--ink-4); } .sent-key i.dot.neg { background: var(--warn); }
-
-/* NARRATIVE */
-.narrative-scroll { padding-right: var(--space-3); }
-.narrative-body {
-  font-family: var(--font-body);
-  font-size: var(--text-sm); line-height: 1.6; color: var(--ink);
-  margin: 0 0 var(--space-4); white-space: pre-line;
-}
-.fixes { display: flex; flex-direction: column; gap: var(--space-2); }
-.fix-list { margin: 0; padding-left: var(--space-4); line-height: 1.55; color: var(--ink); font-size: var(--text-sm); }
-.fix-list li::marker { color: var(--accent-bright); }
-
-/* SILENCE — why agents scrolled past */
-.silence { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--rule); }
-.silence-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
-.silence-row { display: flex; flex-direction: column; gap: 2px; }
-.silence-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2); }
-.silence-label { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
-.silence-share { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3); }
-.silence-ex { margin: 0; font-family: var(--font-display); font-style: normal; font-size: var(--text-sm); line-height: 1.4; color: var(--ink-2); }
-.silence-imp { margin: 0; font-size: var(--text-sm); line-height: 1.5; color: var(--ink); }
-
-/* ICP fit — plain orange tags. Nothing else. */
-.cell-icp { gap: var(--space-3); }
-.segment-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  padding-right: var(--space-2);
-}
-.segment-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 12px;
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--accent-bright);
-  background: var(--accent-soft);
-  border: 1px solid color-mix(in oklch, var(--accent) 35%, transparent);
-  border-radius: var(--radius-pill);
-  white-space: nowrap;
-}
-
-/* USAGE */
-.cell-usage { gap: var(--space-3); }
-.usage-row { display: flex; gap: var(--space-5); }
-.usage-stat { display: flex; flex-direction: column; gap: 1px; }
-.usage-num { font-family: var(--font-display); font-style: normal; font-weight: 500; font-size: var(--text-xl); color: var(--ink); }
-.usage-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
 
 /* FOOT */
 .foot-strip {
@@ -1169,329 +559,11 @@ onMounted(() => {
 .sent-bar2 { height: 6px; background: rgba(127,127,140,0.12); border-radius: 999px; overflow: hidden; }
 .sent-fill2 { height: 100%; border-radius: 999px; }
 .sent-fill2.pos { background: #3ddc97; }
-.sent-fill2.neg { background: #ff5470; }
 
 .drawer-enter-active, .drawer-leave-active { transition: opacity var(--dur-base) var(--ease-out); }
 .drawer-enter-active .nd-card, .drawer-leave-active .nd-card { transition: transform var(--dur-base) var(--ease-out); }
 .drawer-enter-from, .drawer-leave-to { opacity: 0; }
 .drawer-enter-from .nd-card, .drawer-leave-to .nd-card { transform: translateX(100%); }
-
-/* === DECK DIAGNOSIS LAYOUT === */
-
-.diag-dash {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  max-width: 1480px;
-  width: 100%;
-  margin: 0 auto;
-  min-height: 0;
-}
-
-/* Hero row */
-.strip-diag-hero {
-  grid-template-columns: 180px 200px 1fr;
-  flex-shrink: 0;
-}
-
-/* Main row: scorecard + red flags */
-.strip-diag-main {
-  grid-template-columns: 1.3fr 1fr;
-  flex: 1;
-  min-height: 0;
-}
-
-/* Zones row */
-.strip-diag-zones {
-  grid-template-columns: 1fr 1.5fr;
-  flex-shrink: 0;
-}
-
-/* Readiness cell */
-.cell-readiness { text-align: center; justify-content: center; align-items: center; gap: var(--space-3); }
-.readiness-pct {
-  font-family: var(--font-display);
-  font-style: normal;
-  font-weight: 600;
-  font-variation-settings: 'opsz' 144, 'wght' 600;
-  font-size: clamp(52px, 9vh, 88px);
-  line-height: 0.9;
-  letter-spacing: -0.04em;
-  text-shadow: 0 0 50px currentColor;
-}
-.readiness-unit { font-size: 0.45em; letter-spacing: 0; opacity: 0.7; }
-.readiness-bar {
-  width: 100%;
-  height: 4px;
-  background: var(--paper-3);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-}
-.readiness-fill {
-  height: 100%;
-  border-radius: var(--radius-pill);
-  transition: width var(--dur-slow) var(--ease-out);
-}
-
-/* Stage + overall */
-.cell-diag-meta { justify-content: center; gap: var(--space-2); }
-.diag-stage {
-  font-family: var(--font-display);
-  font-style: normal;
-  font-size: clamp(20px, 3vh, 28px);
-  font-weight: 500;
-  font-variation-settings: 'opsz' 144, 'wght' 500;
-  margin: 0;
-  line-height: 1.15;
-  text-transform: capitalize;
-}
-.diag-stage-hint { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-4); margin: var(--space-2) 0 0; }
-.diag-overall {
-  font-family: var(--font-display);
-  font-style: normal;
-  font-weight: 600;
-  font-size: clamp(28px, 4vh, 40px);
-  line-height: 0.9;
-  text-shadow: 0 0 40px currentColor;
-}
-.diag-overall-denom { font-size: 0.5em; opacity: 0.55; }
-
-/* Next move */
-.cell-next-move { justify-content: center; }
-.next-move-text {
-  font-family: var(--font-display);
-  font-style: normal;
-  font-size: clamp(18px, 2.4vh, 26px);
-  font-weight: 500;
-  font-variation-settings: 'opsz' 144, 'wght' 500;
-  margin: 0;
-  line-height: 1.2;
-  color: var(--accent-bright);
-  overflow-wrap: anywhere;
-}
-
-/* Scorecard */
-.scorecard-scroll { padding-right: var(--space-2); }
-.slide-row {
-  display: grid;
-  grid-template-columns: 140px 1fr 48px;
-  gap: var(--space-3);
-  align-items: start;
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--rule);
-}
-.slide-row:last-child { border-bottom: 0; }
-.slide-left { display: flex; flex-direction: column; gap: 2px; }
-.slide-type {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-  font-weight: 600;
-}
-.slide-page {
-  color: var(--ink-4);
-  font-size: 10px;
-}
-.slide-center { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.slide-verdict { font-size: var(--text-sm); color: var(--ink); margin: 0; line-height: 1.45; }
-.slide-issue { font-size: var(--text-sm); color: var(--ink-3); margin: 0; line-height: 1.4; }
-.slide-score {
-  font-family: var(--font-display);
-  font-style: normal;
-  font-weight: 600;
-  font-size: var(--text-xl);
-  line-height: 0.9;
-  text-align: right;
-  flex-shrink: 0;
-}
-.slide-score-denom { font-size: 0.5em; opacity: 0.5; }
-
-/* Red flags */
-.redflags-scroll { padding-right: var(--space-2); }
-.redflag-row {
-  display: flex;
-  gap: var(--space-3);
-  align-items: start;
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--rule);
-}
-.redflag-row:last-child { border-bottom: 0; }
-.redflag-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.redflag-cite { display: flex; gap: var(--space-2); align-items: baseline; margin-bottom: 2px; }
-.redflag-slide {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-  font-weight: 600;
-}
-.redflag-page { color: var(--ink-4); font-size: 10px; }
-.redflag-text { font-size: var(--text-sm); color: var(--ink); margin: 0; line-height: 1.45; }
-
-/* Zones */
-.zone-tags { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.zone-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 12px;
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  border-radius: var(--radius-pill);
-  white-space: nowrap;
-}
-.zone-tag-live {
-  color: var(--live);
-  background: var(--live-soft);
-  border: 1px solid color-mix(in oklch, var(--live) 35%, transparent);
-}
-.zone-tag-warn {
-  color: var(--ink);
-  background: var(--warn-hl);
-  border: 1px solid transparent;
-}
-
-/* Investor simulation */
-.inv-sim-scroll { padding-right: var(--space-2); }
-.inv-sim-text {
-  font-family: var(--font-display);
-  font-style: normal;
-  font-size: clamp(var(--text-sm), 1.6vw, var(--text-md));
-  font-weight: 500;
-  font-variation-settings: 'opsz' 96, 'wght' 500;
-  line-height: 1.55;
-  color: var(--ink-2);
-  margin: 0;
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-}
-
-/* === LAUNCH BRIEF LAYOUT === */
-
-.launch-dash {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  max-width: 1480px;
-  width: 100%;
-  margin: 0 auto;
-  min-height: 0;
-}
-
-/* Launch hero row: verdict + next action + sentiment */
-.strip-launch-hero {
-  grid-template-columns: 180px 1.5fr minmax(180px, 220px);
-  flex-shrink: 0;
-}
-.cell-launch-verdict { text-align: center; justify-content: center; align-items: center; padding: var(--space-3); gap: var(--space-2); }
-.cell-launch-action { gap: var(--space-2); justify-content: center; }
-.cell-launch-sentiment { gap: var(--space-3); justify-content: center; }
-
-/* Launch Q/C/R row: questions + confusion + risks */
-.strip-launch-qcr {
-  grid-template-columns: 1fr 1fr 1fr;
-  min-height: 0;
-}
-
-/* Launch themes + playbook row */
-.strip-launch-tp {
-  grid-template-columns: 0.8fr 1.4fr;
-  flex-shrink: 0;
-}
-
-/* Shared launch list styles */
-.launch-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.launch-list-scroll { padding-right: var(--space-2); }
-.launch-list-item {
-  font-size: var(--text-sm);
-  color: var(--ink);
-  line-height: 1.5;
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--rule);
-}
-.launch-list-item:last-child { border-bottom: 0; padding-bottom: 0; }
-.launch-list-item::before {
-  content: '›';
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--ink-3);
-  margin-right: var(--space-2);
-}
-.launch-list-warn .launch-list-item::before { color: var(--warn); }
-.launch-list-live .launch-list-item::before { color: var(--live); }
-
-/* Theme tags */
-.theme-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-.theme-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 12px;
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--info);
-  background: var(--info-soft);
-  border: 1px solid color-mix(in oklch, var(--info) 35%, transparent);
-  border-radius: var(--radius-pill);
-  white-space: nowrap;
-}
-
-/* Playbook */
-.playbook-scroll { padding-right: var(--space-2); }
-.play-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--rule);
-}
-.play-row:last-child { border-bottom: 0; padding-bottom: 0; }
-.play-trigger, .play-response {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-}
-.play-tag {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  padding: 1px 5px;
-  border: 1px solid var(--rule);
-  border-radius: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.play-tag.accent { color: var(--accent-bright); border-color: color-mix(in oklch, var(--accent) 35%, transparent); }
-.play-trigger-text {
-  font-size: var(--text-sm);
-  color: var(--ink-2);
-  line-height: 1.45;
-}
-.play-response-text {
-  font-size: var(--text-sm);
-  color: var(--ink);
-  line-height: 1.45;
-}
 
 /* responsive for deck diagnosis */
 @media (max-width: 1024px) {
@@ -1503,9 +575,9 @@ onMounted(() => {
 
 @media (max-width: 760px) {
   .page.page-fixed { height: auto; overflow: auto; }
-  .diag-dash { padding: var(--space-3); overflow: visible; }
-  .diag-dash .scroll-zone { overflow: visible; }
-  .strip-diag-hero, .strip-diag-main, .strip-diag-zones { grid-template-columns: 1fr; }
+  
+  
+  
 }
 
 /* responsive for main dashboard */
@@ -1518,15 +590,13 @@ onMounted(() => {
   .rail-context { display: none; }
   .rail-right { margin-left: 0; width: 100%; overflow-x: auto; scrollbar-width: none; }
   .rail-action, .rail-tab { white-space: nowrap; }
-  .dash { grid-template-rows: auto auto auto; overflow: visible; }
-  .dash .scroll-zone { overflow: visible; }
+  
+  
   .page.page-fixed { height: auto; overflow: auto; }
-  .strip-hero { grid-template-columns: 1fr; }
-  /* Page scrolls now — let the active pane grow instead of trapping a scroll. */
-  .detail-pane { overflow: visible; }
-  .pane, .pane-padded { overflow: visible; }
-  .pane :deep(.obj-list),
-  .pane :deep(.quotes-list) { overflow: visible; }
+  
+  
+  
+  
 }
 
 /* responsive for launch brief */
@@ -1539,11 +609,9 @@ onMounted(() => {
 
 @media (max-width: 760px) {
   .page.page-fixed { height: auto; overflow: auto; }
-  .launch-dash { padding: var(--space-3); overflow: visible; }
-  .launch-dash .scroll-zone { overflow: visible; }
-  .strip-launch-hero,
-  .strip-launch-qcr,
-  .strip-launch-tp { grid-template-columns: 1fr; }
+  
+  
+  
 }
 
 /* iPad / tablet (portrait + landscape) — relax the fixed-viewport dashboard

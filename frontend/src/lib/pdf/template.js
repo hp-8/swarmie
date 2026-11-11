@@ -8,11 +8,10 @@
  * Flow: header → subject + panel facts → verdict → action panel (this week,
  * branches, rewording) → what's working → hidden risks → objections →
  * evidence (sentiment, why people scrolled past, segments) → voices →
- * summary, plus deck diagnosis / launch brief when present. Run cost sits
- * in the header facts.
+ * summary, plus deck diagnosis / launch brief when present.
  * A footer with the disclosure and page number goes on every page.
  *
- * Public surface: generateRoastPDF({ report, parsedPitch, usage, jobId }).
+ * Public surface: generateRoastPDF({ report, parsedPitch, jobId, swarmType, reactionCount }).
  */
 
 import { recPhrase, verdictMeta } from '../verdict'
@@ -158,7 +157,7 @@ function drawLogo(doc, x, y, s) {
   }
 }
 
-function drawHeader(doc, flow, { report, parsedPitch, jobId, reviewers, usage }) {
+function drawHeader(doc, flow, { report, parsedPitch, jobId, reviewers }) {
   drawLogo(doc, M.left, flow.y - 4, 20)
   font(doc, SANS, 'bold', 13)
   ink(doc, C.ink)
@@ -179,8 +178,7 @@ function drawHeader(doc, flow, { report, parsedPitch, jobId, reviewers, usage })
   const a = report.action_split || {}
   const spoke = (a.comment || 0) + (a.post || 0)
   const conf = { low: 'Low', med: 'Medium', high: 'High' }[report.confidence] || 'Low'
-  const cost = usage ? ` · Run cost ${costLabel(usage)}` : ''
-  const facts = `${reviewers} reviewers · ${spoke} spoke · ${Math.round(report.silent_share_pct || 0)}% scrolled past · Confidence ${conf}${cost}`
+  const facts = `${reviewers} reviewers · ${spoke} spoke · ${Math.round(report.silent_share_pct || 0)}% scrolled past · Confidence ${conf}`
   flow.y += 2
   para(doc, flow, facts, { size: 8.5, color: C.ink3 })
 }
@@ -502,11 +500,6 @@ function drawLaunchBrief(doc, flow, report) {
   if (b.next_actions?.length) { heading(doc, flow, 'Next actions'); bullets(doc, flow, b.next_actions, C.live) }
 }
 
-function costLabel(usage) {
-  const c = Number(usage?.total_cost_usd || 0)
-  return c >= 0.001 ? `$${c.toFixed(4)}` : 'under $0.001'
-}
-
 function drawFooter(doc, page, total) {
   const y = PAGE_H - M.bottom + 16
   stroke(doc, C.rule)
@@ -530,9 +523,9 @@ const COPY = {
 
 /**
  * Build and download the decision-memo PDF.
- * @param {{ report: object, parsedPitch?: object, usage?: object, jobId?: string, swarmType?: string, reactionCount?: number }} opts
+ * @param {{ report: object, parsedPitch?: object, jobId?: string, swarmType?: string, reactionCount?: number }} opts
  */
-export async function generateRoastPDF({ report, parsedPitch, usage, jobId, swarmType = 'validate', reactionCount = 0 }) {
+export async function generateRoastPDF({ report, parsedPitch, jobId, swarmType = 'validate', reactionCount = 0 }) {
   if (!report) throw new Error('report is required')
   const { default: jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'portrait' })
@@ -543,7 +536,7 @@ export async function generateRoastPDF({ report, parsedPitch, usage, jobId, swar
   const reviewers = reactionCount || Object.values(a).reduce((x, y) => x + (Number(y) || 0), 0)
 
   const flow = makeFlow(doc)
-  drawHeader(doc, flow, { report, parsedPitch, jobId, reviewers, usage })
+  drawHeader(doc, flow, { report, parsedPitch, jobId, reviewers })
   drawVerdict(doc, flow, report)
   drawActionPanel(doc, flow, report)
   drawWorking(doc, flow, report)
