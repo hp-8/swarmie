@@ -644,7 +644,10 @@ const sharingCard = ref(false)
 function shareCardData() {
   const r = report.value
   const top = r.top_objections?.[0]
+  const risk = r.hidden_risks?.[0]
   return {
+    riskTitle: risk?.risk || '',
+    riskWhy: risk?.why_non_obvious || '',
     verdict: r.verdict,
     pmf_score: r.pmf_score,
     confidence: r.confidence,

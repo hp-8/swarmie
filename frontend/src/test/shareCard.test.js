@@ -6,7 +6,6 @@ import {
   agentCountLine,
   confidenceLine,
   resolveVerdictDisplay,
-  buildDotField,
   CARD_W,
   CARD_H,
   CARD_COLORS,
@@ -80,10 +79,11 @@ describe('fitFontSize', () => {
 })
 
 describe('display lines', () => {
-  it('agentCountLine pluralizes the swarm', () => {
-    expect(agentCountLine(150)).toBe('150 synthetic users reacted')
-    expect(agentCountLine(0)).toBe('synthetic swarm reacted')
-    expect(agentCountLine(undefined)).toBe('synthetic swarm reacted')
+  it('agentCountLine counts the panel', () => {
+    expect(agentCountLine(150)).toBe('150 reviewers')
+    expect(agentCountLine(1)).toBe('1 reviewer')
+    expect(agentCountLine(0)).toBe('synthetic panel')
+    expect(agentCountLine(undefined)).toBe('synthetic panel')
   })
 
   it('confidenceLine renders only when present', () => {
@@ -108,25 +108,6 @@ describe('resolveVerdictDisplay', () => {
 
   it('renders a placeholder when nothing is known', () => {
     expect(resolveVerdictDisplay({}).label).toBe('—')
-  })
-})
-
-describe('buildDotField', () => {
-  it('is deterministic for a given seed', () => {
-    expect(buildDotField(50, 7)).toEqual(buildDotField(50, 7))
-  })
-
-  it('differs across seeds', () => {
-    expect(buildDotField(50, 7)).not.toEqual(buildDotField(50, 8))
-  })
-
-  it('keeps every dot inside the card bounds', () => {
-    for (const d of buildDotField(200, 3)) {
-      expect(d.x).toBeGreaterThanOrEqual(0)
-      expect(d.x).toBeLessThanOrEqual(CARD_W)
-      expect(d.y).toBeGreaterThanOrEqual(0)
-      expect(d.y).toBeLessThanOrEqual(CARD_H)
-    }
   })
 })
 

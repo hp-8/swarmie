@@ -53,10 +53,10 @@ export function verdictMeta(v) {
   return VERDICT_META[v] || { label: v || '—', cls: 'is-sharpen' }
 }
 
-// tokens.css → hex: --live → #5fd99a · --accent-bright → #f8924f · --warn → #ec5f5f
+// tokens.css (light) → hex: --live → #2b7a4b · amber #9a5b13 · --warn → #bf2f2a
 export const VERDICT_HEX = {
-  'is-ship': '#5fd99a',
-  'is-sharpen': '#f8924f',
-  'is-wrong': '#ec5f5f',
-  'is-kill': '#ec5f5f',
+  'is-ship': '#2b7a4b',
+  'is-sharpen': '#9a5b13',
+  'is-wrong': '#bf2f2a',
+  'is-kill': '#bf2f2a',
 }

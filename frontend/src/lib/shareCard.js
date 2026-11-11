@@ -11,35 +11,36 @@
  *   downloadBlob(blob, filename)                            (browser only)
  *   drawShareCard(canvas, data) — accepts anything with getContext('2d')
  *
- * `data`: { verdict, pmf_score, confidence, agentCount,
+ * `data`: { verdict, pmf_score, confidence, agentCount, riskTitle, riskWhy,
  *           objectionCategory, objectionText, url }
+ * Shows the memo's top hidden risk; falls back to the top objection for
+ * reports without hidden risks (pre-V2).
  */
 
-import { verdictMeta, VERDICT_HEX } from './verdict'
+import { recPhrase, verdictMeta, VERDICT_HEX } from './verdict'
 
 export const CARD_W = 1200
 export const CARD_H = 630
 
-// tokens.css → hex (same translation as the lib/pdf/template.js palette).
+// tokens.css (V2 light memo) → hex for canvas, which can't read CSS vars.
 export const CARD_COLORS = {
-  paper: '#101116',
-  rule: '#383a44',
-  ink: '#f6f7fa',
-  ink2: '#d6dae0',
-  ink3: '#a8acb8',
-  ink4: '#7a7e8a',
-  accent: '#f17a40',
-  accentBright: '#f8924f',
-  live: '#5fd99a',
-  warn: '#ec5f5f',
-  info: '#6aa9e4',
+  paper: '#ffffff',
+  paper2: '#f6f7f9',
+  rule: '#e3e6ea',
+  ink: '#1d2127',
+  ink2: '#3d434c',
+  ink3: '#5f6773',
+  accentBright: '#9a5b13', // sharpen / middling
+  live: '#2b7a4b',
+  warn: '#bf2f2a',
 }
 
 const ELLIPSIS = '…'
 const PAD = 64
 const MAX_TEXT_W = CARD_W - PAD * 2
 
-const FONT_DISPLAY = 'Fraunces, Georgia, "Times New Roman", serif'
+const FONT_DISPLAY = '"Source Serif 4", Georgia, "Times New Roman", serif'
+const FONT_SANS = '"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif'
 const FONT_MONO = '"JetBrains Mono", ui-monospace, SFMono-Regular, monospace'
 
 // ---------------------------------------------------------------------------
@@ -110,7 +111,7 @@ export function fitFontSize(text, { maxWidth, baseSize, minSize, measureAt }) {
 
 export function agentCountLine(n) {
   const v = Number(n) || 0
-  return v > 0 ? `${v} synthetic users reacted` : 'synthetic swarm reacted'
+  return v > 0 ? `${v} reviewer${v === 1 ? '' : 's'}` : 'synthetic panel'
 }
 
 export function confidenceLine(confidence) {
@@ -135,41 +136,6 @@ export function resolveVerdictDisplay({ verdict, pmf_score } = {}) {
   return { label: '—', color: CARD_COLORS.accentBright }
 }
 
-// mulberry32 — tiny seeded PRNG so the dot swarm is deterministic.
-function mulberry32(seed) {
-  let a = seed >>> 0
-  return function () {
-    a |= 0
-    a = (a + 0x6D2B79F5) | 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-/**
- * Scattered dot-swarm motif — biased toward the top-right so it reads as a
- * swarm gathering, in brand colors (mostly ink, ~30% coral, a few phosphor).
- */
-export function buildDotField(count = 110, seed = 7) {
-  const rand = mulberry32(seed)
-  const dots = []
-  for (let i = 0; i < count; i++) {
-    const x = CARD_W * (1 - Math.pow(rand(), 1.6))
-    const y = CARD_H * Math.pow(rand(), 1.25)
-    const roll = rand()
-    dots.push({
-      x,
-      y,
-      r: 1 + rand() * 2.6,
-      color: roll < 0.30 ? CARD_COLORS.accent : roll < 0.38 ? CARD_COLORS.live : CARD_COLORS.ink3,
-      alpha: 0.05 + rand() * 0.30,
-      glow: roll < 0.06,
-    })
-  }
-  return dots
-}
-
 // ---------------------------------------------------------------------------
 // canvas drawing (thin layer over the helpers above)
 // ---------------------------------------------------------------------------
@@ -185,7 +151,7 @@ function drawTracked(ctx, str, x, y, tracking) {
 
 /**
  * Draw the full card onto `canvas` (resized to 1200×630).
- * Layout: wordmark + agent count → verdict block → top objection → URL bar.
+ * Layout: wordmark + memo meta → verdict sentence → top risk (or objection) → URL bar.
  */
 export function drawShareCard(canvas, data = {}) {
   canvas.width = CARD_W
@@ -195,132 +161,178 @@ export function drawShareCard(canvas, data = {}) {
   const verdict = resolveVerdictDisplay(data)
   const measure = (s) => ctx.measureText(s).width
 
-  // --- paper ---
   ctx.fillStyle = C.paper
   ctx.fillRect(0, 0, CARD_W, CARD_H)
 
-  // --- atmosphere: coral dawn top-right + faint cool counter-glow low-left ---
-  let g = ctx.createRadialGradient(CARD_W * 0.86, -40, 0, CARD_W * 0.86, -40, 560)
-  g.addColorStop(0, 'rgba(241, 122, 64, 0.14)')
-  g.addColorStop(1, 'rgba(241, 122, 64, 0)')
-  ctx.fillStyle = g
-  ctx.fillRect(0, 0, CARD_W, CARD_H)
-
-  g = ctx.createRadialGradient(CARD_W * 0.10, CARD_H * 1.05, 0, CARD_W * 0.10, CARD_H * 1.05, 520)
-  g.addColorStop(0, 'rgba(106, 169, 228, 0.07)')
-  g.addColorStop(1, 'rgba(106, 169, 228, 0)')
-  ctx.fillStyle = g
-  ctx.fillRect(0, 0, CARD_W, CARD_H)
-
-  // --- dot swarm motif ---
-  for (const d of buildDotField()) {
-    ctx.globalAlpha = d.alpha
-    ctx.fillStyle = d.color
-    ctx.shadowColor = d.glow ? C.accent : 'transparent'
-    ctx.shadowBlur = d.glow ? 14 : 0
-    ctx.beginPath()
-    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2)
-    ctx.fill()
-  }
-  ctx.globalAlpha = 1
-  ctx.shadowBlur = 0
-
-  // vignette — edges fall away so the verdict holds the eye
-  g = ctx.createRadialGradient(CARD_W / 2, CARD_H * 0.42, CARD_H * 0.30, CARD_W / 2, CARD_H * 0.42, CARD_W * 0.72)
-  g.addColorStop(0, 'rgba(16, 17, 22, 0)')
-  g.addColorStop(1, 'rgba(16, 17, 22, 0.55)')
-  ctx.fillStyle = g
-  ctx.fillRect(0, 0, CARD_W, CARD_H)
-
-  // --- top bar: wordmark left · agent count right ---
-  ctx.shadowColor = C.accent
-  ctx.shadowBlur = 16
-  ctx.fillStyle = C.accent
-  ctx.beginPath()
-  ctx.arc(PAD + 7, 74, 7, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.shadowBlur = 0
-
+  // --- header: logo + wordmark · memo meta ---
+  drawLogo(ctx, PAD, 52, 36)
   ctx.fillStyle = C.ink
-  ctx.font = `700 21px ${FONT_MONO}`
-  drawTracked(ctx, 'SWARMIE', PAD + 28, 81, 5)
+  ctx.font = `700 26px ${FONT_SANS}`
+  ctx.fillText('Swarmie', PAD + 50, 79)
 
   ctx.fillStyle = C.ink3
-  ctx.font = `500 16px ${FONT_MONO}`
-  ctx.textAlign = 'right'
-  ctx.fillText(agentCountLine(data.agentCount), CARD_W - PAD, 81)
-  ctx.textAlign = 'left'
+  ctx.font = `500 14px ${FONT_MONO}`
+  const meta = `DECISION MEMO · ${agentCountLine(data.agentCount).toUpperCase()}`
+  drawTrackedRight(ctx, meta, CARD_W - PAD, 78, 2)
 
-  // --- verdict block ---
-  ctx.fillStyle = C.ink4
-  ctx.font = `600 15px ${FONT_MONO}`
-  drawTracked(ctx, 'THE SWARM’S VERDICT', PAD, 192, 4)
+  hRule(ctx, 116)
 
-  const verdictLabel = verdict.label.toUpperCase()
-  const verdictSize = fitFontSize(verdictLabel, {
-    maxWidth: MAX_TEXT_W,
-    baseSize: 116,
-    minSize: 56,
-    measureAt: (size, text) => {
-      ctx.font = `italic 600 ${size}px ${FONT_DISPLAY}`
-      return measure(text)
-    },
-  })
-  ctx.font = `italic 600 ${verdictSize}px ${FONT_DISPLAY}`
+  // --- verdict: colored marker + memo sentence ---
   ctx.fillStyle = verdict.color
-  ctx.shadowColor = verdict.color
-  ctx.shadowBlur = 70
-  ctx.fillText(verdictLabel, PAD, 304)
-  ctx.shadowBlur = 28
-  ctx.fillText(verdictLabel, PAD, 304)
-  ctx.shadowBlur = 0
-
+  ctx.beginPath()
+  ctx.arc(PAD + 6, 166, 6, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.font = `600 13px ${FONT_MONO}`
+  drawTracked(ctx, 'VERDICT', PAD + 22, 171, 3)
   const confLine = confidenceLine(data.confidence)
   if (confLine) {
     ctx.fillStyle = C.ink3
-    ctx.font = `500 15px ${FONT_MONO}`
-    drawTracked(ctx, confLine.toUpperCase(), PAD, 350, 3)
+    ctx.font = `500 13px ${FONT_MONO}`
+    drawTracked(ctx, `· ${confLine.toUpperCase()}`, PAD + 104, 171, 2)
   }
 
-  // --- top objection (wrapped + clamped, survives 300-char quotes) ---
-  const objectionText = String(data.objectionText || '').trim()
-  if (objectionText) {
-    ctx.fillStyle = C.ink4
-    ctx.font = `600 13px ${FONT_MONO}`
-    const tag = data.objectionCategory
-      ? `TOP OBJECTION · ${String(data.objectionCategory).toUpperCase()}`
-      : 'TOP OBJECTION'
-    drawTracked(ctx, tag, PAD, 414, 3)
+  const phrase = data.verdict ? recPhrase(data.verdict) : verdict.label
+  const phraseSize = fitFontSize(phrase, {
+    maxWidth: MAX_TEXT_W,
+    baseSize: 68,
+    minSize: 40,
+    measureAt: (size, text) => {
+      ctx.font = `600 ${size}px ${FONT_DISPLAY}`
+      return measure(text)
+    },
+  })
+  ctx.font = `600 ${phraseSize}px ${FONT_DISPLAY}`
+  ctx.fillStyle = C.ink
+  ctx.fillText(phrase, PAD, 248)
 
-    ctx.font = `italic 500 29px ${FONT_DISPLAY}`
-    ctx.fillStyle = C.ink2
-    const lines = layoutText(`“${objectionText}”`, {
-      maxWidth: MAX_TEXT_W,
-      maxLines: 3,
-      measure,
+  // --- finding panel: top hidden risk, else top objection ---
+  const risk = String(data.riskTitle || '').trim()
+  const quote = String(data.objectionText || '').trim()
+  if (risk || quote) {
+    const top = 296
+    const x = PAD + 32
+    const w = MAX_TEXT_W - 64
+    // Lay text out first so the panel can hug it: [font, color, lines, lineHeight]
+    const blocks = []
+    let flag
+    if (risk) {
+      flag = 'RISK'
+      ctx.font = `700 30px ${FONT_SANS}`
+      const title = layoutText(risk, { maxWidth: w, maxLines: 2, measure })
+      blocks.push([ctx.font, C.ink, title, 38])
+      const why = String(data.riskWhy || '').trim()
+      if (why) {
+        ctx.font = `400 20px ${FONT_SANS}`
+        const maxLines = title.length > 1 ? 1 : 2
+        blocks.push([ctx.font, C.ink2, layoutText(`Easy to miss because ${lowerFirst(why)}`, { maxWidth: w, maxLines, measure }), 28])
+      }
+    } else {
+      flag = data.objectionCategory
+        ? `OBJECTION · ${String(data.objectionCategory).toUpperCase()}`
+        : 'OBJECTION'
+      ctx.font = `italic 500 28px ${FONT_DISPLAY}`
+      blocks.push([ctx.font, C.ink2, layoutText(`“${quote}”`, { maxWidth: w, maxLines: 3, measure }), 38])
+    }
+
+    // Baselines: first title line 98px under the panel top, each next line
+    // one line-height down, +10px between blocks.
+    const rows = []
+    let y = top + 98
+    blocks.forEach(([font, color, lines, lh], i) => {
+      if (i) y += 10 + lh
+      lines.forEach((ln, j) => rows.push([font, color, ln, y + j * lh]))
+      y += (lines.length - 1) * lh
     })
-    lines.forEach((ln, i) => ctx.fillText(ln, PAD, 454 + i * 40))
+    const bottom = Math.min(y + 32, 536) // keep clear of the footer rule at 556
+    ctx.fillStyle = C.paper2
+    roundRect(ctx, PAD, top, MAX_TEXT_W, bottom - top, 12)
+    ctx.fill()
+
+    drawFlag(ctx, flag, x, top + 34)
+    for (const [font, color, ln, by] of rows) {
+      ctx.font = font
+      ctx.fillStyle = color
+      ctx.fillText(ln, x, by)
+    }
   }
 
-  // --- bottom bar: rule · URL · honest tag ---
-  ctx.strokeStyle = C.rule
-  ctx.lineWidth = 1
-  ctx.beginPath()
-  ctx.moveTo(PAD, 560)
-  ctx.lineTo(CARD_W - PAD, 560)
-  ctx.stroke()
-
-  ctx.fillStyle = C.accentBright
-  ctx.font = `600 18px ${FONT_MONO}`
-  ctx.fillText(data.url || 'swarmie.harshpatadia.com', PAD, 596)
-
-  ctx.fillStyle = C.ink4
-  ctx.font = `500 14px ${FONT_MONO}`
+  // --- footer: rule · URL · disclosure ---
+  hRule(ctx, 556)
+  ctx.fillStyle = C.ink
+  ctx.font = `500 18px ${FONT_MONO}`
+  ctx.fillText(data.url || 'swarmie.harshpatadia.com', PAD, 594)
+  ctx.fillStyle = C.ink3
+  ctx.font = `400 16px ${FONT_SANS}`
   ctx.textAlign = 'right'
-  ctx.fillText('synthetic users · disclosed', CARD_W - PAD, 596)
+  ctx.fillText('AI reviewers, not real users', CARD_W - PAD, 594)
   ctx.textAlign = 'left'
 
   return canvas
+}
+
+function lowerFirst(s) {
+  return s ? s.charAt(0).toLowerCase() + s.slice(1) : s
+}
+
+function hRule(ctx, y) {
+  ctx.strokeStyle = CARD_COLORS.rule
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(PAD, y + 0.5)
+  ctx.lineTo(CARD_W - PAD, y + 0.5)
+  ctx.stroke()
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
+}
+
+function trackedWidth(ctx, str, tracking) {
+  let w = 0
+  for (const ch of str) w += ctx.measureText(ch).width + tracking
+  return w - tracking
+}
+
+// Outlined mono tag, like the memo's "Risk" flag.
+function drawFlag(ctx, label, x, y) {
+  ctx.font = `600 13px ${FONT_MONO}`
+  const w = trackedWidth(ctx, label, 2)
+  ctx.strokeStyle = CARD_COLORS.warn
+  ctx.lineWidth = 1.5
+  roundRect(ctx, x, y - 18, w + 18, 28, 5)
+  ctx.stroke()
+  ctx.fillStyle = CARD_COLORS.warn
+  drawTracked(ctx, label, x + 9, y + 1, 2)
+}
+
+function drawTrackedRight(ctx, str, right, y, tracking) {
+  drawTracked(ctx, str, right - trackedWidth(ctx, str, tracking), y, tracking)
+}
+
+// The favicon mark: four colored nodes wired to a coral core.
+function drawLogo(ctx, x, y, size) {
+  const p = (v) => (v * size) / 120
+  ctx.strokeStyle = 'rgba(25, 24, 20, 0.6)'
+  ctx.lineWidth = p(3)
+  for (const [ex, ey] of [[28, 42], [92, 42], [28, 82], [92, 82]]) {
+    ctx.beginPath()
+    ctx.moveTo(x + p(60), y + p(60))
+    ctx.lineTo(x + p(ex), y + p(ey))
+    ctx.stroke()
+  }
+  const dots = [[60, 60, 22, '#ff6b35'], [28, 42, 9, '#2d6ef7'], [92, 42, 9, '#15c1a3'], [28, 82, 9, '#ffc94f'], [92, 82, 9, '#ff5da2']]
+  for (const [cx, cy, r, fill] of dots) {
+    ctx.fillStyle = fill
+    ctx.beginPath()
+    ctx.arc(x + p(cx), y + p(cy), p(r), 0, Math.PI * 2)
+    ctx.fill()
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -333,7 +345,10 @@ export async function buildShareCardBlob(data) {
   if (typeof document !== 'undefined' && document.fonts) {
     try {
       await Promise.all([
-        document.fonts.load('italic 600 116px Fraunces'),
+        document.fonts.load('600 68px "Source Serif 4"'),
+        document.fonts.load('italic 500 28px "Source Serif 4"'),
+        document.fonts.load('700 30px "Public Sans"'),
+        document.fonts.load('400 20px "Public Sans"'),
         document.fonts.load('500 16px "JetBrains Mono"'),
         document.fonts.ready,
       ])
