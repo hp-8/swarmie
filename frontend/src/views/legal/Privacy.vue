@@ -74,9 +74,12 @@
       </section>
 
       <section>
-        <h2>4. Uploaded Files</h2>
+        <h2>4. Pitches and Uploaded Files</h2>
         <p>Uploaded PDF files are processed to extract text required for analysis.</p>
         <p>Raw uploaded files are not retained after processing unless explicitly stated otherwise in a future product feature.</p>
+        <p>While a review runs, and for up to one hour after so you can open your results, we hold your pitch, the panel’s reactions and your report on our servers. That copy is then deleted automatically.</p>
+        <p>If you accept analytics, we also store your pitch text, the parsed pitch, the report and the reviewers' reactions in our database (Supabase). We use them to run and improve Swarmie, for example to check the quality of reports, and only in aggregate. We never sell or share your pitches, and we never publish them. Only the Swarmie backend can read this data, not other users. If you decline analytics, your pitch is not stored in this database.</p>
+        <p>You can ask us to delete a stored pitch and its report at any time by emailing <a href="mailto:hpatadi07@gmail.com">hpatadi07@gmail.com</a> with the link to your results page.</p>
       </section>
 
       <section>
@@ -109,8 +112,10 @@
           <li>Google (AI processing, Google Analytics)</li>
           <li>Microsoft (Clarity)</li>
           <li>OpenRouter</li>
-          <li>Supabase</li>
-          <li>Vercel</li>
+          <li>Render (backend hosting)</li>
+          <li>Stripe (payments)</li>
+          <li>Supabase (database and sign-in)</li>
+          <li>Vercel (website hosting)</li>
         </ul>
         <p>Providers may change as the Service evolves.</p>
       </section>
