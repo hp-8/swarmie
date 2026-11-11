@@ -55,7 +55,12 @@ def _svc_headers() -> dict[str, str]:
     key = Config.SUPABASE_SERVICE_ROLE_KEY
     if not (Config.SUPABASE_URL and key):
         raise BillingError("Supabase is not configured")
-    return {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+    headers = {"apikey": key, "Content-Type": "application/json"}
+    # New secret keys (sb_secret_...) are not JWTs and go on `apikey` only;
+    # legacy service_role JWTs also need Authorization: Bearer.
+    if not key.startswith("sb_"):
+        headers["Authorization"] = f"Bearer {key}"
+    return headers
 
 
 def _rpc(fn: str, args: dict) -> object:

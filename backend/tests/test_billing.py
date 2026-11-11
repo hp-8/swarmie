@@ -251,3 +251,12 @@ def test_checkout_requires_sign_in_and_known_pack(ledger):
     client = _client()
     assert client.post("/api/billing/checkout", json={"pack": "sprint"}).status_code == 401
     assert client.post("/api/billing/checkout", json={"pack": "gold"}, headers={"Authorization": "Bearer u7"}).status_code == 400
+
+
+@pytest.mark.parametrize("key,bearer", [("sb_secret_abc", False), ("eyJhbGciOi.legacy.jwt", True)])
+def test_service_headers_support_new_and_legacy_keys(monkeypatch, key, bearer):
+    monkeypatch.setattr(Config, "SUPABASE_URL", "https://p.supabase.co")
+    monkeypatch.setattr(Config, "SUPABASE_SERVICE_ROLE_KEY", key)
+    h = billing._svc_headers()
+    assert h["apikey"] == key
+    assert ("Authorization" in h) is bearer
