@@ -47,7 +47,7 @@
               <p class="s-title"><span class="s-flag">Risk</span>The user is not the buyer.</p>
               <p class="s-line"><strong>Easy to miss because</strong> every positive reaction came from teachers; administrators were 4 of 100 reviewers.</p>
             </div>
-            <p class="s-action"><strong>This week.</strong> Interview 5 school administrators: who approves a grading tool, and from which budget?</p>
+            <p class="s-action"><strong>This week.</strong> Rewrite the first line for the buyer (admins, not teachers), name the budget it comes from, and re-run.</p>
           </div>
         </figure>
       </section>

@@ -14,7 +14,7 @@
             <dd>
               <span class="obj-test-text">{{ obj.real_test }}</span>
               <button class="obj-test-q" type="button" @click="copyTest(obj)">
-                {{ copiedTest === obj.category ? 'Copied' : 'Copy question' }}
+                {{ copiedTest === obj.category ? 'Copied' : 'Copy' }}
               </button>
             </dd>
           </div>

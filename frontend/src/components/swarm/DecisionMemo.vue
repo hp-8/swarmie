@@ -66,36 +66,38 @@
         <ObjectionList :objections="report.top_objections" :copy="copy" :job-id="jobId" />
       </section>
 
-      <figure class="cell cell-ex">
-        <figcaption>How the {{ spokeCount }} who spoke felt</figcaption>
-        <div class="sent" role="img" :aria-label="sentimentAria">
-          <span v-for="k in SENT" :key="k" class="sent-seg" :class="k" :style="{ flexGrow: report.sentiment_split[k] || 0 }"></span>
-        </div>
-        <ul class="sent-key">
-          <li v-for="k in SENT" :key="k"><span class="dot" :class="k"></span>{{ capitalize(k) }} <b>{{ report.sentiment_split[k] }}%</b></li>
-        </ul>
-      </figure>
+      <div class="cell-row">
+        <figure class="cell-ex">
+          <figcaption>How the {{ spokeCount }} who spoke felt</figcaption>
+          <div class="sent" role="img" :aria-label="sentimentAria">
+            <span v-for="k in SENT" :key="k" class="sent-seg" :class="k" :style="{ flexGrow: report.sentiment_split[k] || 0 }"></span>
+          </div>
+          <ul class="sent-key">
+            <li v-for="k in SENT" :key="k"><span class="dot" :class="k"></span>{{ capitalize(k) }} <b>{{ report.sentiment_split[k] }}%</b></li>
+          </ul>
+        </figure>
 
-      <figure v-if="report.ignore_reasons?.length" class="cell cell-ex">
-        <figcaption>{{ capitalize(copy.silence(Math.round(report.silent_share_pct || 0))) }}</figcaption>
-        <ul class="bars">
-          <li v-for="ir in report.ignore_reasons" :key="ir.category">
-            <div class="bar-row"><span>{{ ir.label }}</span><b>{{ ir.share_pct }}%</b></div>
-            <span class="bar" :style="{ '--w': `${ir.share_pct}%` }"></span>
-            <p v-if="ir.implication || ir.example" class="bar-note">{{ ir.implication || ir.example }}</p>
-          </li>
-        </ul>
-      </figure>
+        <figure v-if="report.ignore_reasons?.length" class="cell-ex">
+          <figcaption>{{ capitalize(copy.silence(Math.round(report.silent_share_pct || 0))) }}</figcaption>
+          <ul class="bars">
+            <li v-for="ir in report.ignore_reasons" :key="ir.category">
+              <div class="bar-row"><span>{{ ir.label }}</span><b>{{ ir.share_pct }}%</b></div>
+              <span class="bar" :style="{ '--w': `${ir.share_pct}%` }"></span>
+              <p v-if="ir.implication || ir.example" class="bar-note">{{ ir.implication || ir.example }}</p>
+            </li>
+          </ul>
+        </figure>
 
-      <figure v-if="segments.length" class="cell cell-ex">
-        <figcaption>{{ capitalize(copy.segments) }}</figcaption>
-        <ul class="bars">
-          <li v-for="s in segments" :key="s.name">
-            <div class="bar-row"><span>{{ capitalize(s.name) }}</span><b>{{ s.count ?? '' }}</b></div>
-            <span class="bar is-muted" :style="{ '--w': `${segShare(s.count)}%` }"></span>
-          </li>
-        </ul>
-      </figure>
+        <figure v-if="segments.length" class="cell-ex">
+          <figcaption>{{ capitalize(copy.segments) }}</figcaption>
+          <ul class="bars">
+            <li v-for="s in segments" :key="s.name">
+              <div class="bar-row"><span>{{ capitalize(s.name) }}</span><b>{{ s.count ?? '' }}</b></div>
+              <span class="bar is-muted" :style="{ '--w': `${segShare(s.count)}%` }"></span>
+            </li>
+          </ul>
+        </figure>
+      </div>
 
       <figure v-if="voices.length" class="cell cell-voices">
         <figcaption>{{ capitalize(copy.voices) }}</figcaption>
@@ -239,7 +241,11 @@ async function copyAnchor(id) {
 .cell-act { grid-column: span 5; background: var(--paper-2); display: flex; flex-direction: column; gap: var(--space-5); padding: var(--space-7) var(--space-6); }
 .cell-risks { grid-column: 1 / -1; }
 .cell-objections { grid-column: 1 / -1; }
-.cell-ex { grid-column: span 4; }
+/* Evidence row: its own sub-grid so two or three panels always fill the width
+   (an empty board slot would show the rule colour as a grey block). */
+.cell-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 1px; }
+.cell-ex { flex: 1 1 260px; margin: 0; background: var(--paper); padding: var(--space-6); min-width: 0; }
+.cell-ex figcaption { margin: 0 0 var(--space-4); font-size: var(--text-base); font-weight: 700; letter-spacing: -0.005em; }
 .cell-voices { grid-column: 1 / -1; }
 
 /* Recommendation */
@@ -353,13 +359,12 @@ async function copyAnchor(id) {
 
 @media (max-width: 1099px) {
   .cell-rec, .cell-act { grid-column: 1 / -1; }
-  .cell-ex { grid-column: span 6; }
-  .cell-ex:last-of-type:nth-of-type(odd) { grid-column: 1 / -1; }
 }
 @media (max-width: 767px) {
   .memo { padding: var(--space-5) var(--space-4) var(--space-7); }
   .board { grid-template-columns: minmax(0, 1fr); }
   .cell, .cell-rec, .cell-act { grid-column: 1 / -1; padding: var(--space-5) var(--space-4); }
+  .cell-ex { padding: var(--space-5) var(--space-4); }
   .memo-head { gap: var(--space-2); }
 }
 </style>

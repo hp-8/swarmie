@@ -563,7 +563,7 @@ const COPY = {
     segments: 'segments',
     agents: 'agents',
     silence: (pct) => `why ${pct}% scrolled past`,
-    askTag: 'ask 5 users',
+    askTag: 'test it',
     killTag: 'drop it if',
   },
   investor: {

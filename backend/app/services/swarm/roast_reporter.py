@@ -36,7 +36,7 @@ class RoastReport:
     # --- decision brief fields (additive) ---
     verdict: str = "sharpen_positioning"  # "ship_it" | "sharpen_positioning" | "wrong_audience" | "kill"
     verdict_reason: str = ""  # one blunt line < 120 chars
-    next_action: str = ""  # single most important move before writing more code, < 160 chars
+    next_action: str = ""  # single most important change to make today, < 160 chars
     confidence: str = "low"  # "low" | "med" | "high"
     confidence_reason: str = ""  # one line
     # --- silence signal (workstream B): why agents scrolled past ---
@@ -113,13 +113,24 @@ Decision brief rules:
   * wrong_audience: the swarm engaged but the ICP clearly doesn't match the pitch
   * kill: fundamental demand problem, rethink the problem/solution entirely
 - verdict_reason: one blunt line under 120 chars — the single decisive factor
-- next_action: the single most important move before writing more code, under 160 chars
+Swarmie's panel exists so the founder does not have to start with interviews. Never tell
+them to interview users, run customer discovery, or 'talk to customers' before building.
+Every next step is something they can change today (a line of the pitch, the price, the
+target segment, the scope) and check by re-running Swarmie on the revised pitch. Only when
+the answer needs real buyers (will they pay, will they switch) name ONE specific, cheap
+real-world check: a price on a landing page, a pre-sale, a single message to a named group.
+
+- next_action: the single most important change to make now, stated as an instruction the
+  founder can act on today (e.g. a rewritten first line, a price to try, a segment to lead
+  with), under 160 chars
 - confidence: "low" | "med" | "high" — how much weight to put on this signal
 - confidence_reason: one line (e.g. "only 14 agents spoke; sentiment split")
 - objections_enriched: for each top objection, provide:
   * category: exact category string from top_objections
-  * real_test: exact question to ask 5 real users, under 160 chars
-  * kill_criteria: "if N/5 say X, this positioning is dead", under 160 chars
+  * real_test: the fastest way to settle this objection: the change to make and re-run, or one
+    specific real-world check (see above), under 160 chars
+  * kill_criteria: the result that means dropping this angle, e.g. "if price still tops the
+    objections after the reprice, drop the $49 tier", under 160 chars
   * suggested_fix: concrete messaging/positioning fix, under 160 chars"""
 
 
@@ -565,13 +576,14 @@ class RoastReporter:
                     "  messaging_gaps    (array of 2-4 short strings — concrete things to fix)\n"
                     f"  verdict           (string, one of: {self.VERDICT_ENUM_HINT})\n"
                     "  verdict_reason    (string, <120 chars, one blunt line — the decisive factor)\n"
-                    "  next_action       (string, <160 chars, single most important move before more code)\n"
+                    "  next_action       (string, <160 chars, the single most important change to make today;\n"
+                    "                     never 'interview users' (see the rule in the system prompt))\n"
                     f"  confidence        (string, one of: low | med | high — MUST NOT exceed ceiling '{confidence_ceiling}')\n"
                     "  confidence_reason (string, one line — e.g. 'only 14 agents spoke; sentiment split')\n"
                     "  objections_enriched (array of objects, one per top objection, with keys:\n"
                     "    category (string, exact match to top_objections category),\n"
-                    "    real_test (string, <160 chars, exact question to ask 5 real users),\n"
-                    "    kill_criteria (string, <160 chars, e.g. 'if 3/5 say X, this positioning is dead'),\n"
+                    "    real_test (string, <160 chars, the change to make and re-run, or one specific real-world check),\n"
+                    "    kill_criteria (string, <160 chars, the result that means dropping this angle),\n"
                     "    suggested_fix (string, <160 chars, concrete messaging/positioning fix)\n"
                     "  )\n"
                     "  what_working      (array of 1-3 strings, <140 chars each — real strengths backed by\n"
@@ -585,7 +597,8 @@ class RoastReporter:
                     "                     dependency on a platform. Do NOT repeat top objections. Keys:\n"
                     "    risk (string, <140 chars),\n"
                     "    why_non_obvious (string, <160 chars — why it is easy to miss from this pitch/data),\n"
-                    "    cheap_test (string, <160 chars — how to check it in days, without building)\n"
+                    "    cheap_test (string, <160 chars — how to check it this week without building: a re-run\n"
+                    "                with a changed pitch, a landing-page or pre-sale test; not interviews)\n"
                     "  )\n"
                     "  path_forward      (object — a realistic plan, with keys:\n"
                     "    this_week (string, <160 chars — the concrete first step, usually the next_action),\n"
@@ -739,8 +752,8 @@ class RoastReporter:
     def _fallback_next_action(top_objections: list[dict[str, Any]]) -> str:
         if top_objections:
             top_cat = top_objections[0]["category"]
-            return f"Interview 5 target users specifically about '{top_cat}' before writing more code."[:160]
-        return "Run 5 customer discovery interviews to validate the core problem before any new features."[:160]
+            return f"Rewrite the pitch to answer '{top_cat}' in its first line, then re-run to see if it drops."[:160]
+        return "Sharpen the first line to name who has the problem and what it costs them, then re-run."[:160]
 
 
 # --- Investor swarm reporter ---
