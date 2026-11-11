@@ -15,17 +15,8 @@ const verifyTags = {
 
 export default defineConfig({
   plugins: [vue(), verifyTags],
-  server: {
-    port: 3000,
-    open: true,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5001',
-        changeOrigin: true,
-        secure: false
-      }
-    }
-  },
+  // Dev: frontend on :3000, /api forwarded to the Flask server on :5001.
+  server: { port: 3000, open: true, proxy: { '/api': { target: 'http://localhost:5001', changeOrigin: true } } },
   build: {
     rollupOptions: {
       output: {

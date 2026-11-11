@@ -11,7 +11,7 @@
 
     <main class="doc">
       <h1 class="doc-title h-display">Terms of Service</h1>
-      <p class="doc-meta">Last Updated: June 1, 2026</p>
+      <p class="doc-meta">Last Updated: November 11, 2026</p>
 
       <section>
         <h2>1. Acceptance of Terms</h2>
@@ -100,8 +100,9 @@
 
       <section>
         <h2>10. Intellectual Property</h2>
-        <p>Except for user-submitted content, all rights, title, and interest in the Service, including software, branding, designs, interfaces, and documentation, remain the property of the Service operator.</p>
-        <p>No rights are granted except as expressly stated in these Terms.</p>
+        <p>The Swarmie software is open source, licensed under the <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">GNU Affero General Public License v3.0</a> (AGPL-3.0). Its source code is available at <a href="https://github.com/hp-8/swarmie" target="_blank" rel="noopener">github.com/hp-8/swarmie</a>. Your rights to use, copy, modify, and distribute the software are set out in that license, and nothing in these Terms limits them.</p>
+        <p>The Swarmie name, logo, and branding are not covered by the software license and remain the property of the Service operator. These Terms govern your use of the hosted Service at swarmie.harshpatadia.com, including purchased credits.</p>
+        <p>You keep ownership of the content you submit, as described in Section 6.</p>
       </section>
 
       <section>

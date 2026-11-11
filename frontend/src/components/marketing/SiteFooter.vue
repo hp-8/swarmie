@@ -5,6 +5,7 @@
     <nav class="foot-links" aria-label="Footer">
       <router-link to="/terms">Terms</router-link>
       <router-link to="/privacy">Privacy</router-link>
+      <a href="https://github.com/hp-8/swarmie" target="_blank" rel="noopener">Source code</a>
       <a href="#" @click.prevent="openConsentSettings">Cookie settings</a>
     </nav>
   </footer>

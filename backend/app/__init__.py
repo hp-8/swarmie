@@ -1,14 +1,8 @@
-"""
-Swarmie Backend - Flask Application Factory
-"""
+"""Swarmie backend: Flask app factory."""
 
-import os
+from __future__ import annotations
+
 import time
-import warnings
-
-# Suppress multiprocessing resource_tracker warnings (from third-party libs like transformers)
-# Must be set before all other imports
-warnings.filterwarnings("ignore", message=".*resource_tracker.*")
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -20,101 +14,74 @@ from .extensions import limiter
 from .utils.logger import get_logger, setup_logger
 
 
-def create_app(config_class=Config):
-    """Flask application factory function"""
+def create_app(config_class=Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_class)
+    log = setup_logger()
 
-    # Behind Render's proxy, remote_addr is the proxy — without this every client
-    # shares one rate-limit bucket. Trust only the hops we control (0 = no proxy).
+    # Render sits in front of us: without ProxyFix every client shares the
+    # proxy's IP and therefore one rate-limit bucket. 0 disables it.
     hops = app.config.get("TRUSTED_PROXY_HOPS", 1)
     if hops:
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=hops)
-    
-    # Configure JSON encoding: ensure text is rendered directly (not in \uXXXX format)
-    # Flask >= 2.3 uses app.json.ensure_ascii, older versions use JSON_AS_ASCII
-    if hasattr(app, 'json') and hasattr(app.json, 'ensure_ascii'):
-        app.json.ensure_ascii = False
-    
-    # Setup logger
-    logger = setup_logger('swarmie')
-    
-    # Only log startup info in reloader subprocess (avoid duplicate logs in debug mode)
-    is_reloader_process = os.environ.get('WERKZEUG_RUN_MAIN') == 'true'
-    debug_mode = app.config.get('DEBUG', False)
-    should_log_startup = not debug_mode or is_reloader_process
-    
-    if should_log_startup:
-        logger.info("=" * 50)
-        logger.info("Swarmie Backend is starting...")
-        logger.info("=" * 50)
-    
-    # Enable CORS — allowlist only (env CORS_ORIGINS, comma-separated)
-    CORS(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", [])}})
 
-    # Per-IP rate limiting (in-memory; flask-limiter honors RATELIMIT_ENABLED)
+    # Return non-ASCII text (pitches, quotes) as-is instead of \uXXXX escapes.
+    app.json.ensure_ascii = False
+
+    CORS(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", [])}})
     limiter.init_app(app)
 
+    _register_error_handlers(app)
+    _register_routes(app)
+
+    # Method + path + status only: request bodies carry users' pitches.
+    @app.after_request
+    def _log_request(response):
+        get_logger("request").debug("%s %s -> %s", request.method, request.path, response.status_code)
+        return response
+
+    log.info("Swarmie backend ready")
+    return app
+
+
+def _register_routes(app: Flask) -> None:
+    from .api.analytics import analytics_bp
+    from .api.billing import billing_bp
+    from .api.roast import roast_bp
+
+    app.register_blueprint(roast_bp, url_prefix="/api/roast")
+    app.register_blueprint(billing_bp, url_prefix="/api/billing")
+    app.register_blueprint(analytics_bp, url_prefix="/api/analytics")
+
+    @app.get("/health")
+    def health():
+        return {"status": "ok", "service": "Swarmie Backend"}
+
+
+def _retry_hint() -> str:
+    try:
+        seconds_left = limiter.current_limit.reset_at - time.time()
+    except Exception:  # no active limit in this request context
+        return "Please try again later."
+    minutes = max(1, int(seconds_left) // 60 + 1)
+    return f"Please try again in about {minutes} minute{'' if minutes == 1 else 's'}."
+
+
+def _register_error_handlers(app: Flask) -> None:
     @app.errorhandler(429)
-    def handle_rate_limit(exc):
-        """JSON 429 in the API's standard {error: ...} envelope."""
-        desc = getattr(exc, "description", None) or "rate limit exceeded"
-        retry_hint = "Please try again later."
-        try:
-            reset_at = limiter.current_limit.reset_at  # epoch seconds of window reset
-            minutes = max(1, int(reset_at - time.time()) // 60 + 1)
-            plural = "s" if minutes != 1 else ""
-            retry_hint = f"Please try again in about {minutes} minute{plural}."
-        except Exception:
-            logger.debug("rate-limit retry hint failed; header Retry-After still set by flask-limiter", exc_info=True)
+    def too_many_requests(exc):
+        limit = getattr(exc, "description", None) or "rate limit exceeded"
         if request.path.endswith("/chat"):
-            msg = f"You've hit the agent chat limit ({desc}). {retry_hint}"
+            what = f"You've hit the agent chat limit ({limit})."
         elif request.path.startswith("/api/roast"):
-            msg = f"You've hit the roast limit ({desc}). {retry_hint}"
+            what = f"You've hit the roast limit ({limit})."
         else:
-            msg = f"Too many requests ({desc}). {retry_hint}"
-        return jsonify({"error": msg}), 429
+            what = f"Too many requests ({limit})."
+        return jsonify({"error": f"{what} {_retry_hint()}"}), 429
 
     @app.errorhandler(Exception)
-    def handle_unhandled_exception(exc):
-        """Catch-all: JSON {error} + 500, real traceback only in server logs."""
+    def unexpected_error(exc):
         if isinstance(exc, HTTPException):
-            return exc  # 404/405/413/429... keep their dedicated handling
-        get_logger('swarmie.errors').exception(
-            "unhandled exception on %s %s", request.method, request.path
-        )
-        return jsonify({
-            "error": "Something went wrong on our end. Please try again in a moment.",
-        }), 500
-
-    # Request logging middleware
-    @app.before_request
-    def log_request():
-        logger = get_logger('swarmie.request')
-        logger.debug(f"Request: {request.method} {request.path}")
-        if request.content_type and 'json' in request.content_type:
-            logger.debug(f"Request Body: {request.get_json(silent=True)}")
-    
-    @app.after_request
-    def log_response(response):
-        logger = get_logger('swarmie.request')
-        logger.debug(f"Response: {response.status_code}")
-        return response
-    
-    # Register blueprints
-    from .api import roast_bp
-    app.register_blueprint(roast_bp, url_prefix='/api/roast')
-    from .api.billing import billing_bp
-    app.register_blueprint(billing_bp, url_prefix='/api/billing')
-    from .api.analytics import analytics_bp
-    app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
-    
-    # Health check endpoint
-    @app.route('/health')
-    def health():
-        return {'status': 'ok', 'service': 'Swarmie Backend'}
-    
-    if should_log_startup:
-        logger.info("Swarmie Backend started successfully")
-    
-    return app
+            return exc  # 404/405/413… keep their own responses
+        get_logger("errors").exception("unhandled exception on %s %s", request.method, request.path)
+        return jsonify({"error": "Something went wrong on our end. Please try again in a moment."}), 500

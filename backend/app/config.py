@@ -46,12 +46,6 @@ class Config:
     LLM_DEEP_MODEL_NAME = os.environ.get("LLM_DEEP_MODEL_NAME")
     LLM_SYNTH_MODEL_NAME = os.environ.get("LLM_SYNTH_MODEL_NAME")
 
-    # --- Zep ---
-    # Zep is optional. The fast "roast" pipeline runs without it.
-    # Deep simulation (legacy MiroFish path) still requires Zep.
-    ZEP_API_KEY = os.environ.get("ZEP_API_KEY")
-    USE_ZEP = _bool("USE_ZEP", False)  # default OFF for fast pipeline
-
     # --- Uploads ---
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
     UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "../uploads")
@@ -143,6 +137,4 @@ class Config:
         errors = []
         if not cls.LLM_API_KEY:
             errors.append("LLM_API_KEY is not configured")
-        if cls.USE_ZEP and not cls.ZEP_API_KEY:
-            errors.append("USE_ZEP=true but ZEP_API_KEY is not configured")
         return errors

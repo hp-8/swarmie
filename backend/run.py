@@ -1,58 +1,32 @@
-"""
-Swarmie Backend Entry Point
-"""
+"""Local dev server: `uv run python run.py`. Production runs wsgi.py under gunicorn."""
 
 import os
 import sys
 
-# Make all print()/log output unbuffered so live diagnostics show up in `npm run dev`.
+# Show prints/logs immediately in `npm run dev` instead of when a buffer fills.
 os.environ.setdefault("PYTHONUNBUFFERED", "1")
-try:
-    sys.stdout.reconfigure(line_buffering=True)  # py3.7+
-    sys.stderr.reconfigure(line_buffering=True)
-except Exception:
-    pass
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, "reconfigure"):
+        stream.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
 
-# Fix Windows console encoding issue: set UTF-8 before all imports
-if sys.platform == 'win32':
-    # Ensure Python uses UTF-8 encoding
-    os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
-    # Reconfigure stdout and stderr to UTF-8
-    if hasattr(sys.stdout, 'reconfigure'):
-        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-    if hasattr(sys.stderr, 'reconfigure'):
-        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
-
-# Add project root directory to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from app import create_app
-from app.config import Config
+from app import create_app  # noqa: E402  (after the stream setup above)
+from app.config import Config  # noqa: E402
 
 
-def main():
-    """Main function"""
-    # Validate configuration
-    errors = Config.validate()
-    if errors:
-        print("Configuration errors:")
-        for err in errors:
-            print(f"  - {err}")
-        print("\nPlease check your .env file configuration")
-        sys.exit(1)
-    
-    # Create application
-    app = create_app()
-    
-    # Get runtime configuration
-    host = os.environ.get('FLASK_HOST', '0.0.0.0')
-    # Render/Heroku/Fly all inject PORT; honor it first.
-    port = int(os.environ.get('PORT') or os.environ.get('FLASK_PORT') or 5001)
-    debug = Config.DEBUG
-    
-    # Start server
-    app.run(host=host, port=port, debug=debug, threaded=True)
+def main() -> None:
+    problems = Config.validate()
+    if problems:
+        sys.exit("Fix your .env first:\n" + "\n".join(f"  - {p}" for p in problems))
+
+    port = int(os.environ.get("PORT") or os.environ.get("FLASK_PORT") or 5001)
+    create_app().run(
+        host=os.environ.get("FLASK_HOST", "0.0.0.0"),
+        port=port,
+        debug=Config.DEBUG,
+        threaded=True,
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

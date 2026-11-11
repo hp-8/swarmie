@@ -32,7 +32,7 @@ We default to local Ollama, but tiered model routing isn't built yet.
 Anchor design in `backend/app/services/` — open an issue first to discuss approach.
 
 ### 4. Founder UX
-The current UI is inherited from MiroFish and is *not* optimized for the "founder uploads pitch → sees PMF report" flow. Look at `frontend/src/views/Home.vue` and `Process.vue` first.
+The pitch → memo flow should feel effortless. Start with `frontend/src/views/Home.vue`, `views/swarm/PitchInput.vue` and `components/swarm/DecisionMemo.vue`.
 
 ### 5. Docs, examples, screencasts
 Underrated. Onboarding screencasts, blog posts, integration tutorials — all welcome.
@@ -47,7 +47,7 @@ See [README.md](./README.md#quick-start).
 git clone https://github.com/hp-8/swarmie.git
 cd swarmie
 cp .env.example .env  # fill in keys
-npm run setup:all
+npm run install:all
 npm run dev
 ```
 

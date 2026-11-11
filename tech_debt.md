@@ -4,7 +4,7 @@ _Last evaluated: 2026-11-10. Owner: eng. Scored P0 (product/safety risk) → P2 
 
 Swarmie is the live product: a slim async-LLM swarm for founder validation
 (`backend/app/api/roast.py` + `services/swarm/*`, Vue/Vite SPA frontend). The
-legacy MiroFish OASIS/Zep deep-sim engine has been fully removed.
+legacy deep-sim engine (OASIS/Zep) has been fully removed.
 
 ---
 

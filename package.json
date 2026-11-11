@@ -1,26 +1,25 @@
 {
   "name": "swarmie",
-  "version": "0.1.0",
-  "description": "Swarmie — Roast your startup with 500 AI users. Founder validation via grounded agent simulation.",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Swarmie: a panel of AI reviewers reads your startup pitch and writes a decision memo.",
+  "license": "AGPL-3.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/hp-8/swarmie.git"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
-    "setup": "npm install && cd frontend && npm install",
-    "setup:backend": "cd backend && uv sync",
-    "setup:all": "npm run setup && npm run setup:backend",
-    "dev": "concurrently --kill-others -n \"backend,frontend\" -c \"green,cyan\" \"npm run backend\" \"npm run frontend\"",
-    "backend": "cd backend && uv run python run.py",
-    "frontend": "cd frontend && npm run dev",
-    "build": "cd frontend && npm install && npm run build",
+    "install:all": "npm install && npm install --prefix frontend && uv sync --project backend",
+    "dev": "concurrently -k -n api,web -c green,cyan \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "uv run --project backend python backend/run.py",
+    "dev:web": "npm run dev --prefix frontend",
+    "build": "npm install --prefix frontend && npm run build --prefix frontend",
     "indexnow": "node scripts/indexnow.mjs https://swarmie.harshpatadia.com c5303eaaf37147dba3cb3fb496469858"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "license": "AGPL-3.0"
+  }
 }

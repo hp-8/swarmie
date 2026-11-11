@@ -11,7 +11,7 @@
 
     <main class="doc">
       <h1 class="doc-title h-display">Privacy Policy</h1>
-      <p class="doc-meta">Last Updated: June 1, 2026</p>
+      <p class="doc-meta">Last Updated: November 11, 2026</p>
 
       <section>
         <h2>1. Introduction</h2>

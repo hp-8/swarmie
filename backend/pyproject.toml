@@ -1,12 +1,10 @@
 [project]
 name = "swarmie-backend"
-version = "0.1.0"
+version = "2.0.0"
 description = "Swarmie backend — founder validation via async LLM swarm"
 requires-python = ">=3.11"
 license = { text = "AGPL-3.0" }
-authors = [
-    { name = "Swarmie Team" }
-]
+authors = [{ name = "Harsh Patadia" }]
 
 dependencies = [
     # Core framework
@@ -34,14 +32,6 @@ dependencies = [
 
     # Roast job store (used only when REDIS_URL is set; in-memory otherwise)
     "redis>=5.0.0",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.0",
-    "pytest-cov>=5.0.0",
-    "pipreqs>=0.5.0",
 ]
 
 [build-system]
@@ -79,7 +69,3 @@ ignore = [
     "RUF012",
 ]
 
-[tool.ruff.lint.per-file-ignores]
-# app/__init__.py intentionally places imports after warnings.filterwarnings(),
-# which must run before third-party imports — so E402 is expected there.
-"app/__init__.py" = ["E402"]

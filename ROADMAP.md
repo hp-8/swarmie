@@ -4,7 +4,7 @@ A living document. Order roughly reflects priority.
 
 ## Phase 0 — Inherited Core (Done, superseded)
 
-Forked from MiroFish, rebranded, rebased for founder-validation use case.
+Started as a MiroFish fork; fully rewritten for founder validation as of v2.
 
 > Superseded (2026-06): the OASIS/Zep deep-sim engine below was fully removed in
 > favor of the slim async-LLM swarm. Kept for history.

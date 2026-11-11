@@ -5,8 +5,7 @@
 # Install: pip install -r requirements.txt
 #
 # The roast pipeline (api/roast.py + services/swarm/*) is a pure async LLM
-# fan-out. The legacy MiroFish OASIS/Zep deep-sim stack has been removed, so
-# camel-ai / camel-oasis / zep-cloud are no longer needed.
+# fan-out. No agent-simulation framework is needed.
 # ===========================================
 
 # Core framework

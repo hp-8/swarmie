@@ -87,7 +87,7 @@ cp .env.example .env
 # Leave LLM_API_KEY pointed at a local Ollama to run for $0.
 
 # 3. Install everything
-npm run setup:all
+npm run install:all
 
 # 4. Run
 npm run dev
@@ -106,29 +106,13 @@ docker compose up -d
 
 ## Status
 
-🚧 **Alpha.** Forked from [MiroFish](https://github.com/666ghj/MiroFish) — a Chinese-language swarm-prediction engine — and pivoted toward founder validation, then rebuilt on a slim in-process LLM swarm (the heavy OASIS/Zep stack is legacy, import-guarded, and no longer required).
+**V2.** Swarmie began in 2026 as a fork of [MiroFish](https://github.com/666ghj/MiroFish), a swarm-prediction engine, and has since been rewritten for founder validation. As of v2 it contains no MiroFish code: the pipeline, LLM swarm, memo and site are original.
 
 **Shipped:** end-to-end 60s pipeline · decision-brief output (verdict + per-objection user-tests + kill-criteria) · "why they scrolled past" silence analysis · per-agent chat · two feedback layers (per-objection votes + product feedback) feeding calibration · atmospheric, fully-responsive marketing site · PDF export · Supabase analytics.
 
 **In development:** live grounding in real Reddit/HN/review chatter, public backtest calibration, and the paid tiers (live voice interviews, continuous monitoring, real-user bridge).
 
 See **[ROADMAP.md](./ROADMAP.md)** for what's coming.
-
----
-
-## What's Different from MiroFish
-
-Swarmie keeps MiroFish's strong sim core (OASIS + Zep + multi-step pipeline) but pivots:
-
-| Dimension | MiroFish | Swarmie |
-|-----------|----------|---------|
-| **Audience** | General prediction (news, novels, policy) | Pre-launch founders |
-| **Input** | Any seed document | Pitch / deck / one-pager |
-| **Output** | Long-form prediction report | Decision brief: verdict + objection user-tests + silence analysis |
-| **Realism** | LLM personas from raw graph | Sampled, cited silence reasons today; live grounding (WIP) |
-| **Calibration** | None | Public backtest scoreboard (WIP) |
-| **Language** | Chinese-first | English-first |
-| **Cost focus** | Frontier models | Tiered routing + local-model default |
 
 ---
 
@@ -146,11 +130,11 @@ See **[CONTRIBUTING.md](./CONTRIBUTING.md)**.
 
 ## License
 
-**AGPL-3.0**. See [LICENSE](./LICENSE).
+**AGPL-3.0**. See [LICENSE](./LICENSE). Copyright © 2026 Harsh Patadia.
 
-Inherited from upstream MiroFish. Network-use clause applies — if you host Swarmie as a service, you must publish your modifications.
+Network-use clause applies: if you host a modified Swarmie as a service, you must publish your modifications. The "Swarmie" name and logo are not covered by the code license.
 
-For commercial licensing or hosted-service exceptions, open an issue.
+For licensing outside AGPL-3.0, open an issue.
 
 ---
 
@@ -158,9 +142,6 @@ For commercial licensing or hosted-service exceptions, open an issue.
 
 Swarmie stands on the work of:
 
-- **[MiroFish](https://github.com/666ghj/MiroFish)** by 666ghj and team — upstream codebase
-- **[OASIS](https://github.com/camel-ai/oasis)** by CAMEL-AI — agent social simulation engine (Apache 2.0)
-- **[Zep](https://github.com/getzep/zep)** — agent memory + knowledge graph
-- **[Shanda Group](https://www.shanda.com/)** — strategic support for original MiroFish
+- **[MiroFish](https://github.com/666ghj/MiroFish)** by 666ghj and team: the project Swarmie was originally forked from
 
 See **[NOTICE](./NOTICE)** for full attributions.
