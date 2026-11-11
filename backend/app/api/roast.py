@@ -238,7 +238,6 @@ def _run_pipeline(job: RoastJob) -> None:
         job.finished_at = time.time()
         _store.persist(job)
         _push_event(job, "status", {"status": job.status, "progress": 1.0})
-        _push_event(job, "usage", job.usage)
         _push_event(job, "done", {"job_id": job.job_id})
         _record_run(job)
 
@@ -458,7 +457,7 @@ def stream_roast(job_id: str):
     Replays the full event log from the start (so a reconnecting or late client
     catches up on everything), then tails new events. Event types: status,
     parsed_pitch, archetypes, thinking, reaction, deck_slides, deck_diagnosis,
-    report, usage, done. Client disconnects on `done` or a failed/cancelled
+    report, done. Client disconnects on `done` or a failed/cancelled
     `status`.
     """
     job = _store.get(job_id)
@@ -589,7 +588,6 @@ def chat_agent(job_id: str, agent_id: str):
         "turns": user_turns,
         "soft_cap": CHAT_SOFT_CAP,
         "over_cap": user_turns > CHAT_SOFT_CAP,
-        "cost_usd": round(tracker.total_cost_usd, 6),
     }), 200
 
 

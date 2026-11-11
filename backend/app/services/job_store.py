@@ -83,7 +83,6 @@ class RoastJob:
             out["archetypes"] = self.archetypes
             out["reactions"] = self.reactions
             out["report"] = self.report
-            out["usage"] = self.usage
             out["deck_slides"] = self.deck_slides
         return out
 

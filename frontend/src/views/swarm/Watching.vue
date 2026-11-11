@@ -340,7 +340,7 @@ function handleEvent(eventName, data) {
 function startStream() {
   const url = roastApi.streamUrl(jobId)
   evtSource = new EventSource(url)
-  for (const name of ['status', 'parsed_pitch', 'archetypes', 'thinking', 'reaction', 'report', 'usage', 'done']) {
+  for (const name of ['status', 'parsed_pitch', 'archetypes', 'thinking', 'reaction', 'report', 'done']) {
     evtSource.addEventListener(name, (e) => {
       try { handleEvent(name, JSON.parse(e.data)) } catch (err) { console.warn('Bad SSE', name, err) }
     })

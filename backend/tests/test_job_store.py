@@ -197,3 +197,13 @@ def test_make_store_falls_back_when_redis_unreachable():
     # Bogus URL → connection/ping fails → in-memory fallback (never raises).
     store = make_store("redis://127.0.0.1:1/0", 3600)
     assert isinstance(store, InMemoryJobStore)
+
+
+def test_public_view_never_exposes_run_cost():
+    """Usage and cost stay server-side (roast_runs); the browser never sees them."""
+    job = RoastJob(job_id="roast_cost", status="completed")
+    job.usage = {"total_cost_usd": 0.0123, "total_tokens": 48210, "total_calls": 27}
+    public = job.to_dict(include_full=True)
+    assert "usage" not in public
+    assert "0.0123" not in str(public)
+    assert job.to_state()["usage"]["total_cost_usd"] == 0.0123  # still persisted
