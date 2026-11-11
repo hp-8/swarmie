@@ -275,8 +275,12 @@ class LLM:
         timeout: float | None = None,
     ):
         self.tier = tier
+        claude = None if (api_key and base_url and model) else _resolve_claude(tier)
         if api_key and base_url and model:
             self.api_key, self.base_url, self.model = api_key, base_url, model
+        elif claude:
+            # Paid run: Claude only, so the free provider's key isn't required.
+            self.api_key, self.base_url, self.model = "", "anthropic", ""
         else:
             self.api_key, self.base_url, self.model = _resolve_model(tier)
         self.tracker = tracker
@@ -285,17 +289,16 @@ class LLM:
         # longer deep-tier generations. Default 30s for hosted providers.
         self.timeout = timeout if timeout is not None else float(os.environ.get("LLM_TIMEOUT", "30"))
 
-        claude = _resolve_claude(tier)
         self._claude: anthropic.Anthropic | None = None
         self._aclaude: anthropic.AsyncAnthropic | None = None
         if claude:
             self.model, self._claude_effort = claude
-            self.base_url = "anthropic"
             # Thinking models take longer than the free provider's 30s budget.
             self._claude_timeout = float(os.environ.get("LLM_PAID_TIMEOUT", "300"))
             self._claude = anthropic.Anthropic(timeout=self._claude_timeout, max_retries=self.max_retries)
 
-        self._sync = OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=self.timeout)
+        # Paid runs never call the free provider, so no OpenAI client.
+        self._sync = None if claude else OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=self.timeout)
         self._async: AsyncOpenAI | None = None  # lazy
 
         # Fallback provider (e.g. Gemini). Used after primary exhausts retries.

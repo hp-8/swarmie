@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from app.config import Config
 from app.utils import llm as llm_mod
 from app.utils.llm import LLM, UsageTracker, paid_run
 
@@ -20,7 +21,10 @@ def _resp(text="{\"ok\": true}", stop_reason="end_turn", model="claude-haiku-5-5
 
 @pytest.fixture
 def env(monkeypatch):
-    monkeypatch.setenv("LLM_API_KEY", "free-key")
+    # No free-provider key at all (as in CI): paid runs must not need one.
+    monkeypatch.setattr(Config, "LLM_API_KEY", None)
+    for k in ("LLM_API_KEY", "LLM_CHEAP_API_KEY", "LLM_DEEP_API_KEY", "LLM_SYNTH_API_KEY"):
+        monkeypatch.delenv(k, raising=False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
     monkeypatch.setenv("LLM_PAID_CHEAP_MODEL_NAME", "claude-haiku-5-5")
     token = paid_run.set(True)
@@ -29,7 +33,7 @@ def env(monkeypatch):
 
 
 def test_free_run_does_not_use_claude(monkeypatch):
-    monkeypatch.setenv("LLM_API_KEY", "free-key")
+    monkeypatch.setattr(Config, "LLM_API_KEY", "free-key")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
     assert LLM(tier="cheap")._claude is None
 
