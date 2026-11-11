@@ -700,6 +700,8 @@ async function downloadPdf() {
       parsedPitch: parsedPitch.value,
       usage: usage.value,
       jobId,
+      swarmType: swarmType.value,
+      reactionCount: reactions.value.length,
     })
     trackPdfDownload(jobId).catch(() => {})
     track('file_download', { source: 'roast_pdf' })
