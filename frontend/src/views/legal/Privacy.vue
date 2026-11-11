@@ -188,6 +188,7 @@
         <p>Swarmie is not directed toward children.</p>
         <p>Users must be at least 16 years old or the minimum age required under applicable law.</p>
         <p>We do not knowingly collect personal information from children.</p>
+        <p>If we learn that we have collected personal information from someone under 16, we will delete it. If you believe a child has used Swarmie, contact <a href="mailto:hpatadi07@gmail.com">hpatadi07@gmail.com</a>.</p>
       </section>
 
       <section>

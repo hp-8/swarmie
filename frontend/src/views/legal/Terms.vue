@@ -16,6 +16,7 @@
       <section>
         <h2>1. Acceptance of Terms</h2>
         <p>By accessing or using Swarmie ("the Service"), you agree to be bound by these Terms of Service and our <router-link to="/privacy">Privacy Policy</router-link>. If you do not agree, you may not use the Service.</p>
+        <p><strong>Eligibility.</strong> You must be at least 16 years old, or the minimum age required in your country if higher, to use the Service. You must be at least 18 years old, or the age of majority where you live, to purchase credits. By purchasing, you confirm you meet this requirement.</p>
       </section>
 
       <section>

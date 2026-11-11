@@ -145,6 +145,7 @@
               </tr>
             </tbody>
           </table>
+          <p v-if="BILLING_ENABLED" class="rate-legal">By purchasing you confirm you're 18+ and agree to the <router-link to="/terms">Terms</router-link>.</p>
         </div>
       </section>
 
@@ -368,6 +369,7 @@ function startDraft() {
 .rate-hero .rate-per { color: oklch(100% 0 0 / 0.68); }
 .rate-launch { margin: var(--space-2) 0 0; font-size: var(--text-sm); line-height: 1.45; color: var(--ink); font-weight: 600; }
 .rate-hero .rate-launch { color: var(--paper); }
+.rate-legal { grid-column: 1 / -1; margin: var(--space-3) 0 0; font-size: var(--text-sm); color: var(--ink-3); }
 .rate-cta {
   margin-top: var(--space-5);
   align-self: stretch;

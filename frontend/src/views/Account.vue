@@ -49,6 +49,7 @@
               </div>
             </li>
           </ul>
+          <p class="fine">By purchasing you confirm you're 18+ and agree to the <router-link to="/terms">Terms</router-link>.</p>
           <p v-if="launchLeft !== null && launchLeft > 0" class="fine">Launch prices for the next {{ launchLeft }} buyers.</p>
           <p class="fine">Payments are handled by Stripe. A review that fails returns its credit automatically.</p>
         </template>
