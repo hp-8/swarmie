@@ -11,7 +11,7 @@
 
     <main class="doc">
       <h1 class="doc-title h-display">Privacy Policy</h1>
-      <p class="doc-meta">Last Updated: November 11, 2026</p>
+      <p class="doc-meta">Last Updated: November 20, 2026</p>
 
       <section>
         <h2>1. Introduction</h2>
@@ -83,7 +83,16 @@
       </section>
 
       <section>
-        <h2>5. How We Use Information</h2>
+        <h2>5. Using Swarmie from Claude (Connector)</h2>
+        <p>You can connect Swarmie to Claude, Anthropic's AI assistant, as a connector. Connecting requires signing in to your Swarmie account and approving access on our consent screen. Claude then receives an access token that lets it start reviews, read their results, and ask reviewers follow-up questions on your behalf, using your account and your review credits.</p>
+        <p><strong>What we receive.</strong> Only what Claude sends when it calls a Swarmie tool: the pitch text, the review type and panel size, and any follow-up questions to a reviewer. Claude writes these from your conversation, so they may be a summary or paraphrase of what you typed. We do not receive the rest of your Claude conversation, your other files or connected apps, or Claude's own replies. We also receive your account identity (from the access token) and standard request data such as IP address and timestamps.</p>
+        <p><strong>What we store.</strong> Reviews started from Claude are stored like reviews on the website with analytics accepted: the pitch text, the parsed pitch, the report, the reviewers' reactions, and any follow-up chats, linked to your account and marked as started from Claude. We use this data to run the Service, to show you your results, and to improve review quality in aggregate. The connector itself is a pass-through and keeps no data of its own.</p>
+        <p><strong>What we do not do.</strong> We do not sell or share connector data, publish your pitches, or use them to train AI models. Anthropic's handling of your Claude conversations is governed by Anthropic's own privacy policy, not this one.</p>
+        <p><strong>Retention and control.</strong> Connector data is kept on the same terms as other review data (see Data Retention). You can disconnect at any time in Claude's connector settings, which stops further access; reviews already run stay stored until you ask us to delete them. To delete a review, email <a href="mailto:hpatadi07@gmail.com">hpatadi07@gmail.com</a> with its results link or the job ID shown in Claude.</p>
+      </section>
+
+      <section>
+        <h2>6. How We Use Information</h2>
         <p>We use information to:</p>
         <ul>
           <li>Provide the Service.</li>
@@ -98,14 +107,14 @@
       </section>
 
       <section>
-        <h2>6. AI Processing</h2>
+        <h2>7. AI Processing</h2>
         <p>To provide analyses and simulations, submitted content may be processed by third-party AI providers.</p>
         <p>These providers may receive portions of submitted content necessary to perform requested processing.</p>
         <p>AI-generated outputs are produced using machine learning systems and may not always be accurate.</p>
       </section>
 
       <section>
-        <h2>7. Service Providers</h2>
+        <h2>8. Service Providers</h2>
         <p>We may use third-party providers including:</p>
         <ul>
           <li>Anthropic</li>
@@ -121,7 +130,7 @@
       </section>
 
       <section>
-        <h2>8. Legal Bases for Processing (GDPR)</h2>
+        <h2>9. Legal Bases for Processing (GDPR)</h2>
         <p>Where GDPR applies, we process information under one or more of the following legal bases:</p>
         <ul>
           <li>Performance of a contract.</li>
@@ -133,7 +142,7 @@
       </section>
 
       <section>
-        <h2>9. Cookies and Analytics</h2>
+        <h2>10. Cookies and Analytics</h2>
         <p>We use essential technologies necessary for the operation of the Service.</p>
         <p>With your consent we use Google Analytics 4 (traffic sources, page views, feature usage), Microsoft Clarity (heatmaps and session recordings, with pitch text masked), and Vercel Web Analytics and Speed Insights (page views and performance). Visitors in the EU/EEA, UK and Switzerland are asked first, and these load only after "Accept all". Elsewhere they are on by default; turn them off anytime via "Cookie settings" in the footer.</p>
         <p>Where required by law, analytics, fingerprinting, and non-essential tracking technologies operate only after user consent.</p>
@@ -141,7 +150,7 @@
       </section>
 
       <section>
-        <h2>10. Data Retention</h2>
+        <h2>11. Data Retention</h2>
         <p>We retain information only as long as reasonably necessary for:</p>
         <ul>
           <li>Service delivery.</li>
@@ -154,20 +163,20 @@
       </section>
 
       <section>
-        <h2>11. Security</h2>
+        <h2>12. Security</h2>
         <p>We implement reasonable administrative, technical, and organizational safeguards designed to protect information.</p>
         <p>However, no internet-based service can guarantee absolute security.</p>
         <p>Users submit information at their own risk.</p>
       </section>
 
       <section>
-        <h2>12. International Data Transfers</h2>
+        <h2>13. International Data Transfers</h2>
         <p>Information may be processed and stored in countries outside your country of residence.</p>
         <p>Where required by applicable law, we implement appropriate safeguards for international transfers.</p>
       </section>
 
       <section>
-        <h2>13. Your Rights</h2>
+        <h2>14. Your Rights</h2>
         <p>Depending on your location, you may have rights including:</p>
         <ul>
           <li>Access</li>
@@ -183,13 +192,13 @@
       </section>
 
       <section>
-        <h2>14. California Privacy Rights</h2>
+        <h2>15. California Privacy Rights</h2>
         <p>We do not sell personal information.</p>
         <p>California residents may request access, correction, and deletion rights as provided by applicable law.</p>
       </section>
 
       <section>
-        <h2>15. Children's Privacy</h2>
+        <h2>16. Children's Privacy</h2>
         <p>Swarmie is not directed toward children.</p>
         <p>Users must be at least 16 years old or the minimum age required under applicable law.</p>
         <p>We do not knowingly collect personal information from children.</p>
@@ -197,19 +206,19 @@
       </section>
 
       <section>
-        <h2>16. Future Features</h2>
+        <h2>17. Future Features</h2>
         <p>As Swarmie evolves, additional features, integrations, accounts, community-signal systems, or AI providers may be introduced.</p>
         <p>This Privacy Policy may be updated to reflect those changes.</p>
       </section>
 
       <section>
-        <h2>17. Changes to This Policy</h2>
+        <h2>18. Changes to This Policy</h2>
         <p>We may update this Privacy Policy from time to time.</p>
         <p>The latest version will always be available through the Service and will include an updated effective date.</p>
       </section>
 
       <section>
-        <h2>18. Contact</h2>
+        <h2>19. Contact</h2>
         <p>For privacy-related questions or requests:</p>
         <p>Email: <a href="mailto:hpatadi07@gmail.com">hpatadi07@gmail.com</a></p>
       </section>
