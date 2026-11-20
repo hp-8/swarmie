@@ -16,6 +16,7 @@ const routes = [
   // --- Marketing ---
   { path: '/roasts', name: 'Roasts', component: () => import('../views/Roasts.vue') },
   { path: '/signin', name: 'SignIn', component: () => import('../views/SignIn.vue') },
+  { path: '/oauth/consent', name: 'OAuthConsent', component: () => import('../views/OAuthConsent.vue') },
   { path: '/account', name: 'Account', component: () => import('../views/Account.vue') },
 
   // --- Legal ---

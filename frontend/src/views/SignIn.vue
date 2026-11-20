@@ -60,6 +60,8 @@ onBeforeUnmount(() => clearInterval(timer))
 
 // Return to the account page, carrying the pack the visitor meant to buy.
 function nextPath() {
+  const next = typeof route.query.next === 'string' ? route.query.next : ''
+  if (next.startsWith('/') && !next.startsWith('//')) return next
   const pack = typeof route.query.pack === 'string' ? route.query.pack : ''
   return pack ? `/account?buy=${encodeURIComponent(pack)}` : '/account'
 }
