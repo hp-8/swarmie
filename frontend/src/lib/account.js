@@ -25,6 +25,23 @@ export async function sendMagicLink(email, next = '/account') {
   if (error) throw error
 }
 
+export async function signInWithPassword(email, password) {
+  if (!supabase) throw new Error('Sign-in is not configured.')
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) throw error
+}
+
+export const GOOGLE_SIGNIN = import.meta.env.VITE_GOOGLE_SIGNIN === 'true'
+
+export async function signInWithGoogle(next = '/account') {
+  if (!supabase) throw new Error('Sign-in is not configured.')
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: `${window.location.origin}${next}` },
+  })
+  if (error) throw error
+}
+
 export async function signOut() {
   if (supabase) await supabase.auth.signOut()
   session.value = null

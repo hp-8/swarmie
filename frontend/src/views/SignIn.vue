@@ -4,14 +4,27 @@
     <main class="signin">
       <div class="sheet">
         <h1 class="title">Sign in to Swarmie</h1>
-        <p class="lede">We'll email you a sign-in link. No password. You need an account to buy review packs and run larger panels; free reviews work without one.</p>
+        <p class="lede">We'll email you a sign-in link. You need an account to buy review packs and run larger panels; free reviews work without one.</p>
 
-        <form v-if="!sent" class="form" @submit.prevent="submit">
+        <template v-if="!sent">
+        <button v-if="GOOGLE_SIGNIN" class="btn btn-ghost google" type="button" :disabled="busy" @click="google">Continue with Google</button>
+        <p v-if="GOOGLE_SIGNIN" class="or">or</p>
+        <form class="form" @submit.prevent="usePassword ? passwordSubmit() : submit()">
           <label for="email" class="label">Email</label>
           <input id="email" v-model.trim="email" class="input" type="email" required autocomplete="email" placeholder="you@company.com" :disabled="busy" />
-          <button class="btn" type="submit" :disabled="busy || !email">{{ busy ? 'Sending…' : 'Email me a sign-in link' }}</button>
+          <template v-if="usePassword">
+            <label for="password" class="label">Password</label>
+            <input id="password" v-model="password" class="input" type="password" required autocomplete="current-password" :disabled="busy" />
+          </template>
+          <button class="btn" type="submit" :disabled="busy || !email || (usePassword && !password)">
+            {{ busy ? (usePassword ? 'Signing in…' : 'Sending…') : (usePassword ? 'Sign in' : 'Email me a sign-in link') }}
+          </button>
+          <button class="link toggle" type="button" @click="usePassword = !usePassword; error = ''">
+            {{ usePassword ? 'Email me a link instead' : 'Sign in with a password' }}
+          </button>
           <p v-if="error" class="error" role="alert">{{ error }}</p>
         </form>
+        </template>
 
         <div v-else class="sent" role="status">
           <p class="sent-title">Check your inbox.</p>
@@ -33,13 +46,16 @@
 
 <script setup>
 import { ref, onBeforeUnmount } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import SiteNav from '../components/marketing/SiteNav.vue'
 import SiteFooter from '../components/marketing/SiteFooter.vue'
-import { sendMagicLink } from '../lib/account'
+import { sendMagicLink, signInWithPassword, signInWithGoogle, GOOGLE_SIGNIN } from '../lib/account'
 
 const route = useRoute()
+const router = useRouter()
 const email = ref('')
+const password = ref('')
+const usePassword = ref(false)
 const busy = ref(false)
 const sent = ref(false)
 const error = ref('')
@@ -80,6 +96,30 @@ async function submit() {
   }
 }
 
+async function passwordSubmit() {
+  busy.value = true
+  error.value = ''
+  try {
+    await signInWithPassword(email.value, password.value)
+    router.replace(nextPath())
+  } catch (e) {
+    error.value = e?.message || 'Could not sign in. Check your email and password.'
+  } finally {
+    busy.value = false
+  }
+}
+
+async function google() {
+  busy.value = true
+  error.value = ''
+  try {
+    await signInWithGoogle(nextPath())
+  } catch (e) {
+    error.value = e?.message || 'Could not start Google sign-in.'
+    busy.value = false
+  }
+}
+
 async function resend() {
   resent.value = false
   await submit()
@@ -114,5 +154,8 @@ function changeEmail() {
 .btn-ghost:hover:not(:disabled) { background: var(--paper-3); }
 .btn-ghost:disabled { background: var(--paper-2); color: var(--ink-3); cursor: not-allowed; }
 .note { margin: var(--space-3) 0 0; font-size: var(--text-sm); color: var(--ink-2); }
+.google { width: 100%; margin-top: 0; }
+.or { margin: var(--space-3) 0; text-align: center; font-size: var(--text-sm); color: var(--ink-3); }
+.toggle { justify-self: start; margin-top: var(--space-2); }
 .link { font: inherit; font-size: var(--text-sm); color: var(--ink-2); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 </style>
