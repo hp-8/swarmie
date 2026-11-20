@@ -218,9 +218,9 @@ def test_roast_returns_503_at_capacity_without_burning_quota(monkeypatch):
     monkeypatch.setattr(Config, "RATE_LIMIT_ROAST", "2 per hour")
     client = _make_app(RATELIMIT_ENABLED=True).test_client()
     try:
-        assert client.post("/api/roast", json={"pitch": "a"}).status_code == 202
+        assert client.post("/api/roast", json={"pitch": "An invoicing tool for freelance designers that chases late payments automatically so they get paid on time "}).status_code == 202
         for _ in range(3):  # more than the quota: 503s must not count
-            resp = client.post("/api/roast", json={"pitch": "b"})
+            resp = client.post("/api/roast", json={"pitch": "An invoicing tool for freelance designers that chases late payments automatically so they get paid on time "})
             assert resp.status_code == 503
             body = resp.get_json()
             assert "capacity" in body["error"]
@@ -236,7 +236,7 @@ def test_roast_slot_released_even_if_pipeline_crashes(monkeypatch):
     roast_api = _patch_slots(monkeypatch, 1, boom)
     client = _make_app().test_client()
     for _ in range(3):
-        assert client.post("/api/roast", json={"pitch": "a"}).status_code == 202
+        assert client.post("/api/roast", json={"pitch": "An invoicing tool for freelance designers that chases late payments automatically so they get paid on time "}).status_code == 202
         assert roast_api._roast_slots.acquire(timeout=2)  # thread finished → slot back
         roast_api._roast_slots.release()
 
@@ -249,7 +249,7 @@ def test_roast_slot_released_even_if_pipeline_crashes(monkeypatch):
 def test_paid_swarms_locked_by_default(monkeypatch, swarm):
     monkeypatch.setattr(Config, "PAID_SWARMS_ENABLED", False)
     client = _make_app().test_client()
-    resp = client.post("/api/roast", json={"pitch": "a" * 50, "swarm_type": swarm})
+    resp = client.post("/api/roast", json={"pitch": "An invoicing tool for freelance designers that chases late payments automatically so they get paid on time ", "swarm_type": swarm})
     assert resp.status_code == 402
     assert resp.get_json()["code"] == "pack_required"
 
@@ -258,11 +258,28 @@ def test_validate_swarm_stays_free(monkeypatch):
     monkeypatch.setattr(Config, "PAID_SWARMS_ENABLED", False)
     _patch_slots(monkeypatch, 1, lambda job: None)
     client = _make_app().test_client()
-    assert client.post("/api/roast", json={"pitch": "a" * 50, "swarm_type": "validate"}).status_code == 202
+    assert client.post("/api/roast", json={"pitch": "An invoicing tool for freelance designers that chases late payments automatically so they get paid on time ", "swarm_type": "validate"}).status_code == 202
 
 
 def test_paid_swarms_unlock_with_flag(monkeypatch):
     monkeypatch.setattr(Config, "PAID_SWARMS_ENABLED", True)
     _patch_slots(monkeypatch, 1, lambda job: None)
     client = _make_app().test_client()
-    assert client.post("/api/roast", json={"pitch": "a" * 50, "swarm_type": "investor"}).status_code == 202
+    assert client.post("/api/roast", json={"pitch": "An invoicing tool for freelance designers that chases late payments automatically so they get paid on time ", "swarm_type": "investor"}).status_code == 202
+
+
+def test_gibberish_pitch_rejected_before_run():
+    client = _make_app().test_client()
+    resp = client.post("/api/roast", json={"pitch": "colicin agent hekp clicn solve prompes  asd"})
+    assert resp.status_code == 400
+    assert "doesn't read like a pitch" in resp.get_json()["error"]
+
+
+def test_parser_raises_when_llm_says_not_a_pitch():
+    import pytest
+    from app.services.swarm.pitch_parser import NotAPitchError, PitchParser
+
+    p = PitchParser.__new__(PitchParser)
+    p.llm = type("L", (), {"chat_json": lambda self, *a, **k: {"is_pitch": False}})()
+    with pytest.raises(NotAPitchError):
+        p.parse("qwe rty uio asd fgh jkl zxc vbn qwe rty uio asd fgh")

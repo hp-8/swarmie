@@ -70,6 +70,24 @@ Never invent competitors that weren't mentioned.
 Respond with JSON only. No prose, no markdown fences."""
 
 
+# Appended to every parser prompt: lets the run stop before the swarm spends
+# money on keyboard mash or a test string.
+_PITCH_GATE = """
+
+Also include  is_pitch : boolean — false if the text is gibberish, a keyboard test,
+or too vague to name any product or problem at all; true otherwise (rough or
+short pitches still count)."""
+
+NOT_A_PITCH = (
+    "That doesn't read like a pitch yet. Describe what you're building, "
+    "who it's for and the problem it solves, then run it again."
+)
+
+
+class NotAPitchError(ValueError):
+    pass
+
+
 class PitchParser:
     """Single-shot pitch -> ParsedPitch extractor.
 
@@ -90,10 +108,12 @@ class PitchParser:
             raise ValueError("pitch_text is empty")
 
         messages = [
-            {"role": "system", "content": self.SYSTEM_PROMPT},
+            {"role": "system", "content": self.SYSTEM_PROMPT + _PITCH_GATE},
             {"role": "user", "content": f"PITCH:\n\n{pitch_text.strip()}"},
         ]
         data = self.llm.chat_json(messages, temperature=0.2, max_tokens=2500)
+        if data.get("is_pitch") is False:
+            raise NotAPitchError(NOT_A_PITCH)
         return self._build(data)
 
     def _build(self, data: dict[str, Any]) -> ParsedPitch:

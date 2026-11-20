@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import threading
 import time
 import uuid
@@ -30,6 +31,7 @@ from ..extensions import limiter
 from ..services import billing
 from . import analytics
 from ..services.job_store import RoastJob, make_store
+from ..services.swarm.pitch_parser import NOT_A_PITCH
 from ..services.swarm import (
     CHAT_SOFT_CAP,
     DEFAULT_SWARM,
@@ -80,7 +82,8 @@ def _is_stale(job: RoastJob) -> bool:
 # Pipeline errors raised with a message written FOR the user keep it verbatim;
 # everything else (provider failures, retry exhaustion, bugs) maps to a generic
 # line so internals never reach the client. Raw tracebacks are always logged.
-_USER_FACING_ERROR_PREFIXES = ("Couldn't read the deck", "cancelled")
+_USER_FACING_ERROR_PREFIXES = ("Couldn't read the deck", "cancelled", NOT_A_PITCH)
+MIN_PITCH_WORDS = 8  # cheap floor; the parser's is_pitch flag catches longer mash
 
 
 def _public_error_message(exc: Exception) -> str:
@@ -415,6 +418,8 @@ def create_roast():
             return jsonify({"error": "pitch is required"}), 400
         if len(pitch_text) > 20000:
             return jsonify({"error": "pitch too long (max 20000 chars)"}), 400
+        if len(re.findall(r"[A-Za-z]{2,}", pitch_text)) < MIN_PITCH_WORDS:
+            return jsonify({"error": NOT_A_PITCH}), 400
 
         swarm_type = (body.get("swarm_type") or DEFAULT_SWARM).strip().lower()
         if swarm_type not in SWARMS:

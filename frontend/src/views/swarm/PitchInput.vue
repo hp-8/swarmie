@@ -185,7 +185,8 @@ const canSubmit = computed(() => {
   if (locked.value) return false
   if (!runConsent.value) return false
   if (swarmType.value === 'investor' && deckFile.value) return true
-  return pitchText.value.trim().length >= 40
+  // Mirrors the backend floor (MIN_PITCH_WORDS) so mash never reaches the API.
+  return (pitchText.value.match(/[A-Za-z]{2,}/g) || []).length >= 8
 })
 
 function fillTemplate() {
