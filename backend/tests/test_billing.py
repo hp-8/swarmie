@@ -336,12 +336,28 @@ def test_live_mode_grants_live_payments(ledger, monkeypatch):
 # ---------------------------------------------------------------- channel
 
 @pytest.mark.parametrize("header,expected", [({"X-Swarmie-Source": "mcp"}, ["mcp"]), ({}, [])])
-def test_mcp_runs_are_recorded_server_side(monkeypatch, header, expected):
-    monkeypatch.setattr(Config, "BILLING_ENABLED", False)
+def test_mcp_runs_are_recorded_server_side(ledger, monkeypatch, header, expected):
     _no_pipeline(monkeypatch)
+    ledger.rows["seed"] = ("u1", 1)
     writes = []
     monkeypatch.setattr(roast_api.analytics, "write",
                         lambda op, rows: writes.extend(r["channel"] for r in rows if op == "run_start"))
     payload = {"pitch": "An invoicing tool for freelance designers that chases late payments", "n_agents": 20}
-    assert _client().post("/api/roast", json=payload, headers=header).status_code == 202
+    headers = {**header, "Authorization": "Bearer u1"}
+    assert _client().post("/api/roast", json=payload, headers=headers).status_code == 202
     assert writes == expected
+
+
+def test_mcp_free_size_validate_still_costs_a_credit(ledger, monkeypatch):
+    _no_pipeline(monkeypatch)
+    resp = _client().post("/api/roast", json={"pitch": "An invoicing tool for freelance designers that chases late payments", "n_agents": 20},
+                          headers={"X-Swarmie-Source": "mcp"})
+    assert resp.status_code == 401  # free-size Validate, but connector runs need an account + credit
+
+
+def test_mcp_locked_while_billing_off(monkeypatch):
+    monkeypatch.setattr(Config, "BILLING_ENABLED", False)
+    _no_pipeline(monkeypatch)
+    resp = _client().post("/api/roast", json={"pitch": "An invoicing tool for freelance designers that chases late payments", "n_agents": 20},
+                          headers={"X-Swarmie-Source": "mcp"})
+    assert resp.status_code == 402

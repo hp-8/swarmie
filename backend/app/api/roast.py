@@ -343,14 +343,21 @@ def _charge_for_review(job: RoastJob):
     """Paid reviews cost one credit. Returns an error response, or None to proceed.
 
     With billing off, pack-only review types stay locked (PAID_SWARMS_ENABLED)."""
+    # Claude-connector (MCP) runs and deck uploads are paid features: always a credit.
+    paid_feature = request.headers.get("X-Swarmie-Source") == "mcp" or job.source == "deck"
     if not billing.enabled():
+        if paid_feature:
+            return jsonify({
+                "error": "The Claude connector and deck uploads are part of review packs.",
+                "code": "pack_required",
+            }), 402
         if job.swarm_type in Config.PAID_SWARMS and not Config.PAID_SWARMS_ENABLED:
             return jsonify({
                 "error": "Investor and Launch reviews are part of review packs, which launch soon.",
                 "code": "pack_required",
             }), 402
         return None
-    if not billing.needs_credit(job.swarm_type, job.n_agents):
+    if not paid_feature and not billing.needs_credit(job.swarm_type, job.n_agents):
         return None  # free review: Validate, small panel, no account needed
     user, err = current_user()
     if err:
@@ -358,7 +365,11 @@ def _charge_for_review(job: RoastJob):
     try:
         if not billing.consume(user.id, _credit_ref(job)):
             return jsonify({
-                "error": "You're out of review credits. Buy a pack, or run a free review with 20 reviewers.",
+                "error": (
+                    "You're out of review credits. Buy a Starter pack to keep using the Claude "
+                    "connector and deck uploads." if paid_feature else
+                    "You're out of review credits. Buy a pack, or run a free review with 20 reviewers."
+                ),
                 "code": "no_credits",
             }), 402
     except billing.BillingError:
