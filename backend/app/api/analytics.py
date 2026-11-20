@@ -26,7 +26,7 @@ OPS: dict[str, tuple[str, str, str | None, tuple[str, ...]]] = {
                ("fingerprint_id", "user_agent", "platform", "screen_res", "timezone", "last_seen_at")),
     "run_start": ("roast_runs", "insert", None,
                   ("job_id", "fingerprint_id", "status", "pitch_length", "pitch_text",
-                   "n_agents_requested", "swarm_type", "source")),
+                   "n_agents_requested", "swarm_type", "source", "channel")),
     "run_complete": ("roast_runs", "update", "job_id",
                      ("job_id", "status", "completed_at", "agent_count", "prompt_tokens",
                       "completion_tokens", "total_tokens", "cost_usd", "model", "error")),

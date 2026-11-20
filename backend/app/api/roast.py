@@ -282,6 +282,26 @@ def _record_run(job: RoastJob, exc: Exception | None = None) -> None:
         logger.warning("could not record run %s", job.job_id, exc_info=True)
 
 
+def _record_mcp_start(job: RoastJob) -> None:
+    """Connector runs have no browser to send run_start, so the server writes the row.
+
+    Without it, run_complete (a PATCH by job_id) has nothing to update.
+    """
+    try:
+        analytics.write("run_start", [{
+            "job_id": job.job_id,
+            "status": "started",
+            "pitch_length": len(job.pitch_text),
+            "pitch_text": job.pitch_text,
+            "n_agents_requested": job.n_agents,
+            "swarm_type": job.swarm_type,
+            "source": job.source,
+            "channel": "mcp",
+        }])
+    except Exception:  # analytics must never break a run
+        logger.warning("could not record mcp run %s", job.job_id, exc_info=True)
+
+
 # ---------- routes ----------
 
 @roast_bp.route("/swarms", methods=["GET"])
@@ -420,6 +440,9 @@ def create_roast():
         _roast_slots.release()
         _store.drop(job.job_id)
         return denied
+
+    if request.headers.get("X-Swarmie-Source") == "mcp":
+        _record_mcp_start(job)
 
     print(f"[{job.job_id}] creating background thread (n_agents={n_agents}, source={job.source})", flush=True)
     thread = threading.Thread(target=_run_pipeline_and_release, args=(job,), daemon=True)

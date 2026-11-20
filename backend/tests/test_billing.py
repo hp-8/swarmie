@@ -88,7 +88,7 @@ def _no_pipeline(monkeypatch, result="completed"):
 
 def post(client, user=None, **body):
     headers = {"Authorization": f"Bearer {user}"} if user else {}
-    payload = {"pitch": "a" * 60, "swarm_type": "validate", "n_agents": 20, **body}
+    payload = {"pitch": "An invoicing tool for freelance designers that chases late payments automatically so they get paid on time ", "swarm_type": "validate", "n_agents": 20, **body}
     return client.post("/api/roast", json=payload, headers=headers)
 
 
@@ -331,3 +331,17 @@ def test_live_mode_grants_live_payments(ledger, monkeypatch):
     payload, sig = _signed(event)
     assert _client().post("/api/billing/webhook", data=payload, headers={"Stripe-Signature": sig}).status_code == 200
     assert ledger.balance("u5") == 20
+
+
+# ---------------------------------------------------------------- channel
+
+@pytest.mark.parametrize("header,expected", [({"X-Swarmie-Source": "mcp"}, ["mcp"]), ({}, [])])
+def test_mcp_runs_are_recorded_server_side(monkeypatch, header, expected):
+    monkeypatch.setattr(Config, "BILLING_ENABLED", False)
+    _no_pipeline(monkeypatch)
+    writes = []
+    monkeypatch.setattr(roast_api.analytics, "write",
+                        lambda op, rows: writes.extend(r["channel"] for r in rows if op == "run_start"))
+    payload = {"pitch": "An invoicing tool for freelance designers that chases late payments", "n_agents": 20}
+    assert _client().post("/api/roast", json=payload, headers=header).status_code == 202
+    assert writes == expected
